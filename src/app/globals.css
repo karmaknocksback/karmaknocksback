@@ -1,0 +1,247 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-gold: #c89b3c;
+  --color-gold-soft: #d9b566;
+  --color-gold-deep: #9c7726;
+  --color-warm-white: #fff9f0;
+  --color-saffron: #f7d8a3;
+  --color-charcoal: #1a1a1a;
+  --color-charcoal-soft: #2b2722;
+
+  --font-display: var(--font-display-serif);
+  --font-sans: var(--font-sans-body);
+  --font-hindi-display: var(--font-hindi-display-serif);
+  --font-hindi: var(--font-hindi-sans);
+}
+
+:root {
+  --surface: var(--color-warm-white);
+  --on-surface: var(--color-charcoal);
+  --glass-bg: 255, 249, 240;
+  --glass-border: 200, 155, 60;
+}
+
+.dark {
+  --surface: #1a1a1a;
+  --on-surface: #fff9f0;
+  --glass-bg: 43, 39, 34;
+  /*
+   * The actual fix for "dark mode text stays dark and unreadable":
+   * --color-charcoal and --color-warm-white are the literal values
+   * EVERY text-charcoal/bg-warm-white/etc. utility class resolves to
+   * (defined once in @theme, used directly — not through --on-surface).
+   * 290+ components across the site use text-charcoal directly for body
+   * text, and that token never changed between themes before this, so
+   * backgrounds correctly went dark (via --surface) while text stayed
+   * dark too. Swapping the values here (not just --surface/--on-surface)
+   * fixes every one of those call sites at once, without touching
+   * component code. Literal hex values are used here, not var()
+   * references to each other, specifically to avoid a circular
+   * dependency with --surface/--on-surface above, which already
+   * reference these same tokens.
+   */
+  --color-charcoal: #fff9f0;
+  --color-warm-white: #1a1a1a;
+  --glass-border: 200, 155, 60;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--surface);
+    color: var(--on-surface);
+    font-family: var(--font-sans), var(--font-hindi), sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-gold-deep);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  /*
+   * For sections that are intentionally ALWAYS dark regardless of the
+   * page's light/dark theme toggle (the admin sidebar, the public-site
+   * footer, the admin login screen) — re-pins --color-charcoal/
+   * --color-warm-white back to their fixed values locally, so every
+   * text-charcoal/bg-charcoal/text-warm-white/bg-warm-white utility used
+   * by any descendant resolves correctly regardless of whether .dark is
+   * active higher up the tree. Standard CSS custom-property cascade
+   * (closer/more specific declaration wins) makes this work without
+   * touching the dozens of individual utility classes already used
+   * throughout those sections.
+   */
+  .theme-fixed-dark {
+    --color-charcoal: #1a1a1a;
+    --color-warm-white: #fff9f0;
+  }
+
+
+  .font-display-hi {
+    font-family: var(--font-hindi-display), var(--font-display), serif;
+  }
+  .font-hindi {
+    font-family: var(--font-hindi), var(--font-sans), sans-serif;
+  }
+
+  /*
+   * When the page is switched to English (document.documentElement.lang
+   * is kept in sync by both LanguageInit's pre-hydration script and
+   * LanguageContext's setLang — see src/lib/i18n/), flip the font-family
+   * priority for these two classes so English text actually uses the
+   * Latin-tuned fonts (Manrope/Cormorant Garamond) instead of the
+   * Devanagari-tuned ones (Noto Sans Devanagari/Tiro Devanagari).
+   *
+   * This was the real cause of "look and feel breaking" when switching
+   * to English: .font-hindi/.font-display-hi are applied as hardcoded
+   * classNames across essentially every component sitewide, regardless
+   * of which language is active, so any text that DOES get translated
+   * (nav, footer, language gate) was rendering in a font stack tuned for
+   * Devanagari glyphs, which looks visibly mismatched for Latin text —
+   * wrong letterforms, weights, and spacing compared to a real English
+   * site. Fixing this at the CSS level (keyed off the already-reliable
+   * html[lang] attribute) avoids touching hundreds of individual
+   * className call sites across the codebase.
+   *
+   * The font-family fallback chain still correctly handles mixed
+   * content: a Devanagari character inside an "English-mode" element
+   * (e.g. the "कर्म" brand mark in the navbar logo, which is
+   * intentionally never translated) still renders correctly, because
+   * the Latin font listed first has no Devanagari glyphs, so the browser
+   * falls through to the Devanagari font for just that character.
+   */
+  html[lang="en"] .font-hindi {
+    font-family: var(--font-sans), var(--font-hindi), sans-serif;
+  }
+  html[lang="en"] .font-display-hi {
+    font-family: var(--font-display), var(--font-hindi-display), serif;
+  }
+
+  .glass-card {
+    background: rgba(var(--glass-bg), 0.65);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(var(--glass-border), 0.2);
+    box-shadow: 0 4px 24px rgba(26, 26, 26, 0.08), 0 1px 0 rgba(255,255,255,0.6) inset;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
+  .glass-card:hover {
+    box-shadow: 0 8px 40px rgba(26, 26, 26, 0.12), 0 0 0 1px rgba(200,155,60,0.15), 0 1px 0 rgba(255,255,255,0.6) inset;
+  }
+
+  .glass-card-dark {
+    background: rgba(26, 26, 26, 0.55);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(200, 155, 60, 0.2);
+  }
+
+  .section-dark {
+    background: #0f0500;
+  }
+
+  .section-gradient {
+    background: linear-gradient(180deg, #fff9f0 0%, #fdf5e8 100%);
+  }
+
+  .gold-shimmer {
+    background: linear-gradient(90deg, transparent 0%, rgba(200,155,60,0.15) 50%, transparent 100%);
+    background-size: 200% 100%;
+    animation: shimmer 3s ease infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  .gold-glow {
+    box-shadow: 0 0 0 1px rgba(200, 155, 60, 0.3), 0 0 40px rgba(200, 155, 60, 0.22);
+  }
+
+  .gold-glow:hover {
+    box-shadow: 0 0 0 1px rgba(200, 155, 60, 0.5), 0 0 60px rgba(200, 155, 60, 0.35);
+  }
+
+  .text-gradient-gold {
+    background: linear-gradient(120deg, var(--color-gold-deep), var(--color-gold), var(--color-saffron));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .divider-mala::before {
+    content: "";
+    display: block;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(200, 155, 60, 0.6),
+      transparent
+    );
+  }
+
+  .kkb-input {
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(26, 26, 26, 0.1);
+    background: white;
+    padding: 0.625rem 1rem;
+    font-family: var(--font-hindi), var(--font-sans), sans-serif;
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
+
+  html[lang="en"] .kkb-input {
+    font-family: var(--font-sans), var(--font-hindi), sans-serif;
+  }
+
+  .kkb-input:focus {
+    border-color: var(--color-gold-deep);
+  }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-14px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+@keyframes drift {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(var(--drift-x, 12px), var(--drift-y, -20px)); }
+}
+
+.animate-float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
