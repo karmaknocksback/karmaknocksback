@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Unlock the report
-    unlockReport(data.sessionId);
+    await unlockReport(data.sessionId);
 
     return NextResponse.json({ success: true });
   } catch (err) {

@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (sessionId) {
-      unlockReport(sessionId);
+      await unlockReport(sessionId);
       console.log(`[webhook] Report unlocked for session ${sessionId} via webhook`);
     }
   }

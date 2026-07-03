@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "सत्र नहीं मिला" }, { status: 404 });
     }
 
-    saveAnswers(data.sessionId, data.answers);
+    await saveAnswers(data.sessionId, data.answers);
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[api/karma-mirror/answers] error:", err);

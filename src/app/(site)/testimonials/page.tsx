@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/testimonials" },
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 600;
 
 export default async function TestimonialsPage() {
   const testimonials = await getTestimonials(60);

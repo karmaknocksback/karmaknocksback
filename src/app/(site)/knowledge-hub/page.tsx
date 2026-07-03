@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/knowledge-hub" },
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 120;
 
 interface PageProps {
   searchParams: Promise<{ q?: string; category?: string }>;

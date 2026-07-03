@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ExternalLink, ShoppingBag, Filter, Heart } from "lucide-react";
+import { ExternalLink, ShoppingBag, Filter } from "lucide-react";
 import { listActiveProducts, getShopCategoryCounts } from "@/lib/repo/affiliate";
 import GlassCard from "@/components/shared/GlassCard";
 import {
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/shop" },
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 interface PageProps {
   searchParams: Promise<{
@@ -66,39 +66,16 @@ export default async function ShopPage({ searchParams }: PageProps) {
         </p>
       </div>
 
-      {/* Support Us Banner */}
-      <div className="relative overflow-hidden rounded-2xl mb-8 text-center px-6 py-6"
-        style={{ background: "linear-gradient(135deg, #1a0800 0%, #2d1200 100%)", boxShadow: "0 0 0 1px rgba(200,155,60,0.2)" }}>
-        <div className="absolute top-0 left-1/4 right-1/4 h-px"
-          style={{ background: "linear-gradient(90deg, transparent, rgba(200,155,60,0.8), transparent)" }} />
-        <Heart size={20} className="text-gold mx-auto mb-2" />
-        <p className="font-display-hi text-lg text-warm-white mb-1">हमें Support करें</p>
-        <p className="font-hindi text-xs text-warm-white/60 max-w-2xl mx-auto mb-4">
-          यहाँ से होने वाली कमाई का <strong className="text-gold">50% दान</strong> (धर्म कार्य) में जाता है।
-          शेष 50% में से वेबसाइट, प्रोडक्शन व मार्केटिंग का खर्च निकाला जाता है —
-          और जो पभु की कृपा से बचता है, वह हमारे उपयोग में आता है।
-          यदि आप सीधे support करना चाहते हैं:
-        </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <a href="https://rzp.io/rzp/karmaknocksback" target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 font-hindi text-sm font-medium text-charcoal"
-            style={{ background: "linear-gradient(135deg, #f7d8a3, #c89b3c)" }}>
-            <Heart size={14} /> Donate — ₹51 / ₹101 / ₹501
-          </a>
-          <span className="font-hindi text-xs text-warm-white/40">UPI: karmaknocksback@upi</span>
-        </div>
-      </div>
-
       <div className="flex gap-6">
         {/* Sidebar */}
         <aside className="hidden lg:block w-60 shrink-0 space-y-5">
           {/* Categories */}
           <div>
-            <p className="font-sans text-[10px] uppercase tracking-wider text-charcoal/40 mb-3">श्रेणियाँ</p>
+            <p className="font-sans text-[10px] uppercase tracking-wider text-charcoal/40 mb-3">Categories</p>
             <div className="space-y-0.5">
               <Link href="/shop"
-                className={`flex items-center justify-between rounded-lg px-3 py-2 font-hindi text-sm transition-colors ${!sp.category ? "bg-gold/15 text-gold-deep font-medium" : "text-charcoal/65 hover:bg-charcoal/5"}`}>
-                <span>🛍️ सभी उत्पाद</span>
+                className={`flex items-center justify-between rounded-lg px-3 py-2 font-sans text-sm transition-colors ${!sp.category ? "bg-gold/15 text-gold-deep font-medium" : "text-charcoal/65 hover:bg-charcoal/5"}`}>
+                <span>🛍️ All Products</span>
                 <span className="text-[10px] text-charcoal/40">{counts.all || 0}</span>
               </Link>
               {SHOP_CATEGORIES.map((cat) => (
@@ -114,7 +91,7 @@ export default async function ShopPage({ searchParams }: PageProps) {
           {/* Budget filter */}
           <div>
             <p className="font-sans text-[10px] uppercase tracking-wider text-charcoal/40 mb-3 flex items-center gap-1.5">
-              <Filter size={10} /> बजट
+              <Filter size={10} /> Budget
             </p>
             <div className="space-y-1">
               {BUDGET_FILTERS.map((b) => (
@@ -167,8 +144,8 @@ export default async function ShopPage({ searchParams }: PageProps) {
           {/* Mobile category pills */}
           <div className="flex gap-2 overflow-x-auto pb-2 mb-5 lg:hidden">
             <Link href="/shop"
-              className={`shrink-0 rounded-full px-3.5 py-1.5 font-hindi text-xs border ${!sp.category ? "bg-gold-deep text-warm-white border-gold-deep" : "border-charcoal/15 text-charcoal/60"}`}>
-              सभी
+              className={`shrink-0 rounded-full px-3.5 py-1.5 font-sans text-xs border ${!sp.category ? "bg-gold-deep text-warm-white border-gold-deep" : "border-charcoal/15 text-charcoal/60"}`}>
+              All
             </Link>
             {SHOP_CATEGORIES.map((cat) => (
               <Link key={cat.id} href={buildUrl({ category: cat.id, subcategory: undefined })}
@@ -193,22 +170,22 @@ export default async function ShopPage({ searchParams }: PageProps) {
           {/* Active filter display */}
           {(sp.category || sp.budget || sp.tags || sp.merchant) && (
             <div className="flex items-center gap-2 flex-wrap mb-4">
-              <span className="font-hindi text-xs text-charcoal/40">फ़िल्टर:</span>
+              <span className="font-sans text-xs text-charcoal/40">Filter:</span>
               {sp.category && <span className="rounded-full bg-gold/10 px-2.5 py-0.5 font-hindi text-xs text-gold-deep">{activeCategory?.nameHi}</span>}
               {sp.budget && <span className="rounded-full bg-gold/10 px-2.5 py-0.5 font-hindi text-xs text-gold-deep">{BUDGET_FILTERS.find(b => b.id === sp.budget)?.label}</span>}
               {tagList.map(t => <span key={t} className="rounded-full bg-charcoal/8 px-2.5 py-0.5 font-hindi text-xs text-charcoal/60">{t}</span>)}
-              <Link href="/shop" className="font-hindi text-xs text-red-400 underline">हटाएं</Link>
+              <Link href="/shop" className="font-sans text-xs text-red-400 underline">Clear</Link>
             </div>
           )}
 
           {/* Product count */}
-          <p className="font-hindi text-xs text-charcoal/40 mb-4">{products.length} उत्पाद मिले</p>
+          <p className="font-sans text-xs text-charcoal/40 mb-4">{products.length} products found</p>
 
           {/* Product grid */}
           {products.length === 0 ? (
             <div className="text-center py-20">
               <ShoppingBag size={36} className="text-charcoal/20 mx-auto mb-4" />
-              <p className="font-hindi text-charcoal/45 mb-2">इस श्रेणी में अभी उत्पाद नहीं हैं।</p>
+              <p className="font-sans text-charcoal/45 mb-2">No products in this category yet.</p>
               <p className="font-hindi text-xs text-charcoal/30">
                 Admin से उत्पाद जोड़ें: <Link href="/admin/shop" className="text-gold-deep underline">/admin/shop</Link>
               </p>
@@ -258,7 +235,7 @@ export default async function ShopPage({ searchParams }: PageProps) {
                         <a href={`/api/shop/click/${product._id}`} target="_blank" rel="noopener noreferrer sponsored"
                           className="inline-flex items-center gap-1 rounded-full px-3.5 py-1.5 font-hindi text-xs font-medium text-charcoal transition-transform hover:scale-105"
                           style={{ background: "linear-gradient(135deg, #f7d8a3, #c89b3c)" }}>
-                          खरीदें <ExternalLink size={10} />
+                          Buy Now <ExternalLink size={10} />
                         </a>
                       </div>
                     </div>
@@ -270,8 +247,7 @@ export default async function ShopPage({ searchParams }: PageProps) {
 
           {/* Affiliate disclaimer */}
           <p className="font-hindi text-[11px] text-charcoal/30 text-center mt-8">
-            * इन लिंक्स से खरीदारी करने पर KarmaKnocksBack को affiliate commission मिलती है।
-            आपकी कीमत में कोई अंतर नहीं आता। 🙏
+            * Purchasing via these links earns KarmaKnocksBack a small affiliate commission at no extra cost to you. 🙏
           </p>
         </div>
       </div>

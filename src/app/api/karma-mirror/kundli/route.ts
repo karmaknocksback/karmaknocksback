@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       longitude: geocoded.longitude,
     });
 
-    saveKundliProfile({
+    await saveKundliProfile({
       sessionId: data.sessionId,
       fullName: data.fullName,
       birthDate: data.birthDate,

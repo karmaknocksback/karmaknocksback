@@ -181,10 +181,10 @@ export const SHOP_CATEGORIES = [
 ];
 
 export const BUDGET_FILTERS = [
-  { id: "under5k", label: "₹5,000 से कम" },
+  { id: "under5k", label: "Under ₹5,000" },
   { id: "5k10k", label: "₹5,000 – ₹10,000" },
   { id: "10k50k", label: "₹10,000 – ₹50,000" },
-  { id: "50kplus", label: "₹50,000+" },
+  { id: "50kplus", label: "₹50,000 & above" },
 ];
 
 export const MERCHANT_INFO: Record<string, { label: string; color: string; logo?: string }> = {

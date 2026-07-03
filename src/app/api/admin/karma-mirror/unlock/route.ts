@@ -9,6 +9,6 @@ export async function POST(req: NextRequest) {
   const { sessionId } = await req.json();
   if (!sessionId) return NextResponse.json({ error: "missing sessionId" }, { status: 400 });
 
-  unlockReport(sessionId);
+  await unlockReport(sessionId);
   return NextResponse.json({ success: true });
 }

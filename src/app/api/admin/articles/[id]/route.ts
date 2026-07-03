@@ -37,6 +37,6 @@ export async function DELETE(_req: NextRequest, { params }: RouteParams) {
   if ("error" in auth) return auth.error;
 
   const { id } = await params;
-  deleteArticle(id);
+  await deleteArticle(id);
   return NextResponse.json({ success: true });
 }

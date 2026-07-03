@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "सत्र नहीं मिला" }, { status: 404 });
     }
 
-    saveFeedback(data);
+    await saveFeedback(data);
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[api/karma-mirror/feedback] error:", err);

@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     // configurable — see narrative.ts for why.
     const safety = checkNarrativeSafety(text);
     if (safety.flagged) {
-      saveNarrativeSubmission({
+      await saveNarrativeSubmission({
         sessionId,
         rawText: text,
         featuresJson: JSON.stringify({ excludedFromScoring: true }),
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     }
 
     const features = extractNarrativeFeatures(text);
-    saveNarrativeSubmission({
+    await saveNarrativeSubmission({
       sessionId,
       rawText: text,
       featuresJson: JSON.stringify(features),

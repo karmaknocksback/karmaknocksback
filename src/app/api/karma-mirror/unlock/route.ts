@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
   if (ref) {
     const payment = await getPaymentByReference(ref);
     if (payment && payment.status === "paid" && payment.linkedRequestId === sessionId) {
-      unlockReport(sessionId);
+      await unlockReport(sessionId);
       return NextResponse.json({ unlocked: true });
     }
   }
