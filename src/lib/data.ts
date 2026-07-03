@@ -38,10 +38,12 @@ export type { JapFilters };
 export async function getJaps(filters: JapFilters = {}): Promise<JapData[]> {
   try {
     if (filters.q?.trim()) {
-      const ranked = await searchJapsRanked(filters.q, 50);
+      const ranked = await searchJapsRanked(filters.q, 100);
       let japs = ranked.map((r) => r.jap);
-      if (filters.category) japs = japs.filter((j) => j.category === filters.category);
-      if (filters.planet) japs = japs.filter((j) => j.planet === filters.planet);
+      const cats = filters.categories?.length ? filters.categories : filters.category ? [filters.category] : [];
+      const pls = filters.planets?.length ? filters.planets : filters.planet ? [filters.planet] : [];
+      if (cats.length) japs = japs.filter((j) => cats.includes(j.category));
+      if (pls.length) japs = japs.filter((j) => j.planet && pls.includes(j.planet));
       if (filters.duration === "under-10") japs = japs.filter((j) => j.durationMinutes < 10);
       if (filters.duration === "10-30") japs = japs.filter((j) => j.durationMinutes >= 10 && j.durationMinutes <= 30);
       if (filters.duration === "over-30") japs = japs.filter((j) => j.durationMinutes > 30);

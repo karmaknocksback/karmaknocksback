@@ -61,14 +61,38 @@ function toJap(row: JapRow): JapData {
   };
 }
 
-export interface JapFilters { q?: string; category?: string; planet?: string; duration?: string; }
+export interface JapFilters {
+  q?: string;
+  category?: string;       // single (backward compat)
+  categories?: string[];   // multi-select
+  planet?: string;
+  planets?: string[];
+  duration?: string;
+  sort?: "views" | "newest" | "duration-asc" | "duration-desc";
+}
 
 export async function listJaps(filters: JapFilters = {}): Promise<JapData[]> {
   const clauses: string[] = [];
   const params: (string | number)[] = [];
 
-  if (filters.category) { clauses.push("category = ?"); params.push(filters.category); }
-  if (filters.planet) { clauses.push("planet = ?"); params.push(filters.planet); }
+  // Multi-category support
+  const cats = filters.categories?.length ? filters.categories : filters.category ? [filters.category] : [];
+  if (cats.length === 1) {
+    clauses.push("category = ?"); params.push(cats[0]);
+  } else if (cats.length > 1) {
+    clauses.push(`category IN (${cats.map(() => "?").join(",")})`);
+    cats.forEach(c => params.push(c));
+  }
+
+  // Multi-planet support
+  const pls = filters.planets?.length ? filters.planets : filters.planet ? [filters.planet] : [];
+  if (pls.length === 1) {
+    clauses.push("planet = ?"); params.push(pls[0]);
+  } else if (pls.length > 1) {
+    clauses.push(`planet IN (${pls.map(() => "?").join(",")})`);
+    pls.forEach(p => params.push(p));
+  }
+
   if (filters.q) {
     const terms = expandQuery(filters.q);
     const orClauses = terms.map(() =>
@@ -82,7 +106,16 @@ export async function listJaps(filters: JapFilters = {}): Promise<JapData[]> {
   if (filters.duration === "over-30") clauses.push("duration_minutes > 30");
 
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
-  const rows = await dbAll<JapRow>(`SELECT * FROM japs ${where} ORDER BY created_at DESC`, params);
+
+  // Sort in DB
+  let orderBy = "ORDER BY created_at DESC";
+  if (filters.sort === "views") orderBy = "ORDER BY views DESC, created_at DESC";
+  else if (filters.sort === "newest") orderBy = "ORDER BY created_at DESC";
+  else if (filters.sort === "duration-asc") orderBy = "ORDER BY duration_minutes ASC";
+  else if (filters.sort === "duration-desc") orderBy = "ORDER BY duration_minutes DESC";
+  else if (!filters.sort && !filters.q) orderBy = "ORDER BY views DESC, created_at DESC"; // default: views
+
+  const rows = await dbAll<JapRow>(`SELECT * FROM japs ${where} ${orderBy}`, params);
   return rows.map(toJap);
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, useTransition } from "react";
 import { Search, SlidersHorizontal, X, ChevronDown } from "lucide-react";
 import {
   JAP_CATEGORIES, JAP_CATEGORY_LABELS_HI,
@@ -19,84 +19,97 @@ const SORT_OPTIONS = [
 
 export default function SearchFilterBar() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [q, setQ] = useState(searchParams.get("q") || "");
+  const sp = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+  const [q, setQ] = useState(sp.get("q") || "");
   const [showFilters, setShowFilters] = useState(false);
 
-  // Multi-select: comma-separated in URL
-  const categories = (searchParams.get("category") || "").split(",").filter(Boolean);
-  const planets = (searchParams.get("planet") || "").split(",").filter(Boolean);
-  const duration = searchParams.get("duration") || "";
-  const sort = searchParams.get("sort") || "views";
-
+  const sort = sp.get("sort") || "views";
+  const categories = (sp.get("category") || "").split(",").filter(Boolean);
+  const planets = (sp.get("planet") || "").split(",").filter(Boolean);
+  const duration = sp.get("duration") || "";
   const activeCount = categories.length + planets.length + (duration ? 1 : 0);
 
-  function buildParams(overrides: Record<string, string | string[]>) {
-    const params = new URLSearchParams(searchParams.toString());
-    Object.entries(overrides).forEach(([k, v]) => {
-      if (!v || (Array.isArray(v) && v.length === 0)) params.delete(k);
-      else params.set(k, Array.isArray(v) ? v.join(",") : v);
+  function navigate(overrides: Record<string, string | undefined>) {
+    const params = new URLSearchParams();
+    const current: Record<string, string> = {
+      q: sp.get("q") || "",
+      category: sp.get("category") || "",
+      planet: sp.get("planet") || "",
+      duration: sp.get("duration") || "",
+      sort: sp.get("sort") || "views",
+    };
+    const merged = { ...current, ...overrides };
+    Object.entries(merged).forEach(([k, v]) => { if (v) params.set(k, v); });
+    startTransition(() => {
+      router.push(`/jap-library${params.toString() ? `?${params}` : ""}`, { scroll: false });
     });
-    return params.toString();
   }
 
-  function toggleMulti(key: string, current: string[], value: string) {
-    const next = current.includes(value)
-      ? current.filter((v) => v !== value)
-      : [...current, value];
-    router.push(`/jap-library?${buildParams({ [key]: next })}`);
+  function toggleCategory(cat: string) {
+    const next = categories.includes(cat)
+      ? categories.filter((c) => c !== cat)
+      : [...categories, cat];
+    navigate({ category: next.join(",") || undefined });
+  }
+
+  function togglePlanet(p: string) {
+    const next = planets.includes(p)
+      ? planets.filter((x) => x !== p)
+      : [...planets, p];
+    navigate({ planet: next.join(",") || undefined });
   }
 
   function handleSearch(e: FormEvent) {
     e.preventDefault();
-    router.push(`/jap-library?${buildParams({ q })}`);
+    navigate({ q: q || undefined });
   }
 
   function clearAll() {
-    router.push(`/jap-library?sort=${sort}`);
     setQ("");
+    startTransition(() => router.push("/jap-library", { scroll: false }));
   }
 
   return (
-    <div className="space-y-4">
-      {/* Search + Sort row */}
-      <div className="flex gap-3 max-w-3xl mx-auto">
+    <div className={cn("space-y-4", isPending && "opacity-70 pointer-events-none")}>
+      {/* Top bar */}
+      <div className="flex gap-2.5 max-w-3xl mx-auto">
         <form onSubmit={handleSearch} className="relative flex-1">
-          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-charcoal/40" />
+          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-charcoal/40 pointer-events-none" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="जाप, मंत्र, ग्रह खोजें…"
-            className="w-full rounded-full border border-charcoal/10 bg-white py-3 pl-11 pr-4 font-hindi text-sm outline-none focus:border-gold-deep"
+            className="w-full rounded-full border border-charcoal/10 bg-white py-3 pl-11 pr-4 font-hindi text-sm outline-none focus:border-gold-deep shadow-sm"
           />
         </form>
 
-        {/* Sort dropdown */}
-        <div className="relative">
+        {/* Sort */}
+        <div className="relative shrink-0">
           <select
             value={sort}
-            onChange={(e) => router.push(`/jap-library?${buildParams({ sort: e.target.value })}`)}
-            className="appearance-none rounded-full border border-charcoal/10 bg-white py-3 pl-4 pr-9 font-hindi text-sm outline-none focus:border-gold-deep cursor-pointer"
+            onChange={(e) => navigate({ sort: e.target.value })}
+            className="appearance-none h-full rounded-full border border-charcoal/10 bg-white py-3 pl-4 pr-9 font-hindi text-sm outline-none focus:border-gold-deep cursor-pointer shadow-sm"
           >
             {SORT_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
-          <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-charcoal/40 pointer-events-none" />
+          <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-charcoal/40 pointer-events-none" />
         </div>
 
         {/* Filter toggle */}
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={cn(
-            "flex items-center gap-2 rounded-full border px-4 py-3 font-hindi text-sm transition-colors",
+            "shrink-0 flex items-center gap-2 rounded-full border px-4 py-3 font-hindi text-sm transition-colors shadow-sm",
             showFilters || activeCount > 0
               ? "bg-gold-deep text-warm-white border-gold-deep"
-              : "border-charcoal/10 text-charcoal/65"
+              : "border-charcoal/10 bg-white text-charcoal/65"
           )}
         >
-          <SlidersHorizontal size={15} />
-          फ़िल्टर
+          <SlidersHorizontal size={14} />
+          <span className="hidden sm:inline">फ़िल्टर</span>
           {activeCount > 0 && (
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/30 text-[10px] font-bold">
               {activeCount}
@@ -105,108 +118,102 @@ export default function SearchFilterBar() {
         </button>
       </div>
 
-      {/* Active filter chips */}
+      {/* Active chips */}
       {activeCount > 0 && (
-        <div className="flex flex-wrap items-center gap-2 justify-center">
+        <div className="flex flex-wrap gap-2 justify-center items-center">
           {categories.map((c) => (
-            <Chip key={c} active onRemove={() => toggleMulti("category", categories, c)}>
-              {JAP_CATEGORY_LABELS_HI[c as keyof typeof JAP_CATEGORY_LABELS_HI] || c}
-            </Chip>
+            <button key={c} onClick={() => toggleCategory(c)}
+              className="inline-flex items-center gap-1.5 rounded-full bg-gold/15 border border-gold/25 px-3 py-1 font-hindi text-xs text-gold-deep">
+              {JAP_CATEGORY_LABELS_HI[c] || c} <X size={10} />
+            </button>
           ))}
           {planets.map((p) => (
-            <Chip key={p} active onRemove={() => toggleMulti("planet", planets, p)}>
-              {PLANET_LABELS_HI[p as keyof typeof PLANET_LABELS_HI] || p}
-            </Chip>
+            <button key={p} onClick={() => togglePlanet(p)}
+              className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 border border-indigo-200 px-3 py-1 font-hindi text-xs text-indigo-600">
+              {PLANET_LABELS_HI[p] || p} <X size={10} />
+            </button>
           ))}
           {duration && (
-            <Chip active onRemove={() => router.push(`/jap-library?${buildParams({ duration: "" })}`)}>
-              {DURATION_BUCKETS.find((d) => d.value === duration)?.label || duration}
-            </Chip>
+            <button onClick={() => navigate({ duration: undefined })}
+              className="inline-flex items-center gap-1.5 rounded-full bg-charcoal/8 border border-charcoal/15 px-3 py-1 font-hindi text-xs text-charcoal/60">
+              {DURATION_BUCKETS.find(d => d.value === duration)?.label} <X size={10} />
+            </button>
           )}
-          <button onClick={clearAll} className="font-hindi text-xs text-charcoal/45 underline ml-1">
-            सभी हटाएं
-          </button>
+          <button onClick={clearAll} className="font-hindi text-xs text-red-400 underline">सभी हटाएं</button>
         </div>
       )}
 
       {/* Filter panel */}
       {showFilters && (
-        <div className="rounded-2xl border border-charcoal/10 bg-white p-5 max-w-3xl mx-auto space-y-5 shadow-sm">
-          <FilterGroup label="श्रेणी (एक या अधिक चुनें)">
+        <div className="rounded-2xl border border-charcoal/10 bg-white p-5 max-w-3xl mx-auto shadow-sm space-y-5">
+          <Group label="श्रेणी — एक या अधिक चुनें">
             {JAP_CATEGORIES.map((c) => (
-              <MultiChip
-                key={c}
-                active={categories.includes(c)}
-                onClick={() => toggleMulti("category", categories, c)}
-              >
+              <Chip key={c} active={categories.includes(c)} onClick={() => toggleCategory(c)}>
                 {JAP_CATEGORY_LABELS_HI[c]}
-              </MultiChip>
+              </Chip>
             ))}
-          </FilterGroup>
+          </Group>
 
-          <FilterGroup label="ग्रह (एक या अधिक चुनें)">
+          <div className="h-px bg-charcoal/8" />
+
+          <Group label="ग्रह — एक या अधिक चुनें">
             {PLANETS.map((p) => (
-              <MultiChip
-                key={p}
-                active={planets.includes(p)}
-                onClick={() => toggleMulti("planet", planets, p)}
-              >
+              <Chip key={p} active={planets.includes(p)} onClick={() => togglePlanet(p)}>
                 {PLANET_LABELS_HI[p]}
-              </MultiChip>
+              </Chip>
             ))}
-          </FilterGroup>
+          </Group>
 
-          <FilterGroup label="अवधि">
+          <div className="h-px bg-charcoal/8" />
+
+          <Group label="अवधि">
             {DURATION_BUCKETS.map((d) => (
-              <MultiChip
+              <Chip
                 key={d.value}
                 active={duration === d.value}
-                onClick={() => router.push(`/jap-library?${buildParams({ duration: duration === d.value ? "" : d.value })}`)}
+                onClick={() => navigate({ duration: duration === d.value ? undefined : d.value })}
               >
                 {d.label}
-              </MultiChip>
+              </Chip>
             ))}
-          </FilterGroup>
+          </Group>
+
+          <div className="flex justify-end">
+            <button onClick={() => setShowFilters(false)}
+              className="font-hindi text-xs text-charcoal/50 rounded-full border border-charcoal/10 px-4 py-1.5 hover:bg-charcoal/5">
+              बंद करें
+            </button>
+          </div>
         </div>
+      )}
+
+      {/* Loading indicator */}
+      {isPending && (
+        <p className="text-center font-hindi text-xs text-charcoal/40 animate-pulse">लोड हो रहा है…</p>
       )}
     </div>
   );
 }
 
-function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
+function Group({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="font-sans text-[10px] uppercase tracking-wider text-charcoal/40 mb-2.5">{label}</p>
+      <p className="font-sans text-[10px] uppercase tracking-wider text-charcoal/40 mb-3">{label}</p>
       <div className="flex flex-wrap gap-2">{children}</div>
     </div>
   );
 }
 
-function MultiChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <button type="button" onClick={onClick}
       className={cn(
-        "rounded-full px-3.5 py-1.5 font-hindi text-xs transition-all border",
+        "rounded-full px-3.5 py-1.5 font-hindi text-xs border transition-all",
         active
-          ? "bg-gold-deep text-warm-white border-gold-deep"
-          : "border-charcoal/10 text-charcoal/65 hover:border-gold-deep/40"
-      )}
-    >
+          ? "bg-gold-deep text-warm-white border-gold-deep shadow-sm"
+          : "border-charcoal/10 text-charcoal/65 hover:border-gold-deep/40 hover:bg-gold/5"
+      )}>
       {children}
     </button>
-  );
-}
-
-function Chip({ active, onRemove, children }: { active: boolean; onRemove: () => void; children: React.ReactNode }) {
-  return (
-    <span className={cn(
-      "inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-hindi text-xs border",
-      active ? "bg-gold/15 text-gold-deep border-gold/30" : "border-charcoal/10 text-charcoal/60"
-    )}>
-      {children}
-      <button onClick={onRemove} className="hover:text-red-500"><X size={11} /></button>
-    </span>
   );
 }
