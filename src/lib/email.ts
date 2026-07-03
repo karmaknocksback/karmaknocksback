@@ -238,3 +238,51 @@ export async function notifyAdminAllChannels(subject: string, html: string, plai
     phoneE164 ? sendSmsNotification(phoneE164, plainSummary) : Promise.resolve(),
   ]);
 }
+
+// ---- Typed email senders using beautiful templates ----
+import {
+  contactAckTemplate, customJapAckTemplate,
+  adminNotificationTemplate, karmaReportTemplate, paymentConfirmTemplate,
+} from "@/lib/email-templates";
+
+export async function sendContactAck(to: string, name: string, subject: string): Promise<void> {
+  await sendEmail({
+    to,
+    subject: `आपका संदेश प्राप्त हुआ — KarmaKnocksBack`,
+    html: contactAckTemplate(name, subject),
+  });
+}
+
+export async function sendCustomJapAck(to: string, name: string, purpose: string): Promise<void> {
+  await sendEmail({
+    to,
+    subject: `Custom Jap Request प्राप्त हुआ — KarmaKnocksBack`,
+    html: customJapAckTemplate(name, purpose),
+  });
+}
+
+export async function sendAdminNotification(type: string, details: Record<string, string>): Promise<void> {
+  const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || process.env.CONTACT_EMAIL;
+  if (!adminEmail) return;
+  await sendEmail({
+    to: adminEmail,
+    subject: `🔔 नया ${type} — KarmaKnocksBack`,
+    html: adminNotificationTemplate(type, details),
+  });
+}
+
+export async function sendKarmaReport(to: string, name: string, archetypeHi: string, sessionId: string): Promise<void> {
+  await sendEmail({
+    to,
+    subject: `आपकी Karma Mirror रिपोर्ट तैयार है — ${archetypeHi}`,
+    html: karmaReportTemplate(name, archetypeHi, sessionId),
+  });
+}
+
+export async function sendPaymentConfirm(to: string, name: string, amount: string, note: string, referenceCode: string): Promise<void> {
+  await sendEmail({
+    to,
+    subject: `भुगतान सफल ✓ — KarmaKnocksBack`,
+    html: paymentConfirmTemplate(name, amount, note, referenceCode),
+  });
+}

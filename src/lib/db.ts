@@ -199,6 +199,21 @@ async function initSchema(db: Client): Promise<void> {
       content_status TEXT NOT NULL DEFAULT 'pending',
       created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
       UNIQUE(collection_id, sequence_number))`,
+    `CREATE TABLE IF NOT EXISTS affiliate_products (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      name_hi TEXT NOT NULL,
+      description_hi TEXT NOT NULL,
+      image_url TEXT NOT NULL,
+      affiliate_url TEXT NOT NULL,
+      merchant TEXT NOT NULL DEFAULT 'amazon',
+      category TEXT NOT NULL DEFAULT 'spiritual',
+      price_display TEXT,
+      badge TEXT,
+      active INTEGER NOT NULL DEFAULT 1,
+      display_order INTEGER NOT NULL DEFAULT 0,
+      clicks INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL)`,
     `CREATE TABLE IF NOT EXISTS payments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       reference_code TEXT NOT NULL UNIQUE, linked_request_type TEXT,
@@ -286,3 +301,6 @@ export async function dbRun(sql: string, args: InArgs = []): Promise<{ lastInser
 export function nowIso(): string {
   return new Date().toISOString();
 }
+
+// ---- Affiliate Products table (added for shop feature) ----
+// Run after existing ensureDb() — added as a defensive migration

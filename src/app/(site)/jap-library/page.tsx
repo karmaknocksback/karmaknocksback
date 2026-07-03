@@ -20,12 +20,35 @@ interface PageProps {
     category?: string;
     planet?: string;
     duration?: string;
+    sort?: string;
   }>;
 }
 
 export default async function JapLibraryPage({ searchParams }: PageProps) {
   const filters = await searchParams;
-  const japs = await getJaps(filters);
+
+  // Multi-select: split comma-separated values
+  const rawJaps = await getJaps({
+    q: filters.q,
+    category: filters.category?.split(",")[0], // first category for DB query
+    planet: filters.planet?.split(",")[0],      // first planet for DB query
+    duration: filters.duration,
+  });
+
+  // Apply multi-select filtering client-side (categories/planets are small sets)
+  const categories = filters.category?.split(",").filter(Boolean) || [];
+  const planets = filters.planet?.split(",").filter(Boolean) || [];
+
+  let japs = rawJaps;
+  if (categories.length > 1) japs = japs.filter((j) => categories.includes(j.category));
+  if (planets.length > 1) japs = japs.filter((j) => j.planet && planets.includes(j.planet));
+
+  // Sort
+  const sort = filters.sort || "views";
+  if (sort === "views") japs = [...japs].sort((a, b) => (b.views || 0) - (a.views || 0));
+  else if (sort === "newest") japs = [...japs].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  else if (sort === "duration-asc") japs = [...japs].sort((a, b) => a.durationMinutes - b.durationMinutes);
+  else if (sort === "duration-desc") japs = [...japs].sort((a, b) => b.durationMinutes - a.durationMinutes);
 
   return (
     <div className="mx-auto max-w-7xl px-5 sm:px-8 py-16">

@@ -13,6 +13,7 @@ import {
   ScanFace,
   BookMarked,
   IndianRupee,
+  ShoppingBag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ const LINKS = [
   { href: "/admin/jain-jaap-directory", label: "जाप निर्देशिका", icon: BookMarked },
   { href: "/admin/karma-mirror", label: "Karma Mirror", icon: ScanFace },
   { href: "/admin/payments", label: "भुगतान प्रबंधन", icon: IndianRupee },
+  { href: "/admin/shop", label: "Affiliate Shop", icon: ShoppingBag },
   { href: "/admin/testimonials", label: "टेस्टिमोनियल्स", icon: Star },
   { href: "/admin/requests", label: "रिक्वेस्ट्स", icon: Inbox },
   { href: "/admin/settings", label: "सेटिंग्स", icon: SettingsIcon },

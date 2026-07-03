@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createContactMessage } from "@/lib/repo/requests";
-import { notifyAdminAllChannels, rowsToHtml, sendAcknowledgment } from "@/lib/email";
+import { sendContactAck, sendAdminNotification } from "@/lib/email";
 
 const schema = z.object({
   name: z.string().min(1),
@@ -18,24 +18,12 @@ export async function POST(req: NextRequest) {
 
     const id = await createContactMessage(data);
 
-    await notifyAdminAllChannels(
-      `नया संपर्क संदेश — ${data.subject}`,
-      rowsToHtml({
-        नाम: data.name,
-        ईमेल: data.email,
-        फ़ोन: data.phone || "—",
-        विषय: data.subject,
-        संदेश: data.message,
-      }),
-      `नया संपर्क संदेश: ${data.name} — ${data.subject}`
-    );
-
-    await sendAcknowledgment({
-      to: data.email,
-      name: data.name,
-      title: "आपका संदेश प्राप्त हो गया है",
-      bodyHtml: `<p style="color:#1a1a1a;font-size:14px;">विषय: <strong>${data.subject}</strong></p>`,
+    await sendAdminNotification("संपर्क संदेश", {
+      "नाम": data.name, "ईमेल": data.email,
+      "विषय": data.subject, "संदेश": data.message,
     });
+
+    await sendContactAck(data.email, data.name, data.subject);
 
     return NextResponse.json({ success: true, id });
   } catch (err) {
