@@ -23,7 +23,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
   const { id } = await params;
   try {
     const body = await req.json();
-    const article = updateArticle(id, body);
+    const article = await updateArticle(id, body);
     if (!article) return NextResponse.json({ error: "नहीं मिला" }, { status: 404 });
     return NextResponse.json({ success: true, article });
   } catch (err) {

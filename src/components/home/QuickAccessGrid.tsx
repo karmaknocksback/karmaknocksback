@@ -79,7 +79,7 @@ const ITEMS = [
 
 export default function QuickAccessGrid() {
   return (
-    <section className="relative py-20 overflow-hidden">
+    <section className="relative py-20 overflow-hidden dot-grid">
       <div
         className="absolute inset-0 opacity-[0.015]"
         style={{
@@ -102,7 +102,7 @@ export default function QuickAccessGrid() {
           {ITEMS.map(({ icon: Icon, label, sub, href, gradient, hoverClass, iconBg, featured }) => (
             <Link key={label} href={href} className="group block">
               <div
-                className={`relative overflow-hidden rounded-2xl h-full p-5 sm:p-6 flex flex-col gap-3 transition-all duration-300 hover:-translate-y-1 border border-white/10 bg-gradient-to-br ${gradient} shadow-[0_4px_20px_rgba(0,0,0,0.3)] ${hoverClass}`}
+                className={`relative overflow-hidden rounded-2xl h-full p-5 sm:p-6 flex flex-col gap-3 border border-white/10 bg-gradient-to-br ${gradient} shadow-[0_4px_20px_rgba(0,0,0,0.3)] ${hoverClass} card-3d`}
               >
                 {featured && (
                   <div

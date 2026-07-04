@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const jap = createJap(body);
+    const jap = await createJap(body);
     return NextResponse.json({ success: true, jap });
   } catch (err) {
     console.error("[api/admin/japs] create error:", err);

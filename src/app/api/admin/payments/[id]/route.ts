@@ -37,8 +37,8 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
 
     const payment =
       data.action === "mark_paid"
-        ? markPaymentPaid(id, data.utrReference, data.adminNotes)
-        : markPaymentCancelled(id, data.adminNotes);
+        ? await markPaymentPaid(id, data.utrReference, data.adminNotes)
+        : await markPaymentCancelled(id, data.adminNotes);
 
     return NextResponse.json({ success: true, payment });
   } catch (err) {

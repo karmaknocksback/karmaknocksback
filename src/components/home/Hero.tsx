@@ -70,7 +70,7 @@ export default function Hero() {
             <img
               src="/images/logo.png"
               alt="KarmaKnocksBack"
-              className="mx-auto mb-8 h-44 sm:h-56 w-auto"
+              className="mx-auto mb-8 h-44 sm:h-56 w-auto animate-float-slow"
               style={{
                 filter: "drop-shadow(0 0 60px rgba(200,155,60,0.6)) drop-shadow(0 0 20px rgba(200,155,60,0.4))",
               }}
@@ -81,12 +81,7 @@ export default function Hero() {
             >
               हर जैन जाप
               <br />
-              <span
-                className="bg-clip-text text-transparent"
-                style={{
-                  backgroundImage: "linear-gradient(135deg, #f7d8a3 0%, #c89b3c 40%, #9c7726 100%)",
-                }}
-              >
+              <span className="text-shimmer">
                 एक ही स्थान पर
               </span>
             </h1>

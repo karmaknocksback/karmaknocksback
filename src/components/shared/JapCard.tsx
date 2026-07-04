@@ -1,4 +1,4 @@
-import { Clock, PlayCircle, ExternalLink, Info } from "lucide-react";
+import { Clock, PlayCircle, ExternalLink } from "lucide-react";
 import GlassCard from "@/components/shared/GlassCard";
 import Bilingual from "@/components/shared/Bilingual";
 import { JAP_CATEGORY_LABELS_HI } from "@/lib/constants";

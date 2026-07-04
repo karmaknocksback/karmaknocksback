@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   if ("error" in auth) return auth.error;
 
   const status = req.nextUrl.searchParams.get("status") || undefined;
-  return NextResponse.json({ payments: listPayments(status) });
+  return NextResponse.json({ payments: await listPayments(status) });
 }
 
 const createSchema = z.object({

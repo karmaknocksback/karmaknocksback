@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import CityAutocomplete from "./CityAutocomplete";
 import { useRouter } from "next/navigation";
 import GlassCard from "@/components/shared/GlassCard";
 import { useTrackActiveSession } from "@/lib/karma-mirror/session-storage";
@@ -104,13 +105,7 @@ export default function KundliForm({ sessionId }: Props) {
           </div>
 
           <Field label="जन्म स्थान (शहर, राज्य, देश)">
-            <input
-              required
-              value={birthPlace}
-              onChange={(e) => setBirthPlace(e.target.value)}
-              className="kkb-input"
-              placeholder="जैसे: Jaipur, Rajasthan, India"
-            />
+            <CityAutocomplete value={birthPlace} onChange={setBirthPlace} />
           </Field>
 
           <Field label="समय क्षेत्र (Time Zone)">

@@ -7,8 +7,8 @@ export async function GET() {
   if ("error" in auth) return auth.error;
 
   return NextResponse.json({
-    customJapRequests: listCustomJapRequests(),
-    serviceRequests: listServiceRequests(),
-    contactMessages: listContactMessages(),
+    customJapRequests: await listCustomJapRequests(),
+    serviceRequests: await listServiceRequests(),
+    contactMessages: await listContactMessages(),
   });
 }

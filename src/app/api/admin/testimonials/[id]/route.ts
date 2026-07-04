@@ -13,7 +13,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
   const { id } = await params;
   try {
     const body = await req.json();
-    updateTestimonialApproval(id, !!body.approved);
+    await updateTestimonialApproval(id, !!body.approved);
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[api/admin/testimonials/:id] update error:", err);
@@ -26,6 +26,6 @@ export async function DELETE(_req: NextRequest, { params }: RouteParams) {
   if ("error" in auth) return auth.error;
 
   const { id } = await params;
-  deleteTestimonial(id);
+  await deleteTestimonial(id);
   return NextResponse.json({ success: true });
 }
