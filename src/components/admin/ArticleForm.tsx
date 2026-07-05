@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, type FormEvent } from "react";
+import RichTextEditor from "@/components/admin/RichTextEditor";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
 import { KNOWLEDGE_CATEGORIES, KNOWLEDGE_CATEGORY_LABELS_HI } from "@/lib/constants";
@@ -143,14 +144,12 @@ export default function ArticleForm({ initial }: { initial?: Partial<ArticleForm
         />
       </Field>
 
-      <Field label="लेख सामग्री (## से उप-शीर्षक बनाएं)">
-        <textarea
-          required
-          rows={10}
+      <Field label="लेख सामग्री — Rich Text Editor">
+        <RichTextEditor
           value={form.content}
-          onChange={(e) => update("content", e.target.value)}
-          className="kkb-input resize-none font-mono text-xs"
-          placeholder={"## परिचय\n\nयहाँ लेख लिखें...\n\n## मुख्य भाग\n\nआगे की सामग्री..."}
+          onChange={(val) => update("content", val)}
+          placeholder={"यहाँ लेख लिखें...\n\nH2 से उप-शीर्षक, Bold/Italic, Images सब toolbar से जोड़ें।"}
+          minHeight={360}
         />
       </Field>
 

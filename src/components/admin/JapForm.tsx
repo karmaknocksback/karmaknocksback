@@ -129,8 +129,12 @@ export default function JapForm({ initial }: { initial?: Partial<JapFormValues> 
       <div className="grid sm:grid-cols-3 gap-4">
         <Field label="श्रेणी">
           <select
-            value={form.category}
-            onChange={(e) => update("category", e.target.value as JapFormValues["category"])}
+            value={JAP_CATEGORIES.includes(form.category as (typeof JAP_CATEGORIES)[number]) ? form.category : "__custom__"}
+            onChange={(e) => {
+              if (e.target.value !== "__custom__") {
+                update("category", e.target.value as JapFormValues["category"]);
+              }
+            }}
             className="kkb-input"
           >
             {JAP_CATEGORIES.map((c) => (
@@ -138,7 +142,20 @@ export default function JapForm({ initial }: { initial?: Partial<JapFormValues> 
                 {JAP_CATEGORY_LABELS_HI[c] || c}
               </option>
             ))}
+            <option value="__custom__">+ नई श्रेणी टाइप करें</option>
           </select>
+          {/* Custom category input — shows when "नई श्रेणी" is selected OR current value is not in list */}
+          {(!JAP_CATEGORIES.includes(form.category as (typeof JAP_CATEGORIES)[number]) ||
+            form.category === "__custom__") && (
+            <input
+              type="text"
+              value={form.category === "__custom__" ? "" : form.category}
+              onChange={(e) => update("category", e.target.value as JapFormValues["category"])}
+              placeholder="नई श्रेणी का नाम लिखें (English)"
+              className="kkb-input mt-2"
+              autoFocus
+            />
+          )}
         </Field>
         <Field label="ग्रह (वैकल्पिक)">
           <select

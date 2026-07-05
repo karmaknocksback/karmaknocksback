@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createServiceRequest } from "@/lib/repo/requests";
-import { notifyAdminAllChannels, rowsToHtml, sendAcknowledgment } from "@/lib/email";
+import { sendAdminNotification, sendEmail } from "@/lib/email";
+import { contactAckTemplate } from "@/lib/email-templates";
 
 const schema = z.object({
   name: z.string().min(2),
@@ -19,24 +20,14 @@ export async function POST(req: NextRequest) {
 
     const id = await createServiceRequest(data);
 
-    await notifyAdminAllChannels(
-      `नया Service Inquiry — ${data.service}`,
-      rowsToHtml({
-        नाम: data.name,
-        ईमेल: data.email,
-        फ़ोन: data.phone,
-        सेवा: data.service,
-        आवश्यकता: data.requirement,
-        बजट: data.budget,
-      }),
-      `नया Service Inquiry: ${data.name} — ${data.service}`
-    );
-
-    await sendAcknowledgment({
+    await sendAdminNotification("Service Inquiry", {
+      "नाम": data.name, "ईमेल": data.email, "फ़ोन": data.phone,
+      "सेवा": data.service, "आवश्यकता": data.requirement, "बजट": data.budget,
+    });
+    await sendEmail({
       to: data.email,
-      name: data.name,
-      title: "आपकी सेवा पूछताछ प्राप्त हो गई है",
-      bodyHtml: `<p style="color:#1a1a1a;font-size:14px;">सेवा: <strong>${data.service}</strong></p>`,
+      subject: `आपकी सेवा पूछताछ प्राप्त हुई — KarmaKnocksBack`,
+      html: contactAckTemplate(data.name, `सेवा: ${data.service}`),
     });
 
     return NextResponse.json({ success: true, id });

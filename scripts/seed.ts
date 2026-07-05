@@ -19,7 +19,7 @@ dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
 import bcrypt from "bcryptjs";
-import { ensureDb } from "../src/lib/db";
+import { ensureDb, dbGet } from "../src/lib/db";
 import { createJap } from "../src/lib/repo/japs";
 import { createArticle } from "../src/lib/repo/articles";
 import { createTestimonial } from "../src/lib/repo/testimonials";
@@ -290,18 +290,33 @@ async function run() {
   const db = await ensureDb();
   console.log("Database ready.");
 
-  await db.execute("DELETE FROM japs");
-  await db.execute("DELETE FROM articles");
-  await db.execute("DELETE FROM testimonials");
+  // ✅ SAFE SEED: Only insert if tables are empty — never deletes existing data
+  // Your admin changes, articles, and japs are PRESERVED on re-seed.
+  // To force-reset: use npm run seed:reset (not implemented by default)
 
-  for (const jap of JAPS) await createJap(jap);
-  console.log(`Inserted ${JAPS.length} japs`);
+  const japCount = await dbGet<{ c: number }>("SELECT COUNT(*) as c FROM japs");
+  if (!japCount || japCount.c === 0) {
+    for (const jap of JAPS) await createJap(jap);
+    console.log(`Inserted ${JAPS.length} sample japs`);
+  } else {
+    console.log(`Japs table has ${japCount.c} entries — skipping jap seed (your data is safe!)`);
+  }
 
-  for (const article of ARTICLES) await createArticle(article);
-  console.log(`Inserted ${ARTICLES.length} articles`);
+  const articleCount = await dbGet<{ c: number }>("SELECT COUNT(*) as c FROM articles");
+  if (!articleCount || articleCount.c === 0) {
+    for (const article of ARTICLES) await createArticle(article);
+    console.log(`Inserted ${ARTICLES.length} sample articles`);
+  } else {
+    console.log(`Articles table has ${articleCount.c} entries — skipping article seed (your data is safe!)`);
+  }
 
-  for (const testimonial of TESTIMONIALS) await createTestimonial(testimonial);
-  console.log(`Inserted ${TESTIMONIALS.length} testimonials`);
+  const testimonialCount = await dbGet<{ c: number }>("SELECT COUNT(*) as c FROM testimonials");
+  if (!testimonialCount || testimonialCount.c === 0) {
+    for (const testimonial of TESTIMONIALS) await createTestimonial(testimonial);
+    console.log(`Inserted ${TESTIMONIALS.length} sample testimonials`);
+  } else {
+    console.log(`Testimonials table has ${testimonialCount.c} entries — skipping (your data is safe!)`);
+  }
 
   const adminEmail = (process.env.ADMIN_EMAIL || "admin@karmaknocksback.com").toLowerCase();
   const adminPassword = process.env.ADMIN_PASSWORD || "ChangeMe123!";

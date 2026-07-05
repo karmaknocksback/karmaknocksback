@@ -13,6 +13,7 @@ export const NAV_LINKS = [
   { label: "Jaap Directory", labelHi: "जाप निर्देशिका", href: "/jain-jaap-directory" },
   { label: "Knowledge Hub", labelHi: "ज्ञान केंद्र", href: "/knowledge-hub" },
   { label: "Karma Mirror", labelHi: "Karma Mirror", href: "/karma-mirror" },
+  { label: "Know Karma", labelHi: "कर्म जानो", href: "/know-karma-more" },
   { label: "Shop", labelHi: "शॉप", href: "/shop" },
   { label: "Services", labelHi: "सेवाएँ", href: "/services" },
   { label: "Community", labelHi: "समुदाय", href: "/community" },
