@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
+import { useBookMedia } from "./useBookMedia";
+import BookPageMedia from "./BookPageMedia";
 
 /* ──────────── Data ──────────── */
 const PAGES = [
@@ -21,6 +23,7 @@ interface Particle { id:number; x:number; y:number; color:string; size:number; v
 
 /* ──────────── Main component ──────────── */
 export default function KarmaBook() {
+  const media = useBookMedia("karma");
   const [cur,  setCur]    = useState(0);
   const [anim, setAnim]   = useState<null|"left"|"right">(null);
   const [stars,setStars]  = useState<Set<number>>(new Set([0]));
@@ -188,7 +191,7 @@ export default function KarmaBook() {
             position:"absolute",top:0,left:0,right:0,height:4,zIndex:10,
             background:`linear-gradient(90deg,${bg},transparent)`,
           }}/>
-          <PageContent page={cur} />
+          <PageContent page={cur} media={media} />
         </div>
 
         {/* Chintu floating character */}
@@ -287,17 +290,19 @@ function NavBtn({children,onClick,disabled,color,primary}:{children:React.ReactN
 }
 
 /* ──────────── Page Content Router ──────────── */
-function PageContent({page}:{page:number}) {
+function PageContent({page,media}:{page:number;media:Record<number,{imageUrl:string|null;audioUrl:string|null;caption:string|null}>}) {
   const Comps = [P0,P1,P2,P3,P4,P5,P6,P7,P8,P9];
   const C = Comps[page] ?? P0;
-  return <C />;
+  return <C pageMedia={media[page]} />;
 }
 
 /* ──────────── Layout Shell ──────────── */
-function Book({left,right,lb,rb="#FFFDE7",rc="#2c1810"}:{left:React.ReactNode;right:React.ReactNode;lb:string;rb?:string;rc?:string}) {
+function Book({left,right,lb,rb="#FFFDE7",rc="#2c1810",pageMedia}:{left:React.ReactNode;right:React.ReactNode;lb:string;rb?:string;rc?:string;pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
   return (
     <div style={{display:"flex",minHeight:"min(480px,72vw)",maxHeight:520,width:"100%"}}>
-      <div style={{width:"50%",background:lb,position:"relative",overflow:"hidden",flexShrink:0}}>{left}</div>
+      <div style={{width:"50%",background:lb,position:"relative",overflow:"hidden",flexShrink:0}}>
+        <BookPageMedia media={pageMedia} fallback={left}/>
+      </div>
       <div style={{width:"50%",background:rb,color:rc,padding:"22px 20px 16px",display:"flex",flexDirection:"column",overflow:"hidden",gap:0}}>{right}</div>
     </div>
   );
@@ -321,9 +326,9 @@ function Box({bg,bc,c,children}:{bg:string;bc:string;c:string;children:React.Rea
 /* ══════════════════════════════════════════════
    PAGE 0 — COVER
 ══════════════════════════════════════════════ */
-function P0() {
+function P0({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
   return (
-    <Book lb="#0d0020" rb="linear-gradient(160deg,#1a0020,#2d0040)" rc="#FFD700" left={
+    <Book pageMedia={pageMedia} lb="#0d0020" rb="linear-gradient(160deg,#1a0020,#2d0040)" rc="#FFD700" left={
       <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
         <defs>
           <radialGradient id="sg" cx="50%" cy="40%"><stop offset="0%" stopColor="#FFD700" stopOpacity="0.4"/><stop offset="100%" stopColor="#0d0020" stopOpacity="0"/></radialGradient>
@@ -402,9 +407,9 @@ function P0() {
 /* ══════════════════════════════════════════════
    PAGE 1 — WHO ARE YOU? (Robot + Battery)
 ══════════════════════════════════════════════ */
-function P1() {
+function P1({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
   return (
-    <Book lb="#E3F2FD" rb="#E8F5E9" rc="#1B5E20" left={
+    <Book pageMedia={pageMedia} lb="#E3F2FD" rb="#E8F5E9" rc="#1B5E20" left={
       <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
         <rect width="310" height="480" fill="#BBDEFB"/>
         <rect width="310" height="58" fill="#1565C0"/>
@@ -495,9 +500,9 @@ function P1() {
 /* ══════════════════════════════════════════════
    PAGE 2 — KARMA = MAGIC DUST
 ══════════════════════════════════════════════ */
-function P2() {
+function P2({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
   return (
-    <Book lb="#FFF8E1" rb="#FFFDE7" rc="#4E342E" left={
+    <Book pageMedia={pageMedia} lb="#FFF8E1" rb="#FFFDE7" rc="#4E342E" left={
       <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
         <rect width="310" height="480" fill="#FFF8E1"/>
         <rect width="310" height="58" fill="#E65100"/>
@@ -593,9 +598,9 @@ function P2() {
 /* ══════════════════════════════════════════════
    PAGE 3 — 4 KASHAYA MONSTERS
 ══════════════════════════════════════════════ */
-function P3() {
+function P3({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
   return (
-    <Book lb="#FCE4EC" rb="#FCE4EC" rc="#880E4F" left={
+    <Book pageMedia={pageMedia} lb="#FCE4EC" rb="#FCE4EC" rc="#880E4F" left={
       <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
         <rect width="310" height="480" fill="#fff0f5"/>
         <rect width="310" height="58" fill="#880E4F"/>
@@ -688,9 +693,9 @@ function P3() {
 /* ══════════════════════════════════════════════
    PAGE 4 — GOOD KARMA
 ══════════════════════════════════════════════ */
-function P4() {
+function P4({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
   return (
-    <Book lb="#E8F5E9" rb="#F2FAE8" rc="#1B5E20" left={
+    <Book pageMedia={pageMedia} lb="#E8F5E9" rb="#F2FAE8" rc="#1B5E20" left={
       <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
         <rect width="310" height="480" fill="#DCEDC8"/>
         <rect width="310" height="58" fill="#2E7D32"/>
@@ -752,9 +757,9 @@ function P4() {
 /* ══════════════════════════════════════════════
    PAGE 5 — BAD KARMA
 ══════════════════════════════════════════════ */
-function P5() {
+function P5({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
   return (
-    <Book lb="#FFEBEE" rb="#FFF5F5" rc="#501313" left={
+    <Book pageMedia={pageMedia} lb="#FFEBEE" rb="#FFF5F5" rc="#501313" left={
       <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
         <rect width="310" height="480" fill="#FFCDD2"/>
         <rect width="310" height="58" fill="#B71C1C"/>
@@ -824,7 +829,7 @@ function P5() {
 /* ══════════════════════════════════════════════
    PAGE 6 — 8 TYPES
 ══════════════════════════════════════════════ */
-function P6() {
+function P6({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
   const types = [
     ["🧠","ज्ञानावरण","Gyanavaran","Hides knowledge",0,  -58,"#9C27B0"],
     ["👁","दर्शनावरण","Darshanavaran","Hides vision",   41,-41,"#7B1FA2"],
@@ -884,9 +889,9 @@ function P6() {
 /* ══════════════════════════════════════════════
    PAGE 7 — THE BOAT STORY
 ══════════════════════════════════════════════ */
-function P7() {
+function P7({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
   return (
-    <Book lb="#E1F5FE" rb="#E1F5FE" rc="#01579B" left={
+    <Book pageMedia={pageMedia} lb="#E1F5FE" rb="#E1F5FE" rc="#01579B" left={
       <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
         <rect width="310" height="480" fill="#B3E5FC"/>
         <rect width="310" height="58" fill="#0277BD"/>
@@ -960,9 +965,9 @@ function P7() {
 /* ══════════════════════════════════════════════
    PAGE 8 — SAMVAR & NIRJARA
 ══════════════════════════════════════════════ */
-function P8() {
+function P8({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
   return (
-    <Book lb="#E8F5E9" rb="#F1F8E9" rc="#1B5E20" left={
+    <Book pageMedia={pageMedia} lb="#E8F5E9" rb="#F1F8E9" rc="#1B5E20" left={
       <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
         <rect width="310" height="480" fill="#DCEDC8"/>
         <rect width="310" height="58" fill="#1B5E20"/>
@@ -1023,9 +1028,9 @@ function P8() {
 /* ══════════════════════════════════════════════
    PAGE 9 — MOKSHA!
 ══════════════════════════════════════════════ */
-function P9() {
+function P9({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
   return (
-    <Book lb="#0d001a" rb="#1a0020" rc="#FFD700" left={
+    <Book pageMedia={pageMedia} lb="#0d001a" rb="#1a0020" rc="#FFD700" left={
       <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
         <rect width="310" height="480" fill="#0d001a"/>
         {[[22,28,2,"#FFD700"],[62,14,1.5,"#fff"],[128,8,2.5,"#FFD700"],[192,20,1.5,"#fff"],[258,10,2,"#FFD700"],[298,42,1.5,"#fff"],[38,78,1.5,"#FFD700"],[288,66,2,"#fff"],[158,30,1,"#fff"],[96,44,0.8,"#FFD700"]].map(([x,y,r,f],i)=><circle key={i} cx={+x} cy={+y} r={+r} fill={f as string} opacity={0.88}/>)}

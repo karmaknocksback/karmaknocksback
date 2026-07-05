@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import { useBookMedia } from "../useBookMedia";
+import BookPageMedia from "../BookPageMedia";
 
 const PAGES = [
   {label:"📖 Cover",color:"#FF9800"},
@@ -22,11 +24,12 @@ const TIRTHS = [
 ];
 
 export default function TirthankarBook() {
+  const bookMedia = useBookMedia("tirthankar");
   const [cur, setCur] = useState(0);
   return (
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"0 16px"}}>
       <div style={{width:"min(680px,100%)",borderRadius:20,overflow:"hidden",boxShadow:`0 0 0 2px ${PAGES[cur].color}40, 0 40px 80px rgba(0,0,0,0.7)`}}>
-        <TPage cur={cur}/>
+        <TPage cur={cur} bookMedia={bookMedia}/>
       </div>
       <div style={{display:"flex",alignItems:"center",gap:14,marginTop:22}}>
         <button onClick={()=>setCur(Math.max(0,cur-1))} disabled={cur===0} style={{width:40,height:40,borderRadius:"50%",border:`2px solid rgba(255,255,255,0.2)`,background:"rgba(255,255,255,0.05)",color:"rgba(255,255,255,0.7)",fontSize:18,cursor:cur===0?"not-allowed":"pointer",opacity:cur===0?0.25:1}}>‹</button>
@@ -38,23 +41,23 @@ export default function TirthankarBook() {
   );
 }
 
-function TPage({cur}:{cur:number}) {
+function TPage({cur,bookMedia}:{cur:number;bookMedia:Record<number,{imageUrl:string|null;audioUrl:string|null;caption:string|null}>}) {
   const pages = [TP0,TP1,TP2,TP3,TP4,TP5,TP6,TP7];
   const P = pages[cur] ?? TP0;
   return <P/>;
 }
 
-function BL({left,right,lb="#1a0800",rb="#FFF3E0",rc="#4E342E"}:{left:React.ReactNode;right:React.ReactNode;lb?:string;rb?:string;rc?:string}) {
+function BL({left,right,lb="#1a0800",rb="#FFF3E0",rc="#4E342E",pageMedia}:{left:React.ReactNode;right:React.ReactNode;lb?:string;rb?:string;rc?:string;pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
   return (
     <div style={{display:"flex",minHeight:"min(480px,72vw)",maxHeight:520}}>
-      <div style={{width:"50%",background:lb,overflow:"hidden",position:"relative"}}>{left}</div>
+      <div style={{width:"50%",background:lb,overflow:"hidden",position:"relative"}}><BookPageMedia media={pageMedia} fallback={left}/></div>
       <div style={{width:"50%",background:rb,color:rc,padding:"22px 20px",display:"flex",flexDirection:"column",overflow:"hidden"}}>{right}</div>
     </div>
   );
 }
 
-function TP0() {
-  return <BL lb="#1a0800" rb="linear-gradient(160deg,#1a0800,#3d1a00)" rc="#FF9800" left={
+function TP0({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
+  return <BL pageMedia={pageMedia} lb="#1a0800" rb="linear-gradient(160deg,#1a0800,#3d1a00)" rc="#FF9800" left={
     <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
       <rect width="310" height="480" fill="#100600"/>
       {[[30,30,2,"#FF9800"],[200,20,1.5,"#fff"],[260,14,2,"#FFD700"]].map(([x,y,r,f],i)=><circle key={i} cx={+x} cy={+y} r={+r} fill={f as string} opacity={0.9}/>)}
@@ -93,8 +96,8 @@ function TP0() {
   }/>;
 }
 
-function TP1() {
-  return <BL lb="#100a00" rb="#FFF8E1" rc="#4E342E" left={
+function TP1({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
+  return <BL pageMedia={pageMedia} lb="#100a00" rb="#FFF8E1" rc="#4E342E" left={
     <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
       <rect width="310" height="480" fill="#100a00"/>
       <rect width="310" height="52" fill="#E65100"/>
@@ -139,8 +142,8 @@ function TP1() {
   }/>;
 }
 
-function TP2() {
-  return <BL lb="#1a1200" rb="#FFF9C4" rc="#4E342E" left={
+function TP2({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
+  return <BL pageMedia={pageMedia} lb="#1a1200" rb="#FFF9C4" rc="#4E342E" left={
     <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
       <rect width="310" height="480" fill="#1a1200"/>
       <rect width="310" height="52" fill="#F57F17"/>
@@ -196,8 +199,8 @@ function TP2() {
   }/>;
 }
 
-function TP3() {
-  return <BL lb="#0d1a0d" rb="#E8F5E9" rc="#1B5E20" left={
+function TP3({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
+  return <BL pageMedia={pageMedia} lb="#0d1a0d" rb="#E8F5E9" rc="#1B5E20" left={
     <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
       <rect width="310" height="480" fill="#0d1a0d"/>
       <rect width="310" height="52" fill="#2E7D32"/>
@@ -244,8 +247,8 @@ function TP3() {
   }/>;
 }
 
-function TP4() {
-  return <BL lb="#0a1a16" rb="#E0F2F1" rc="#00695C" left={
+function TP4({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
+  return <BL pageMedia={pageMedia} lb="#0a1a16" rb="#E0F2F1" rc="#00695C" left={
     <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
       <rect width="310" height="480" fill="#0a1a16"/>
       <rect width="310" height="52" fill="#00897B"/>
@@ -295,8 +298,8 @@ function TP4() {
   }/>;
 }
 
-function TP5() {
-  return <BL lb="#1a0e00" rb="#FFF8E1" rc="#4E342E" left={
+function TP5({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
+  return <BL pageMedia={pageMedia} lb="#1a0e00" rb="#FFF8E1" rc="#4E342E" left={
     <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
       <rect width="310" height="480" fill="#1a0e00"/>
       <rect width="310" height="52" fill="#F57F17"/>
@@ -347,8 +350,8 @@ function TP5() {
   }/>;
 }
 
-function TP6() {
-  return <BL lb="#1a1000" rb="#FFF9C4" rc="#4E342E" left={
+function TP6({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
+  return <BL pageMedia={pageMedia} lb="#1a1000" rb="#FFF9C4" rc="#4E342E" left={
     <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
       <rect width="310" height="480" fill="#1a1000"/>
       <rect width="310" height="52" fill="#FF8F00"/>
@@ -388,8 +391,8 @@ function TP6() {
   }/>;
 }
 
-function TP7() {
-  return <BL lb="#100600" rb="linear-gradient(160deg,#100600,#2a0e00)" rc="#FF9800" left={
+function TP7({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
+  return <BL pageMedia={pageMedia} lb="#100600" rb="linear-gradient(160deg,#100600,#2a0e00)" rc="#FF9800" left={
     <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
       <rect width="310" height="480" fill="#100600"/>
       {/* All 24 tirthankaras as dots in circle */}

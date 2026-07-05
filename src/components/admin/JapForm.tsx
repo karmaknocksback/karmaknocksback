@@ -42,6 +42,9 @@ export default function JapForm({ initial }: { initial?: Partial<JapFormValues> 
   const [bestForText, setBestForText] = useState((initial?.bestFor || []).join(", "));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  // Track whether user is in custom category mode
+  const isKnownCategory = JAP_CATEGORIES.includes(form.category as (typeof JAP_CATEGORIES)[number]);
+  const [showCustomInput, setShowCustomInput] = useState(!isKnownCategory);
 
   function update<K extends keyof JapFormValues>(key: K, value: JapFormValues[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -129,9 +132,13 @@ export default function JapForm({ initial }: { initial?: Partial<JapFormValues> 
       <div className="grid sm:grid-cols-3 gap-4">
         <Field label="श्रेणी">
           <select
-            value={JAP_CATEGORIES.includes(form.category as (typeof JAP_CATEGORIES)[number]) ? form.category : "__custom__"}
+            value={showCustomInput ? "__custom__" : form.category}
             onChange={(e) => {
-              if (e.target.value !== "__custom__") {
+              if (e.target.value === "__custom__") {
+                setShowCustomInput(true);
+                update("category", "" as JapFormValues["category"]);
+              } else {
+                setShowCustomInput(false);
                 update("category", e.target.value as JapFormValues["category"]);
               }
             }}
@@ -144,14 +151,12 @@ export default function JapForm({ initial }: { initial?: Partial<JapFormValues> 
             ))}
             <option value="__custom__">+ नई श्रेणी टाइप करें</option>
           </select>
-          {/* Custom category input — shows when "नई श्रेणी" is selected OR current value is not in list */}
-          {(!JAP_CATEGORIES.includes(form.category as (typeof JAP_CATEGORIES)[number]) ||
-            form.category === "__custom__") && (
+          {showCustomInput && (
             <input
               type="text"
-              value={form.category === "__custom__" ? "" : form.category}
+              value={form.category}
               onChange={(e) => update("category", e.target.value as JapFormValues["category"])}
-              placeholder="नई श्रेणी का नाम लिखें (English)"
+              placeholder="नई श्रेणी का नाम लिखें (English, e.g. Healing)"
               className="kkb-input mt-2"
               autoFocus
             />

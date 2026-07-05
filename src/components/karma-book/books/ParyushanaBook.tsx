@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import { useBookMedia } from "../useBookMedia";
+import BookPageMedia from "../BookPageMedia";
 
 const PAGES = [
   {label:"📖 Cover",color:"#E91E63"},
@@ -16,16 +18,17 @@ function NavBtn({d,onClick,disabled,color,primary}:{d:React.ReactNode;onClick:()
   return <button onClick={onClick} disabled={disabled} style={{width:42,height:42,borderRadius:"50%",border:`2px solid ${primary?color:"rgba(255,255,255,0.2)"}`,background:primary?`${color}30`:"rgba(255,255,255,0.05)",color:primary?color:"rgba(255,255,255,0.7)",fontSize:20,cursor:disabled?"not-allowed":"pointer",opacity:disabled?0.25:1}}>{d}</button>;
 }
 
-function BL({left,right,lb="#1a0020",rb="#FCE4EC",rc="#880E4F"}:{left:React.ReactNode;right:React.ReactNode;lb?:string;rb?:string;rc?:string}) {
+function BL({left,right,lb="#1a0020",rb="#FCE4EC",rc="#880E4F",pageMedia}:{left:React.ReactNode;right:React.ReactNode;lb?:string;rb?:string;rc?:string;pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
   return (
     <div style={{display:"flex",minHeight:"min(480px,72vw)",maxHeight:520}}>
-      <div style={{width:"50%",background:lb,overflow:"hidden",position:"relative"}}>{left}</div>
+      <div style={{width:"50%",background:lb,overflow:"hidden",position:"relative"}}><BookPageMedia media={pageMedia} fallback={left}/></div>
       <div style={{width:"50%",background:rb,color:rc,padding:"22px 20px",display:"flex",flexDirection:"column",overflow:"hidden"}}>{right}</div>
     </div>
   );
 }
 
 export default function ParyushanaBook() {
+  const bookMedia = useBookMedia("paryushana");
   const [cur,setCur]=useState(0);
   const comps=[PP0,PP1,PP2,PP3,PP4,PP5,PP6,PP7];
   const P=comps[cur]??PP0;
@@ -42,8 +45,8 @@ export default function ParyushanaBook() {
   );
 }
 
-function PP0() {
-  return <BL lb="#1a0020" rb="linear-gradient(160deg,#1a0020,#3d0035)" rc="#E91E63" left={
+function PP0({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
+  return <BL pageMedia={pageMedia} lb="#1a0020" rb="linear-gradient(160deg,#1a0020,#3d0035)" rc="#E91E63" left={
     <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
       <rect width="310" height="480" fill="#12001a"/>
       {[[30,30,2,"#E91E63"],[200,20,1.5,"#fff"],[260,14,2,"#FF80AB"]].map(([x,y,r,f],i)=><circle key={i} cx={+x} cy={+y} r={+r} fill={f as string} opacity={0.8}/>)}
@@ -87,8 +90,8 @@ function PP0() {
   }/>;
 }
 
-function PP1() {
-  return <BL lb="#12001a" rb="#FCE4EC" rc="#880E4F" left={
+function PP1({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
+  return <BL pageMedia={pageMedia} lb="#12001a" rb="#FCE4EC" rc="#880E4F" left={
     <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
       <rect width="310" height="480" fill="#12001a"/>
       <rect width="310" height="52" fill="#C2185B"/>
@@ -140,8 +143,8 @@ function PP1() {
   }/>;
 }
 
-function PP2() {
-  return <BL lb="#12001a" rb="#FCE4EC" rc="#880E4F" left={
+function PP2({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
+  return <BL pageMedia={pageMedia} lb="#12001a" rb="#FCE4EC" rc="#880E4F" left={
     <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
       <rect width="310" height="480" fill="#12001a"/>
       <rect width="310" height="52" fill="#AD1457"/>
@@ -204,8 +207,8 @@ function PP2() {
   }/>;
 }
 
-function PP3() {
-  return <BL lb="#12001a" rb="#FCE4EC" rc="#880E4F" left={
+function PP3({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
+  return <BL pageMedia={pageMedia} lb="#12001a" rb="#FCE4EC" rc="#880E4F" left={
     <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
       <rect width="310" height="480" fill="#12001a"/>
       <rect width="310" height="52" fill="#880E4F"/>
@@ -256,18 +259,18 @@ function PP3() {
   }/>;
 }
 
-function PP4() { return <SimpleParPage num={4} title="पर्युषण का उपवास 🍎" titleEn="Paryushana Fasting!" color="#E91E63" body={<><p>During Paryushana, Jains observe different levels of fasting:</p><br/><ul style={{paddingLeft:18,lineHeight:2.2}}><li><strong>Atthai</strong> — fast for 8 days, eat nothing! 🏆</li><li><strong>Upavas</strong> — eat nothing for one day</li><li><strong>Ekasana</strong> — eat only once a day</li><li><strong>Nivi</strong> — eat once, without water after sunset</li></ul><br/><p>Fasting helps burn old karma (Nirjara) quickly!</p></>} example="🍎 Priya did Atthai — 8 days without food! She felt her soul getting lighter and cleaner each day. By day 8 she was GLOWING! ✨" bg="#FCE4EC" fg="#880E4F"/>;
+function PP4({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) { return <SimpleParPage pageMedia={pageMedia} num={4} title="पर्युषण का उपवास 🍎" titleEn="Paryushana Fasting!" color="#E91E63" body={<><p>During Paryushana, Jains observe different levels of fasting:</p><br/><ul style={{paddingLeft:18,lineHeight:2.2}}><li><strong>Atthai</strong> — fast for 8 days, eat nothing! 🏆</li><li><strong>Upavas</strong> — eat nothing for one day</li><li><strong>Ekasana</strong> — eat only once a day</li><li><strong>Nivi</strong> — eat once, without water after sunset</li></ul><br/><p>Fasting helps burn old karma (Nirjara) quickly!</p></>} example="🍎 Priya did Atthai — 8 days without food! She felt her soul getting lighter and cleaner each day. By day 8 she was GLOWING! ✨" bg="#FCE4EC" fg="#880E4F"/>;
 }
 
-function PP5() { return <SimpleParPage num={5} title="कल्पसूत्र — पवित्र ग्रंथ 📖" titleEn="Kalpa Sutra — The Holy Scripture!" color="#C2185B" body={<><p>During Paryushana, Jains listen to the <strong>Kalpa Sutra</strong> — the scripture describing the life of Lord Mahavir, from his birth to his Moksha!</p><br/><p>On the 5th day, the reading of <em>Lord Mahavir&apos;s birth</em> is celebrated with great joy — gifts and sweets!</p><br/><p>This is called <strong>Mahavir Janma Vachana</strong>!</p></>} example="📖 Chintu sat with the whole family listening to Mahavir&apos;s birth story. When the moment came, everyone cheered and sweets were distributed! 🎉" bg="#FCE4EC" fg="#880E4F"/>;
+function PP5({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) { return <SimpleParPage pageMedia={pageMedia} num={5} title="कल्पसूत्र — पवित्र ग्रंथ 📖" titleEn="Kalpa Sutra — The Holy Scripture!" color="#C2185B" body={<><p>During Paryushana, Jains listen to the <strong>Kalpa Sutra</strong> — the scripture describing the life of Lord Mahavir, from his birth to his Moksha!</p><br/><p>On the 5th day, the reading of <em>Lord Mahavir&apos;s birth</em> is celebrated with great joy — gifts and sweets!</p><br/><p>This is called <strong>Mahavir Janma Vachana</strong>!</p></>} example="📖 Chintu sat with the whole family listening to Mahavir&apos;s birth story. When the moment came, everyone cheered and sweets were distributed! 🎉" bg="#FCE4EC" fg="#880E4F"/>;
 }
 
-function PP6() { return <SimpleParPage num={6} title="माफी की कहानियाँ 💝" titleEn="Forgiveness Stories!" color="#AD1457" body={<><p><strong>Story 1 — The Angry King:</strong><br/>A king was about to execute a monk for entering his palace. The monk said with total peace: &quot;I forgive you for what you are about to do.&quot; The king was so moved he set the monk free and became his disciple!</p><br/><p><strong>Story 2 — Chintu&apos;s apology:</strong><br/>Chintu had said mean words to his friend a year ago. On Samvatsari, he called him and said &quot;Micchami Dukkadam.&quot; His friend cried with happiness. Their friendship became stronger than ever! 💙</p></>} example="💝 Forgiveness breaks the chain of karma. When you forgive — even someone who hurt you — YOU become free!" bg="#FCE4EC" fg="#880E4F"/>;
+function PP6({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) { return <SimpleParPage pageMedia={pageMedia} num={6} title="माफी की कहानियाँ 💝" titleEn="Forgiveness Stories!" color="#AD1457" body={<><p><strong>Story 1 — The Angry King:</strong><br/>A king was about to execute a monk for entering his palace. The monk said with total peace: &quot;I forgive you for what you are about to do.&quot; The king was so moved he set the monk free and became his disciple!</p><br/><p><strong>Story 2 — Chintu&apos;s apology:</strong><br/>Chintu had said mean words to his friend a year ago. On Samvatsari, he called him and said &quot;Micchami Dukkadam.&quot; His friend cried with happiness. Their friendship became stronger than ever! 💙</p></>} example="💝 Forgiveness breaks the chain of karma. When you forgive — even someone who hurt you — YOU become free!" bg="#FCE4EC" fg="#880E4F"/>;
 }
 
-function PP7() {
+function PP7({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
   const pledges=["I will practice Pratikraman during Paryushana","I will say Micchami Dukkadam to everyone","I will fast for at least one day","I will read Kalpa Sutra with my family","I will forgive everyone who has hurt me","I will do 48 minutes Samayik daily during Paryushana","I will avoid hurting any creature for 10 days","I will donate to someone in need"];
-  return <BL lb="#12001a" rb="#FCE4EC" rc="#880E4F" left={
+  return <BL pageMedia={pageMedia} lb="#12001a" rb="#FCE4EC" rc="#880E4F" left={
     <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
       <rect width="310" height="480" fill="#12001a"/>
       <rect width="310" height="52" fill="#880E4F"/>
@@ -307,8 +310,8 @@ function PP7() {
   }/>;
 }
 
-function SimpleParPage({num,title,titleEn,color,body,example,bg,fg}:{num:number;title:string;titleEn:string;color:string;body:React.ReactNode;example:string;bg:string;fg:string}) {
-  return <BL lb="#12001a" rb={bg} rc={fg} left={
+function SimpleParPage({num,title,titleEn,color,body,example,bg,fg,pageMedia}:{num:number;title:string;titleEn:string;color:string;body:React.ReactNode;example:string;bg:string;fg:string;pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
+  return <BL pageMedia={pageMedia} lb="#12001a" rb={bg} rc={fg} left={
     <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
       <rect width="310" height="480" fill="#12001a"/>
       <rect width="310" height="52" fill={color}/>

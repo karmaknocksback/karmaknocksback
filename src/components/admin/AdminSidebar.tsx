@@ -25,6 +25,7 @@ const LINKS = [
   { href: "/admin/karma-mirror", label: "Karma Mirror", icon: ScanFace },
   { href: "/admin/payments", label: "भुगतान प्रबंधन", icon: IndianRupee },
   { href: "/admin/shop", label: "Affiliate Shop", icon: ShoppingBag },
+  { href: "/admin/know-karma-more", label: "Kids Books", icon: BookOpenText },
   { href: "/admin/testimonials", label: "टेस्टिमोनियल्स", icon: Star },
   { href: "/admin/requests", label: "रिक्वेस्ट्स", icon: Inbox },
   { href: "/admin/settings", label: "सेटिंग्स", icon: SettingsIcon },

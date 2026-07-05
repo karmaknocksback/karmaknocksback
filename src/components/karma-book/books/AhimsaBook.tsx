@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import { useBookMedia } from "../useBookMedia";
+import BookPageMedia from "../BookPageMedia";
 
 const PAGES = [
   {label:"📖 Cover",color:"#00BCD4"},
@@ -16,16 +18,17 @@ function NavBtn({d,onClick,disabled,color,primary}:{d:React.ReactNode;onClick:()
   return <button onClick={onClick} disabled={disabled} style={{width:42,height:42,borderRadius:"50%",border:`2px solid ${primary?color:"rgba(255,255,255,0.2)"}`,background:primary?`${color}30`:"rgba(255,255,255,0.05)",color:primary?color:"rgba(255,255,255,0.7)",fontSize:20,cursor:disabled?"not-allowed":"pointer",opacity:disabled?0.25:1}}>{d}</button>;
 }
 
-function BL({left,right,lb="#0a1a1e",rb="#E0F7FA",rc="#006064"}:{left:React.ReactNode;right:React.ReactNode;lb?:string;rb?:string;rc?:string}) {
+function BL({left,right,lb="#0a1a1e",rb="#E0F7FA",rc="#006064",pageMedia}:{left:React.ReactNode;right:React.ReactNode;lb?:string;rb?:string;rc?:string;pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
   return (
     <div style={{display:"flex",minHeight:"min(480px,72vw)",maxHeight:520}}>
-      <div style={{width:"50%",background:lb,overflow:"hidden",position:"relative"}}>{left}</div>
+      <div style={{width:"50%",background:lb,overflow:"hidden",position:"relative"}}><BookPageMedia media={pageMedia} fallback={left}/></div>
       <div style={{width:"50%",background:rb,color:rc,padding:"22px 20px",display:"flex",flexDirection:"column",overflow:"hidden"}}>{right}</div>
     </div>
   );
 }
 
 export default function AhimsaBook() {
+  const bookMedia = useBookMedia("ahimsa");
   const [cur,setCur]=useState(0);
   const comps=[AP0,AP1,AP2,AP3,AP4,AP5,AP6,AP7];
   const P=comps[cur]??AP0;
@@ -42,8 +45,8 @@ export default function AhimsaBook() {
   );
 }
 
-function AP0() {
-  return <BL lb="#0a1a1e" rb="linear-gradient(160deg,#003344,#006064)" rc="#00BCD4" left={
+function AP0({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
+  return <BL pageMedia={pageMedia} lb="#0a1a1e" rb="linear-gradient(160deg,#003344,#006064)" rc="#00BCD4" left={
     <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
       <rect width="310" height="480" fill="#001a22"/>
       {[[30,30,2,"#00BCD4"],[200,20,1.5,"#fff"],[260,14,2,"#00E5FF"]].map(([x,y,r,f],i)=><circle key={i} cx={+x} cy={+y} r={+r} fill={f as string} opacity={0.8}/>)}
@@ -91,8 +94,8 @@ function AP0() {
   }/>;
 }
 
-function AP1() {
-  return <BL lb="#001a22" rb="#E0F7FA" rc="#006064" left={
+function AP1({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
+  return <BL pageMedia={pageMedia} lb="#001a22" rb="#E0F7FA" rc="#006064" left={
     <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
       <rect width="310" height="480" fill="#001a22"/>
       <rect width="310" height="52" fill="#0097A7"/>
@@ -148,8 +151,8 @@ function AP1() {
   }/>;
 }
 
-function AP2() {
-  return <BL lb="#001a22" rb="#E0F7FA" rc="#006064" left={
+function AP2({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
+  return <BL pageMedia={pageMedia} lb="#001a22" rb="#E0F7FA" rc="#006064" left={
     <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
       <rect width="310" height="480" fill="#001a22"/>
       <rect width="310" height="52" fill="#00838F"/>
@@ -205,8 +208,8 @@ function AP2() {
   }/>;
 }
 
-function AP3() {
-  return <BL lb="#001a22" rb="#E0F7FA" rc="#006064" left={
+function AP3({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
+  return <BL pageMedia={pageMedia} lb="#001a22" rb="#E0F7FA" rc="#006064" left={
     <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
       <rect width="310" height="480" fill="#001a22"/>
       <rect width="310" height="52" fill="#006064"/>
@@ -261,8 +264,8 @@ function AP3() {
   }/>;
 }
 
-function AP4() {
-  return <BL lb="#001a22" rb="#E0F7FA" rc="#006064" left={
+function AP4({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
+  return <BL pageMedia={pageMedia} lb="#001a22" rb="#E0F7FA" rc="#006064" left={
     <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
       <rect width="310" height="480" fill="#001a22"/>
       <rect width="310" height="52" fill="#0097A7"/>
@@ -317,8 +320,8 @@ function AP4() {
   }/>;
 }
 
-function AP5() {
-  return <BL lb="#001a22" rb="#E8F5E9" rc="#1B5E20" left={
+function AP5({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
+  return <BL pageMedia={pageMedia} lb="#001a22" rb="#E8F5E9" rc="#1B5E20" left={
     <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
       <rect width="310" height="480" fill="#001a22"/>
       <rect width="310" height="52" fill="#2E7D32"/>
@@ -372,14 +375,14 @@ function AP5() {
   }/>;
 }
 
-function AP6() {
+function AP6({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
   const heroes=[
     {n:"महावीर स्वामी",e:"Lord Mahavir",d:"Walked barefoot. Never harmed any creature.",em:"🦚",c:"#FF9800"},
     {n:"गाँधीजी",e:"Mahatma Gandhi",d:"Used Ahimsa to free India from British rule!",em:"🕊️",c:"#4CAF50"},
     {n:"Albert Einstein",e:"Albert Einstein",d:"Said Jain Ahimsa is the most evolved ethics!",em:"🔬",c:"#2196F3"},
     {n:"Priya",e:"Priya (Our hero!)",d:"Said sorry to every creature she ever hurt!",em:"👧",c:"#E91E63"},
   ];
-  return <BL lb="#001a22" rb="#E0F7FA" rc="#006064" left={
+  return <BL pageMedia={pageMedia} lb="#001a22" rb="#E0F7FA" rc="#006064" left={
     <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
       <rect width="310" height="480" fill="#001a22"/>
       <rect width="310" height="52" fill="#0097A7"/>
@@ -417,7 +420,7 @@ function AP6() {
   }/>;
 }
 
-function AP7() {
+function AP7({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
   const challenges=[
     "🌿 Eat 100% vegetarian today",
     "🐜 Move an insect to safety instead of killing it",
@@ -428,7 +431,7 @@ function AP7() {
     "😊 Smile at everyone — even strangers!",
     "🕊️ Do one act of kindness for an animal",
   ];
-  return <BL lb="#001a22" rb="#E0F7FA" rc="#006064" left={
+  return <BL pageMedia={pageMedia} lb="#001a22" rb="#E0F7FA" rc="#006064" left={
     <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
       <rect width="310" height="480" fill="#001a22"/>
       <rect width="310" height="52" fill="#006064"/>

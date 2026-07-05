@@ -1,4 +1,6 @@
 "use client";
+import { useBookMedia } from "../useBookMedia";
+import BookPageMedia from "../BookPageMedia";
 import { useState, useCallback } from "react";
 
 const PAGES = [
@@ -13,6 +15,7 @@ const PAGES = [
 ];
 
 export default function NavkarBook() {
+  const bookMedia = useBookMedia("navkar");
   const [cur, setCur] = useState(0);
   const [anim, setAnim] = useState(false);
 
@@ -68,7 +71,7 @@ function BookLayout({left,right,lb="#0d2818",rb="#E8F5E9",rc="#1B5E20"}:{left:Re
 }
 
 // NAVKAR PAGES
-function NP0() {
+function NP0({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
   return (
     <BookLayout lb="#0d2818" rb="linear-gradient(160deg,#0d2818,#1a4a2e)" rc="#4CAF50" left={
       <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
@@ -116,7 +119,7 @@ function NP0() {
   );
 }
 
-function NP1() {
+function NP1({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
   const parmesthis = [
     { n:"अरिहंत", e:"Arihant", d:"Conquered inner enemies — anger, pride, deceit, greed!", c:"#FFD700", em:"⚔️" },
     { n:"सिद्ध", e:"Siddha", d:"Perfectly liberated souls. Reached Moksha!", c:"#E1F5FE", em:"✨" },
@@ -176,22 +179,22 @@ function NP1() {
 }
 
 // Simplified remaining pages
-function NP2() { return <SimpleNavkarPage num={2} title="अरिहंत — The Conqueror ⚔️" titleEn="Arihant — Who Won the Inner Battle!" color="#FFD700" bgDark="#1a1400" bgLight="#FFF9C4" colorDark="#5D4037" icon="⚔️" body={<><p>An <strong>Arihant</strong> is someone who has <em>conquered all 4 inner enemies</em> — Krodh (anger), Maan (pride), Maya (deceit), and Lobh (greed)!</p><br/><p>They still live in the world, but <strong>no karma sticks to them</strong>. They teach us the path to freedom.</p><br/><p>Lord Mahavir was the 24th Arihant of this time cycle!</p></>} example="🦁 Chintu asks: 'If someone shouts at Arihant, do they get angry?' NEVER! They are as calm as the ocean. No storm can disturb them! 🌊" story="Lord Mahavir sat in meditation. A farmer tied a nail through his ear. He didn't flinch. That is an Arihant — completely peaceful! 😇"/>;
+function NP2({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) { return <SimpleNavkarPage num={2} title="अरिहंत — The Conqueror ⚔️" titleEn="Arihant — Who Won the Inner Battle!" color="#FFD700" bgDark="#1a1400" bgLight="#FFF9C4" colorDark="#5D4037" icon="⚔️" body={<><p>An <strong>Arihant</strong> is someone who has <em>conquered all 4 inner enemies</em> — Krodh (anger), Maan (pride), Maya (deceit), and Lobh (greed)!</p><br/><p>They still live in the world, but <strong>no karma sticks to them</strong>. They teach us the path to freedom.</p><br/><p>Lord Mahavir was the 24th Arihant of this time cycle!</p></>} example="🦁 Chintu asks: 'If someone shouts at Arihant, do they get angry?' NEVER! They are as calm as the ocean. No storm can disturb them! 🌊" story="Lord Mahavir sat in meditation. A farmer tied a nail through his ear. He didn't flinch. That is an Arihant — completely peaceful! 😇"/>;
 }
 
-function NP3() { return <SimpleNavkarPage num={3} title="सिद्ध — The Perfectly Free ✨" titleEn="Siddha — Soul That Reached Moksha!" color="#E1F5FE" bgDark="#001a2e" bgLight="#E1F5FE" colorDark="#01579B" icon="✨" body={<><p>A <strong>Siddha</strong> is a soul that has shed ALL karma and reached <em>Moksha (मोक्ष)</em> — the top of the universe!</p><br/><p>They have <strong>infinite knowledge, sight, bliss and power</strong>. No more birth, no more death — free forever!</p><br/><p>There are <em>infinite Siddhas</em> living in Siddha Loka at this very moment!</p></>} example="🌟 Siddhas don't need to eat, sleep or breathe. They are pure consciousness — like a perfect light that never goes off! 💡" story="Priya asks: 'Can Siddhas hear my prayers?' The teacher smiles: 'They don't hear individually — but YOUR prayer purifies YOUR soul!' 🌸"/>;
+function NP3({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) { return <SimpleNavkarPage num={3} title="सिद्ध — The Perfectly Free ✨" titleEn="Siddha — Soul That Reached Moksha!" color="#E1F5FE" bgDark="#001a2e" bgLight="#E1F5FE" colorDark="#01579B" icon="✨" body={<><p>A <strong>Siddha</strong> is a soul that has shed ALL karma and reached <em>Moksha (मोक्ष)</em> — the top of the universe!</p><br/><p>They have <strong>infinite knowledge, sight, bliss and power</strong>. No more birth, no more death — free forever!</p><br/><p>There are <em>infinite Siddhas</em> living in Siddha Loka at this very moment!</p></>} example="🌟 Siddhas don't need to eat, sleep or breathe. They are pure consciousness — like a perfect light that never goes off! 💡" story="Priya asks: 'Can Siddhas hear my prayers?' The teacher smiles: 'They don't hear individually — but YOUR prayer purifies YOUR soul!' 🌸"/>;
 }
 
-function NP4() { return <SimpleNavkarPage num={4} title="आचार्य — The Master Teacher 🎓" titleEn="Acharya — Head of the Monk Community!" color="#FF9800" bgDark="#1a0e00" bgLight="#FFF3E0" colorDark="#4E342E" icon="🎓" body={<><p>An <strong>Acharya</strong> is the head of a group of Jain monks. They have learned all 12 Jain scriptures and guide others!</p><br/><p>They walk barefoot, eat once a day, never stay in one place too long, and teach the path of liberation.</p></>} example="🎓 An Acharya is like the captain of a spiritual team. All the monks listen to them and follow their example every single day!" story="Young Chintu saw an Acharya walk barefoot in winter. 'Doesn't it hurt?' he asked. The Acharya smiled: 'The body feels, but I am not the body!' 🙏"/>;
+function NP4({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) { return <SimpleNavkarPage num={4} title="आचार्य — The Master Teacher 🎓" titleEn="Acharya — Head of the Monk Community!" color="#FF9800" bgDark="#1a0e00" bgLight="#FFF3E0" colorDark="#4E342E" icon="🎓" body={<><p>An <strong>Acharya</strong> is the head of a group of Jain monks. They have learned all 12 Jain scriptures and guide others!</p><br/><p>They walk barefoot, eat once a day, never stay in one place too long, and teach the path of liberation.</p></>} example="🎓 An Acharya is like the captain of a spiritual team. All the monks listen to them and follow their example every single day!" story="Young Chintu saw an Acharya walk barefoot in winter. 'Doesn't it hurt?' he asked. The Acharya smiled: 'The body feels, but I am not the body!' 🙏"/>;
 }
 
-function NP5() { return <SimpleNavkarPage num={5} title="उपाध्याय — The Scholar Monk 📚" titleEn="Upadhyay — Teaches the Holy Scriptures!" color="#CE93D8" bgDark="#1a0020" bgLight="#F3E5F5" colorDark="#4A148C" icon="📚" body={<><p>An <strong>Upadhyay</strong> is a monk whose special duty is to teach the <em>Agam scriptures</em> — the holy books of Jainism!</p><br/><p>They have mastered at least 11 of the 12 main scriptures and spend their life teaching others.</p></>} example="📚 If Acharya is the school principal, Upadhyay is the best teacher! Every monk learns from them daily." story="Priya listened as Upadhyay explained karma for 3 hours. 'Can I become Upadhyay?' she asked. 'Anyone can — if you walk the right path!' 🌟"/>;
+function NP5({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) { return <SimpleNavkarPage num={5} title="उपाध्याय — The Scholar Monk 📚" titleEn="Upadhyay — Teaches the Holy Scriptures!" color="#CE93D8" bgDark="#1a0020" bgLight="#F3E5F5" colorDark="#4A148C" icon="📚" body={<><p>An <strong>Upadhyay</strong> is a monk whose special duty is to teach the <em>Agam scriptures</em> — the holy books of Jainism!</p><br/><p>They have mastered at least 11 of the 12 main scriptures and spend their life teaching others.</p></>} example="📚 If Acharya is the school principal, Upadhyay is the best teacher! Every monk learns from them daily." story="Priya listened as Upadhyay explained karma for 3 hours. 'Can I become Upadhyay?' she asked. 'Anyone can — if you walk the right path!' 🌟"/>;
 }
 
-function NP6() { return <SimpleNavkarPage num={6} title="साधु — The Holy Monk 🧘" titleEn="Sadhu — All Jain Monks on the Path!" color="#A5D6A7" bgDark="#0a1a08" bgLight="#E8F5E9" colorDark="#1B5E20" icon="🧘" body={<><p>A <strong>Sadhu (साधु)</strong> means all Jain monks and Sadhvis (nuns). They have taken the 5 great vows!</p><br/><ul style={{paddingLeft:18,lineHeight:2}}><li>Ahimsa — No violence</li><li>Satya — Only truth</li><li>Asteya — No stealing</li><li>Brahmacharya — Celibacy</li><li>Aparigraha — No possessions</li></ul></>} example="🧘 Sadhus own nothing — no phone, no money, no house. But they carry the greatest treasure: a soul getting closer to Moksha every day!" story="Chintu gave fruit to a Sadhu. 'Why are you happy? You have nothing!' The Sadhu laughed: 'I have everything — freedom from wanting!' 😊"/>;
+function NP6({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) { return <SimpleNavkarPage num={6} title="साधु — The Holy Monk 🧘" titleEn="Sadhu — All Jain Monks on the Path!" color="#A5D6A7" bgDark="#0a1a08" bgLight="#E8F5E9" colorDark="#1B5E20" icon="🧘" body={<><p>A <strong>Sadhu (साधु)</strong> means all Jain monks and Sadhvis (nuns). They have taken the 5 great vows!</p><br/><ul style={{paddingLeft:18,lineHeight:2}}><li>Ahimsa — No violence</li><li>Satya — Only truth</li><li>Asteya — No stealing</li><li>Brahmacharya — Celibacy</li><li>Aparigraha — No possessions</li></ul></>} example="🧘 Sadhus own nothing — no phone, no money, no house. But they carry the greatest treasure: a soul getting closer to Moksha every day!" story="Chintu gave fruit to a Sadhu. 'Why are you happy? You have nothing!' The Sadhu laughed: 'I have everything — freedom from wanting!' 😊"/>;
 }
 
-function NP7() {
+function NP7({pageMedia}:{pageMedia?:{imageUrl:string|null;audioUrl:string|null;caption:string|null}}) {
   return (
     <BookLayout lb="#0a1a08" rb="#E8F5E9" rc="#1B5E20" left={
       <svg width="100%" height="100%" viewBox="0 0 310 480" preserveAspectRatio="xMidYMid slice">
