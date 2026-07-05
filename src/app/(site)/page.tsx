@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-export const revalidate = 120; // 2 min cache
+export const dynamic = "force-dynamic";
 
 
 export default async function HomePage() {

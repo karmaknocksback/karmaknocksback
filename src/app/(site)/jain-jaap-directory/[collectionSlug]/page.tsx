@@ -5,7 +5,7 @@ import SectionHeading from "@/components/shared/SectionHeading";
 import GlassCard from "@/components/shared/GlassCard";
 import { getCollectionBySlug, listItemsByCollection } from "@/lib/repo/jap-collections";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,

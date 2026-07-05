@@ -6,7 +6,7 @@ import GlassCard from "@/components/shared/GlassCard";
 import Bilingual from "@/components/shared/Bilingual";
 import { getCollectionBySlug, getItemBySlug, listItemsByCollection } from "@/lib/repo/jap-collections";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,

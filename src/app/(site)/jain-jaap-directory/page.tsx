@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/jain-jaap-directory" },
 };
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export default async function JainJaapDirectoryPage() {
   const collections = await listCollections();
