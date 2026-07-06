@@ -48,7 +48,7 @@ export default function KarmaGarden() {
   },[]);
 
   return (
-    <div className="flex flex-col items-center px-3 pb-10">
+    <div className="flex flex-col items-center w-full px-3 pb-10 overflow-x-hidden">
       {/* Karma progress */}
       <div className="w-full max-w-lg mb-4 mt-2 rounded-2xl p-4 bg-white shadow-md" style={{border:"2px solid #4CAF50"}}>
         <div className="flex items-center justify-between mb-2">

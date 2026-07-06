@@ -1,10 +1,4 @@
 import type { Metadata } from "next";
-import {
-  Cormorant_Garamond,
-  Manrope,
-  Tiro_Devanagari_Hindi,
-  Noto_Sans_Devanagari,
-} from "next/font/google";
 import "./globals.css";
 import { SITE } from "@/lib/constants";
 import { jsonLdScript, organizationSchema } from "@/lib/seo";
@@ -12,34 +6,6 @@ import ThemeInit from "@/components/shared/ThemeInit";
 import LanguageInit from "@/components/shared/LanguageInit";
 import LanguageGate from "@/components/shared/LanguageGate";
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
-
-const cormorant = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-display-serif",
-  display: "swap",
-});
-
-const manrope = Manrope({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-sans-body",
-  display: "swap",
-});
-
-const tiroDevanagari = Tiro_Devanagari_Hindi({
-  subsets: ["devanagari"],
-  weight: ["400"],
-  variable: "--font-hindi-display-serif",
-  display: "swap",
-});
-
-const notoDevanagari = Noto_Sans_Devanagari({
-  subsets: ["devanagari"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-hindi-sans",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
@@ -89,7 +55,7 @@ export default function RootLayout({
     <html
       lang="hi"
       suppressHydrationWarning
-      className={`${cormorant.variable} ${manrope.variable} ${tiroDevanagari.variable} ${notoDevanagari.variable} h-full antialiased`}
+      className="h-full antialiased"
     >
       <body className="min-h-full flex flex-col">
         <ThemeInit />

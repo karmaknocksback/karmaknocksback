@@ -82,7 +82,7 @@ export default function NavkarMemoryQuest() {
   const fmt=(s:number)=>`${Math.floor(s/60)}:${(s%60).toString().padStart(2,"0")}`;
 
   return (
-    <div className="flex flex-col items-center px-3 pb-10">
+    <div className="flex flex-col items-center w-full px-3 pb-10 overflow-x-hidden">
       {/* Floating particles */}
       <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:60}}>
         {particles.map(p=>(
@@ -91,7 +91,7 @@ export default function NavkarMemoryQuest() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-2 mb-4 mt-2 w-full max-w-xl">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4 mt-2 w-full max-w-xl">
         {[{l:"⭐ Score",v:score,c:"#FF9800"},{l:"🎯 Moves",v:moves,c:"#9C27B0"},{l:"⏱️",v:fmt(time),c:"#2196F3"},{l:"✅ Pairs",v:`${matched.length}/${CARDS_DATA.length}`,c:"#4CAF50"}].map(s=>(
           <div key={s.l} className="rounded-2xl p-3 text-center" style={{background:"white",border:`3px solid ${s.c}30`,boxShadow:`0 4px 12px ${s.c}20`}}>
             <p className="font-sans text-[10px] text-gray-400">{s.l}</p>
@@ -115,14 +115,14 @@ export default function NavkarMemoryQuest() {
       )}
 
       {/* Card grid */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:8,maxWidth:516}}>
+      <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 w-full max-w-lg">
         {deck.map(card=>{
           const isFlipped=flipped.includes(card.key);
           const isMatched=matched.includes(card.pairId);
           const show=isFlipped||isMatched;
           return (
             <div key={card.key} onClick={e=>flip(card.key,e)}
-              style={{width:78,height:106,perspective:600,cursor:isMatched?"default":"pointer",
+              style={{width:"min(19vw,78px)",height:"auto",aspectRatio:"78/106",perspective:600,cursor:isMatched?"default":"pointer",
                 animation:isMatched?`float3 ${2.5}s ease-in-out infinite`:undefined}}>
               <div style={{width:"100%",height:"100%",position:"relative",transformStyle:"preserve-3d",
                 transform:show?"rotateY(0deg)":"rotateY(180deg)",

@@ -36,7 +36,7 @@ export default function DailyKarmaGame() {
   },[completed]);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 pb-12">
+    <div className="w-full max-w-2xl mx-auto px-3 pb-10 overflow-x-hidden">
       {/* Particles */}
       <div className="fixed inset-0 pointer-events-none z-50">
         {particles.map(p=>(

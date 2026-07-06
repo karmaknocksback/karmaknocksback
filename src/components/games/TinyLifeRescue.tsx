@@ -57,7 +57,7 @@ export default function TinyLifeRescue(){
   const RATING=score>=30?"🏆 Ahimsa Master!":score>=20?"🌟 Great Rescuer!":score>=10?"😊 Kind Helper!":"🌱 Learning Ahimsa!";
 
   return (
-    <div className="flex flex-col items-center px-3 pb-10">
+    <div className="flex flex-col items-center w-full px-3 pb-10 overflow-x-hidden">
       {/* Stats */}
       <div className="grid grid-cols-4 gap-2 w-full max-w-lg mb-4 mt-2">
         {[{l:"🐜 Rescued",v:score,c:"#4CAF50"},{l:"❤️ Karma",v:`${karma}pts`,c:"#E91E63"},{l:"⏱️ Time",v:`${timeLeft}s`,c:"#2196F3"},{l:"💔 Missed",v:missed,c:"#EF5350"}].map(s=>(

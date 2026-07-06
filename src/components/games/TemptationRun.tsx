@@ -99,7 +99,7 @@ export default function TemptationRun(){
   const RATING=score>=30?"🏆 Ahimsa Master!":score>=20?"🌟 Great Warrior!":score>=10?"😊 Good Try!":"🌱 Keep Learning!";
 
   return (
-    <div className="flex flex-col items-center px-3 pb-10">
+    <div className="flex flex-col items-center w-full px-3 pb-10 overflow-x-hidden">
       {/* Soul Glow meter */}
       <div className="w-full max-w-lg mb-4 mt-2">
         <div className="flex justify-between mb-1">

@@ -49,7 +49,7 @@ export default function KarmaForest() {
   const status = health>75?"🌿 Paradise!":health>50?"🌱 Healthy":health>25?"🍂 Struggling":"🍂 Fading...";
 
   return (
-    <div className="flex flex-col items-center px-3 pb-10">
+    <div className="flex flex-col items-center w-full px-3 pb-10 overflow-x-hidden">
       {/* Health bar */}
       <div className="w-full max-w-lg mb-4 mt-2">
         <div className="flex justify-between mb-1">

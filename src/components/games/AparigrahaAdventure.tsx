@@ -56,7 +56,7 @@ export default function AparigrahaAdventure(){
   const charImg=result==="success"?"/games/chintu/victory.jpg":result==="fail"?"/games/chintu/sad.jpg":"/games/chintu/idle.jpg";
 
   return (
-    <div className="max-w-lg mx-auto px-3 pb-10">
+    <div className="w-full max-w-lg mx-auto px-3 pb-10 overflow-x-hidden">
       {/* Weight bar */}
       <div className="mt-2 mb-4 rounded-2xl p-4 bg-white shadow-md" style={{border:`3px solid ${weight>MAX_WEIGHT?"#EF5350":"#795548"}`}}>
         <div className="flex justify-between mb-1">

@@ -73,7 +73,7 @@ export default async function GamePage({ params }: Props) {
   const textColor = GAME_TEXT[gameId] || "#333";
 
   return (
-    <div className="min-h-screen" style={{ background:bg }}>
+    <div className="min-h-screen overflow-x-hidden" style={{ background:bg }}>
       {/* Header */}
       <div className="pt-6 pb-3 px-5 text-center">
         <Link href="/games"

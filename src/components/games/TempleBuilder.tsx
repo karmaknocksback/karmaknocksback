@@ -49,7 +49,7 @@ export default function TempleBuilder(){
   const templeImg=placed.length>=8?"/games/temple/grand.jpg":placed.length>=4?"/games/shared/temple.jpg":"/games/aparigraha/temple.jpg";
 
   return (
-    <div className="max-w-2xl mx-auto px-3 pb-10">
+    <div className="w-full max-w-2xl mx-auto px-3 pb-10 overflow-x-hidden">
       {/* Header */}
       <div className="flex items-center justify-between mt-2 mb-3 rounded-2xl p-4 bg-white shadow-md" style={{border:"2px solid #FFD700"}}>
         <div>

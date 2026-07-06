@@ -38,7 +38,7 @@ export default function CompassionCity(){
   },[missions]);
 
   return (
-    <div className="max-w-2xl mx-auto px-3 pb-10">
+    <div className="w-full max-w-2xl mx-auto px-3 pb-10 overflow-x-hidden">
       {/* City panorama — FULL RESPONSIVE */}
       <div className="relative w-full rounded-3xl overflow-hidden mt-2 mb-4"
         style={{aspectRatio:"16/7",minHeight:140,boxShadow:"0 8px 32px rgba(0,0,0,0.15)",border:"3px solid #FFD700"}}>
