@@ -1,5 +1,6 @@
 "use client";
 import { useState, useCallback } from "react";
+import Image from "next/image";
 
 interface Mission { id:string; emoji:string; title:string; hi:string; desc:string; pts:number; color:string; effect:string; done?:boolean; }
 

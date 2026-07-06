@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
 
 const ITEMS = [
   {id:"lotus",emoji:"🪷",label:"Lotus Pond",hi:"कमल तालाब",cost:20,category:"Garden",desc:"A serene pond for meditation"},
@@ -69,9 +70,12 @@ export default function TempleBuilder() {
       {/* Temple visual */}
       <div className="relative rounded-2xl mb-4 overflow-hidden"
         style={{background:"linear-gradient(180deg,#1a0e00,#2d1500,#3d2000)",border:"2px solid rgba(255,215,0,0.25)",minHeight:160}}>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-8xl" style={{filter:`drop-shadow(0 0 ${placed.length*4}px rgba(255,215,0,0.6))`,transition:"all 0.5s"}}>
-          {placed.length>=8?"🌟":placed.length>=4?"🕌":placed.length>=1?"🏗️":"🏚️"}
-        </div>
+        {placed.length>=1&&(
+          <div className="absolute inset-0">
+            <Image src="/games/temple/grand.jpg" alt="temple" fill className="object-cover" unoptimized style={{opacity:Math.min(1,placed.length/8),transition:"opacity 0.5s",filter:`brightness(${0.7+placed.length*0.04})`}}/>
+          </div>
+        )}
+        {placed.length===0&&<div className="absolute inset-0 flex items-center justify-center text-8xl">🏚️</div>}
         <div className="absolute inset-0 flex flex-wrap gap-2 items-end justify-center p-3">
           {placed.map(id=>{
             const item = ITEMS.find(i=>i.id===id);

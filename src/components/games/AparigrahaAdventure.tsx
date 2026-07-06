@@ -1,5 +1,6 @@
 "use client";
 import { useState, useCallback } from "react";
+import Image from "next/image";
 
 const ITEMS = [
   {id:"gold",emoji:"💰",label:"Gold Bar",weight:30,needed:false,desc:"Shiny but heavy. Do you really need this?"},
@@ -66,9 +67,13 @@ export default function AparigrahaAdventure() {
           <div className="h-3 rounded-full bg-gray-200 overflow-hidden">
             <div className="h-full rounded-full transition-all" style={{width:`${step}%`,background:"linear-gradient(90deg,#795548,#A1887F)"}}/>
           </div>
-          <div className="flex justify-between mt-1">
-            <span className="text-lg" style={{transform:`translateX(${step*3}px)`,transition:"all 0.1s",display:"inline-block"}}>🧒</span>
-            <span className="text-xl">🕌</span>
+          <div className="flex justify-between mt-1 items-center">
+            <div className="relative w-12 h-14 rounded-lg overflow-hidden" style={{transform:`translateX(${step*2.5}px)`,transition:"all 0.1s"}}>
+              <Image src="/games/chintu/run.jpg" alt="chintu" fill className="object-cover" unoptimized/>
+            </div>
+            <div className="relative w-12 h-14 rounded-lg overflow-hidden">
+              <Image src="/games/aparigraha/temple.jpg" alt="temple" fill className="object-cover" unoptimized/>
+            </div>
           </div>
         </div>
       )}
