@@ -1,5 +1,6 @@
 "use client";
 import { useState, useCallback } from "react";
+import Dice3D from "./Dice3D";
 
 // Simplified 4-player Ludo: each player has 1 token, home at 0, finish at 57
 const MORAL_SQUARES: Record<number,{title:string;emoji:string;msg:string;karma:number;type:"virtue"|"vice"}> = {
@@ -80,7 +81,7 @@ export default function KarmaLudo() {
       <div className="flex gap-4 mb-4 mt-2">
         {PLAYERS.map((p,i)=>(
           <div key={i} className="flex items-center gap-2 rounded-xl px-4 py-2"
-            style={{background:turn===i&&!event&&!winner?"rgba(255,215,0,0.1)":"rgba(255,255,255,0.05)",border:`2px solid ${turn===i&&!event&&!winner?p.color:"transparent"}`,transition:"all 0.3s"}}>
+            style={{background:turn===i&&!event&&!winner?"rgba(255,215,0,0.1)":"rgba(255,255,255,0.8)",border:`2px solid ${turn===i&&!event&&!winner?p.color:"transparent"}`,transition:"all 0.3s"}}>
             <span className="text-2xl">{p.emoji}</span>
             <div>
               <p className="font-sans text-xs font-bold text-white">{p.name}</p>
@@ -92,7 +93,7 @@ export default function KarmaLudo() {
 
       {/* Ludo path board */}
       <div className="rounded-2xl overflow-hidden mb-4 relative"
-        style={{background:"linear-gradient(135deg,#0d001a,#1a0035)",border:"2px solid rgba(255,215,0,0.2)",boxShadow:"0 0 30px rgba(255,215,0,0.15)"}}>
+        style={{background:"linear-gradient(135deg,#f0e8ff,#e8d5ff)",border:"2px solid rgba(255,215,0,0.2)",boxShadow:"0 0 30px rgba(255,215,0,0.15)"}}>
         <svg width={COLS*CELL} height={segments*CELL+CELL}>
           {Array.from({length:57},(_,i)=>{
             const row=Math.floor(i/COLS); const col=i%COLS;
@@ -102,9 +103,9 @@ export default function KarmaLudo() {
             return (
               <g key={i}>
                 <rect x={mx} y={my} width={CELL} height={CELL}
-                  fill={isEnd?"rgba(255,215,0,0.3)":isStart?"rgba(255,255,255,0.1)":sq2?.type==="virtue"?"rgba(76,175,80,0.2)":sq2?.type==="vice"?"rgba(244,67,54,0.2)":"rgba(255,255,255,0.03)"}
-                  stroke="rgba(255,255,255,0.06)" strokeWidth="0.5"/>
-                <text x={mx+CELL/2} y={my+CELL-5} textAnchor="middle" fontSize="7" fill="rgba(255,255,255,0.2)">{i+1}</text>
+                  fill={isEnd?"rgba(255,215,0,0.3)":isStart?"rgba(255,255,255,0.1)":sq2?.type==="virtue"?"rgba(76,175,80,0.2)":sq2?.type==="vice"?"rgba(244,67,54,0.2)":"rgba(255,255,255,0.65)"}
+                  stroke="rgba(255,255,255,0.75)" strokeWidth="0.5"/>
+                <text x={mx+CELL/2} y={my+CELL-5} textAnchor="middle" fontSize="7" fill="rgba(0,0,0,0.2)">{i+1}</text>
                 {sq2&&<text x={mx+CELL/2} y={my+CELL/2+4} textAnchor="middle" fontSize="11">{sq2.emoji}</text>}
                 {isEnd&&<text x={mx+CELL/2} y={my+CELL/2+4} textAnchor="middle" fontSize="11">🕌</text>}
               </g>
@@ -128,7 +129,7 @@ export default function KarmaLudo() {
       {/* Dice */}
       <div className="flex items-center gap-4 mb-4">
         <div className="text-3xl w-14 h-14 flex items-center justify-center rounded-xl"
-          style={{background:"rgba(255,255,255,0.08)",border:"2px solid rgba(255,215,0,0.3)",color:"#FFD700"}}>
+          style={{background:"rgba(255,255,255,0.85)",border:"2px solid rgba(255,215,0,0.3)",color:"#FFD700"}}>
           {dice?["","⚀","⚁","⚂","⚃","⚄","⚅"][dice]:"?"}
         </div>
         <button onClick={rollDice} disabled={!!event||rolling||winner!==null}
@@ -138,13 +139,13 @@ export default function KarmaLudo() {
         </button>
       </div>
 
-      <div className="w-full max-w-md rounded-xl p-3 mb-2" style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.06)"}}>
+      <div className="w-full max-w-md rounded-xl p-3 mb-2" style={{background:"rgba(255,255,255,0.7)",border:"1px solid rgba(255,255,255,0.75)"}}>
         {log.map((l,i)=><p key={i} className="font-hindi text-xs py-0.5" style={{color:i===0?"rgba(255,215,0,0.9)":"rgba(255,255,255,0.3)"}}>{l}</p>)}
       </div>
 
       {/* Moral event modal */}
       {event&&sq&&(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:"rgba(0,0,0,0.85)",backdropFilter:"blur(10px)"}}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:"rgba(0,0,0,0.5)",backdropFilter:"blur(10px)"}}>
           <div className="rounded-3xl p-8 text-center max-w-xs w-full"
             style={{background:sq.type==="virtue"?"linear-gradient(135deg,#1a3a00,#2d5c00)":"linear-gradient(135deg,#2d0000,#4a0000)",
               border:`2px solid ${sq.type==="virtue"?"#4CAF50":"#EF5350"}`,
@@ -161,8 +162,8 @@ export default function KarmaLudo() {
 
       {/* Winner */}
       {winner!==null&&(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:"rgba(0,0,0,0.9)",backdropFilter:"blur(12px)"}}>
-          <div className="rounded-3xl p-10 text-center max-w-sm w-full" style={{background:"linear-gradient(135deg,#1a1000,#2d2000)",border:"2px solid #FFD700",boxShadow:"0 0 80px rgba(255,215,0,0.5)"}}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:"rgba(0,0,0,0.5)",backdropFilter:"blur(12px)"}}>
+          <div className="rounded-3xl p-10 text-center max-w-sm w-full" style={{background:"linear-gradient(135deg,#fffde7,#fff9c4)",border:"2px solid #FFD700",boxShadow:"0 0 80px rgba(255,215,0,0.5)"}}>
             <div className="text-6xl mb-4">🏆</div>
             <h3 className="font-sans text-3xl font-black text-yellow-300 mb-3">{PLAYERS[winner].emoji} {PLAYERS[winner].name} Wins!</h3>
             <div className="grid grid-cols-2 gap-3 mb-5">

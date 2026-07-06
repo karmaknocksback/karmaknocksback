@@ -47,12 +47,12 @@ export default function AparigrahaAdventure() {
 
   return (
     <div className="max-w-lg mx-auto px-3 pb-10">
-      <div className="mt-2 mb-4 rounded-2xl p-4" style={{background:"rgba(121,85,72,0.15)",border:"1px solid rgba(121,85,72,0.3)"}}>
+      <div className="mt-2 mb-4 rounded-2xl p-4" style={{background:"white",border:"2px solid #795548",boxShadow:"0 4px 16px rgba(121,85,72,0.2)"}}>
         <div className="flex justify-between mb-2">
           <span className="font-sans text-xs text-white/50">🎒 Backpack Weight</span>
           <span className="font-sans text-xs font-bold" style={{color:weight>MAX_WEIGHT?"#EF5350":"#4CAF50"}}>{weight}/{MAX_WEIGHT}kg · {speed}</span>
         </div>
-        <div className="h-4 rounded-full bg-white/10 overflow-hidden">
+        <div className="h-4 rounded-full bg-gray-200 overflow-hidden">
           <div className="h-full rounded-full transition-all duration-300"
             style={{width:`${pct}%`,background:`linear-gradient(90deg,${pct<60?"#4CAF50":pct<90?"#FF9800":"#EF5350"},${pct<60?"#66BB6A":pct<90?"#FFC107":"#FF5722"})`}}/>
         </div>
@@ -61,9 +61,9 @@ export default function AparigrahaAdventure() {
 
       {/* Journey progress */}
       {started && result===null && (
-        <div className="mb-4 rounded-xl p-4" style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)"}}>
+        <div className="mb-4 rounded-xl p-4" style={{background:"rgba(255,255,255,0.8)",border:"1.5px solid rgba(0,0,0,0.1)"}}>
           <p className="font-sans text-xs text-white/60 mb-2">🛤️ Journey to the Temple...</p>
-          <div className="h-3 rounded-full bg-white/10 overflow-hidden">
+          <div className="h-3 rounded-full bg-gray-200 overflow-hidden">
             <div className="h-full rounded-full transition-all" style={{width:`${step}%`,background:"linear-gradient(90deg,#795548,#A1887F)"}}/>
           </div>
           <div className="flex justify-between mt-1">
@@ -87,7 +87,7 @@ export default function AparigrahaAdventure() {
           </p>
           <button onClick={()=>{setStarted(false);setResult(null);setBackpack([]);setStep(0);}}
             className="px-6 py-2.5 rounded-full font-sans font-black text-sm"
-            style={{background:result==="success"?"linear-gradient(135deg,#4CAF50,#66BB6A)":"linear-gradient(135deg,#795548,#A1887F)",color:"white"}}>
+            style={{background:result==="success"?"linear-gradient(135deg,#4CAF50,#66BB6A)":"linear-gradient(135deg,#795548,#A1887F)",color:"#1a1a1a"}}>
             Try Again ↺
           </button>
         </div>
@@ -102,7 +102,7 @@ export default function AparigrahaAdventure() {
           return (
             <button key={item.id} onClick={()=>toggle(item.id)} disabled={started&&result===null}
               className="rounded-xl p-3 text-left transition-all hover:scale-[1.02] active:scale-95"
-              style={{background:inPack?item.needed?"rgba(76,175,80,0.2)":"rgba(244,67,54,0.15)":item.needed?"rgba(76,175,80,0.06)":"rgba(255,255,255,0.04)",
+              style={{background:inPack?item.needed?"rgba(76,175,80,0.2)":"rgba(244,67,54,0.15)":item.needed?"rgba(76,175,80,0.06)":"rgba(255,255,255,0.7)",
                 border:`1.5px solid ${inPack?item.needed?"rgba(76,175,80,0.5)":"rgba(244,67,54,0.4)":"rgba(255,255,255,0.1)"}`}}>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-2xl">{item.emoji}</span>
@@ -120,7 +120,7 @@ export default function AparigrahaAdventure() {
 
       <button onClick={journey} disabled={started&&result===null||!canJourney}
         className="w-full py-3 rounded-xl font-sans font-black text-sm transition-all disabled:opacity-50"
-        style={{background:canJourney?"linear-gradient(135deg,#795548,#A1887F)":"rgba(255,255,255,0.08)",color:"white",boxShadow:canJourney?"0 4px 20px rgba(121,85,72,0.4)":"none"}}>
+        style={{background:canJourney?"linear-gradient(135deg,#795548,#A1887F)":"rgba(255,255,255,0.85)",color:"#1a1a1a",boxShadow:canJourney?"0 4px 20px rgba(121,85,72,0.4)":"none"}}>
         {!canJourney?"Too Heavy — Remove Items First":"🏔️ Begin Temple Journey!"}
       </button>
     </div>

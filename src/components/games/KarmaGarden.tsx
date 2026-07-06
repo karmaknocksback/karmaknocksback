@@ -67,7 +67,7 @@ export default function KarmaGarden() {
             <p className="font-hindi text-xs" style={{color:"#4CAF50"}}>{level.label}</p>
           </div>
         </div>
-        <div className="h-3 rounded-full bg-white/10">
+        <div className="h-3 rounded-full bg-gray-200">
           <div className="h-full rounded-full transition-all duration-700" style={{width:`${Math.min(100,(karma/500)*100)}%`,background:"linear-gradient(90deg,#4CAF50,#FFD700)"}}/>
         </div>
         <div className="flex justify-between mt-1">
@@ -139,7 +139,7 @@ export default function KarmaGarden() {
         {GOOD_DEEDS.map(d=>(
           <button key={d.id} onClick={()=>doGoodDeed(d)}
             className="rounded-xl p-3 text-center transition-all hover:scale-105 active:scale-95"
-            style={{background:"rgba(76,175,80,0.12)",border:"1px solid rgba(76,175,80,0.3)"}}>
+            style={{background:"white",border:"2px solid #4CAF50"}}>
             <div className="text-2xl mb-1">{d.emoji}</div>
             <p className="font-sans text-xs font-bold text-white/80">{d.label}</p>
             <p className="font-display-hi text-[10px] text-green-400">{d.labelHi}</p>
@@ -150,7 +150,7 @@ export default function KarmaGarden() {
 
       {/* Log */}
       {log.length>0 && (
-        <div className="w-full max-w-lg rounded-xl p-3" style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)"}}>
+        <div className="w-full max-w-lg rounded-xl p-3" style={{background:"rgba(255,255,255,0.7)",border:"1px solid rgba(255,255,255,0.85)"}}>
           {log.map((l,i)=><p key={i} className="font-hindi text-xs py-0.5" style={{color:i===0?"#4CAF50":"rgba(255,255,255,0.3)"}}>{l}</p>)}
         </div>
       )}

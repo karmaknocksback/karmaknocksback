@@ -63,7 +63,7 @@ export default function TinyLifeRescue() {
       {/* Stats */}
       <div className="flex gap-4 mb-4 mt-2">
         {[{l:"🐜 Rescued",v:score},{l:"❤️ Karma",v:`${karma} pts`},{l:"⏱️ Time",v:`${timeLeft}s`},{l:"💔 Missed",v:missed}].map(s=>(
-          <div key={s.l} className="rounded-xl px-3 py-2 text-center" style={{background:"rgba(0,188,212,0.12)",border:"1px solid rgba(0,188,212,0.3)"}}>
+          <div key={s.l} className="rounded-xl px-3 py-2 text-center" style={{background:"white",border:"2px solid #00BCD4"}}>
             <p className="font-sans text-[10px] text-cyan-300">{s.l}</p>
             <p className="font-display text-lg font-black text-white">{s.v}</p>
           </div>
@@ -76,7 +76,7 @@ export default function TinyLifeRescue() {
           <h3 className="font-sans text-xl font-black text-white mb-2">Tiny Life Rescue!</h3>
           <p className="font-hindi text-sm text-cyan-300 mb-2">जीव बचाओ!</p>
           <p className="font-sans text-xs text-white/50 mb-6">Tap on creatures before they disappear! Each rescue earns Karma Points. Every life matters! 🙏</p>
-          <button onClick={start} className="px-8 py-3 rounded-full font-sans font-black text-sm" style={{background:"linear-gradient(135deg,#00BCD4,#0097A7)",color:"white",boxShadow:"0 4px 20px rgba(0,188,212,0.4)"}}>
+          <button onClick={start} className="px-8 py-3 rounded-full font-sans font-black text-sm" style={{background:"linear-gradient(135deg,#00BCD4,#0097A7)",color:"#006064",boxShadow:"0 4px 20px rgba(0,188,212,0.4)"}}>
             🦋 Start Rescuing!
           </button>
         </div>
@@ -85,7 +85,7 @@ export default function TinyLifeRescue() {
       {/* Game area */}
       {playing && (
         <div className="relative rounded-2xl overflow-hidden cursor-crosshair"
-          style={{width:"min(520px,100%)",height:360,background:"linear-gradient(135deg,#0a1a14,#0d2e1a)",border:"2px solid rgba(0,188,212,0.3)"}}>
+          style={{width:"min(520px,100%)",height:360,background:"linear-gradient(135deg,#A5D6A7,#66BB6A)",border:"2px solid rgba(0,188,212,0.3)"}}>
           {/* Background nature */}
           {["🌿","🌱","🍀","🌾"].map((e,i)=>
             <div key={i} className="absolute text-2xl opacity-20" style={{left:`${10+i*22}%`,bottom:8}}>{e}</div>
@@ -103,7 +103,7 @@ export default function TinyLifeRescue() {
             </button>
           ))}
           {/* Timer bar */}
-          <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-white/10">
+          <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-gray-200">
             <div className="h-full transition-all" style={{width:`${(timeLeft/60)*100}%`,background:"linear-gradient(90deg,#00BCD4,#4CAF50)"}}/>
           </div>
         </div>
@@ -111,20 +111,20 @@ export default function TinyLifeRescue() {
 
       {/* Game over */}
       {over && (
-        <div className="rounded-3xl p-8 text-center max-w-sm w-full mt-4" style={{background:"linear-gradient(135deg,#001a22,#002d35)",border:"2px solid #00BCD4",boxShadow:"0 0 60px rgba(0,188,212,0.4)"}}>
+        <div className="rounded-3xl p-8 text-center max-w-sm w-full mt-4" style={{background:"linear-gradient(135deg,#e0f7fa,#b2ebf2)",border:"2px solid #00BCD4",boxShadow:"0 0 60px rgba(0,188,212,0.4)"}}>
           <div className="text-5xl mb-3">🦋</div>
           <h3 className="font-sans text-2xl font-black text-cyan-300 mb-1">Time&apos;s Up!</h3>
           <p className="font-sans text-lg text-yellow-300 font-bold mb-1">{RATING}</p>
           <div className="grid grid-cols-3 gap-3 my-5">
             {[{l:"Rescued",v:score},{l:"Karma",v:`${karma}pts`},{l:"Missed",v:missed}].map(s=>(
-              <div key={s.l} className="rounded-xl p-3" style={{background:"rgba(0,188,212,0.15)"}}>
+              <div key={s.l} className="rounded-xl p-3" style={{background:"#E0F7FA"}}>
                 <p className="font-sans text-[10px] text-cyan-400">{s.l}</p>
                 <p className="font-display text-xl font-black text-white">{s.v}</p>
               </div>
             ))}
           </div>
           <p className="font-hindi text-xs text-cyan-200 mb-5">🙏 हर जीव की रक्षा करना सबसे बड़ी अहिंसा है!</p>
-          <button onClick={start} className="px-8 py-3 rounded-full font-sans font-black text-sm" style={{background:"linear-gradient(135deg,#00BCD4,#0097A7)",color:"white"}}>
+          <button onClick={start} className="px-8 py-3 rounded-full font-sans font-black text-sm" style={{background:"linear-gradient(135deg,#00BCD4,#0097A7)",color:"#006064"}}>
             Play Again! 🦋
           </button>
         </div>

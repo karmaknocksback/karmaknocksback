@@ -160,13 +160,13 @@ export default function JainStoryAdventures() {
           ))}
         </div>
       ) : done ? (
-        <div className="w-full rounded-2xl p-6 text-center" style={{background:"linear-gradient(135deg,#1a1000,#2d2000)",border:"2px solid #FFD700"}}>
+        <div className="w-full rounded-2xl p-6 text-center" style={{background:"linear-gradient(135deg,#fffde7,#fff9c4)",border:"2px solid #FFD700"}}>
           <div className="text-5xl mb-3">🏆</div>
           <h3 className="font-sans text-xl font-black text-yellow-300 mb-2">Story Complete!</h3>
           <p className="font-sans text-sm text-yellow-200 mb-1">Total Karma: ⭐ {karma}</p>
           <p className="font-hindi text-xs text-white/50 mb-5">तुमने {s.hi} की कहानी पूरी की!</p>
           <div className="flex gap-3 justify-center">
-            <button onClick={()=>setSelectedStory(null)} className="px-5 py-2.5 rounded-full font-sans text-xs font-black" style={{background:"rgba(255,255,255,0.1)",color:"white"}}>← More Stories</button>
+            <button onClick={()=>setSelectedStory(null)} className="px-5 py-2.5 rounded-full font-sans text-xs font-black" style={{background:"rgba(255,255,255,0.1)",color:"#1a1a1a"}}>← More Stories</button>
             <button onClick={()=>selectStory(s)} className="px-5 py-2.5 rounded-full font-sans text-xs font-black" style={{background:`linear-gradient(135deg,${s.color},#FFD700)`,color:"#1a0800"}}>Play Again ↺</button>
           </div>
         </div>

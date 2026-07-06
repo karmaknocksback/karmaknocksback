@@ -48,7 +48,7 @@ export default function TempleBuilder() {
     <div className="max-w-2xl mx-auto px-3 pb-10">
       {/* Header */}
       <div className="flex items-center justify-between mt-2 mb-4 rounded-2xl p-4"
-        style={{background:"rgba(255,215,0,0.08)",border:"1px solid rgba(255,215,0,0.2)"}}>
+        style={{background:"white",border:"2px solid #FFD700",boxShadow:"0 4px 16px rgba(255,215,0,0.3)"}}>
         <div>
           <p className="font-sans text-xs text-white/50">Virtue Points</p>
           <p className="font-display text-3xl font-black text-yellow-300">⭐ {points}</p>
@@ -81,7 +81,7 @@ export default function TempleBuilder() {
       </div>
 
       {/* Earn deeds */}
-      <div className="mb-4 rounded-xl p-3" style={{background:"rgba(76,175,80,0.1)",border:"1px solid rgba(76,175,80,0.25)"}}>
+      <div className="mb-4 rounded-xl p-3" style={{background:"#E8F5E9",border:"2px solid #4CAF50"}}>
         <p className="font-sans text-xs text-green-400 font-bold mb-2">🌱 Earn Virtue Points</p>
         <div className="flex flex-wrap gap-2">
           {EARN_DEEDS.map(d=>(
@@ -105,7 +105,7 @@ export default function TempleBuilder() {
           return (
             <button key={item.id} onClick={()=>place(item)} disabled={done}
               className="rounded-xl p-3 text-center transition-all hover:scale-105 active:scale-95 disabled:opacity-60 disabled:cursor-default"
-              style={{background:done?"rgba(76,175,80,0.2)":canAfford?"rgba(255,215,0,0.08)":"rgba(255,255,255,0.03)",
+              style={{background:done?"rgba(76,175,80,0.2)":canAfford?"rgba(255,215,0,0.08)":"rgba(255,255,255,0.65)",
                 border:`1px solid ${done?"rgba(76,175,80,0.5)":canAfford?"rgba(255,215,0,0.2)":"rgba(255,255,255,0.1)"}`}}>
               <div className="text-2xl mb-1">{done?"✅":item.emoji}</div>
               <p className="font-sans text-[9px] text-white/70 leading-tight mb-1">{item.label}</p>

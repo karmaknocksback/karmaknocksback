@@ -54,7 +54,7 @@ export default function KarmaForest() {
           <span className="font-sans text-xs text-white/60">🌍 Forest Health</span>
           <span className="font-sans text-xs font-bold" style={{color:health>50?"#4CAF50":"#FF5722"}}>{status} {health}%</span>
         </div>
-        <div className="h-4 rounded-full bg-white/10 overflow-hidden">
+        <div className="h-4 rounded-full bg-gray-200 overflow-hidden">
           <div className="h-full rounded-full transition-all duration-700"
             style={{width:`${health}%`,background:health>50?"linear-gradient(90deg,#4CAF50,#66BB6A)":"linear-gradient(90deg,#FF5722,#FF8A65)"}}/>
         </div>
@@ -63,7 +63,7 @@ export default function KarmaForest() {
       {/* Toast */}
       {toast && (
         <div className="mb-3 rounded-full px-5 py-2 font-sans text-sm font-black animate-bounce"
-          style={{background:toast.good?"linear-gradient(135deg,#4CAF50,#66BB6A)":"linear-gradient(135deg,#EF5350,#FF7043)",color:"white",boxShadow:`0 4px 20px rgba(${toast.good?"76,175,80":"239,83,80"},0.6)`}}>
+          style={{background:toast.good?"linear-gradient(135deg,#4CAF50,#66BB6A)":"linear-gradient(135deg,#EF5350,#FF7043)",color:"#1a1a1a",boxShadow:`0 4px 20px rgba(${toast.good?"76,175,80":"239,83,80"},0.6)`}}>
           {toast.msg}
         </div>
       )}
@@ -103,7 +103,7 @@ export default function KarmaForest() {
 
       {/* Actions */}
       <div className="w-full max-w-lg grid grid-cols-2 gap-3">
-        <div className="rounded-xl p-3" style={{background:"rgba(76,175,80,0.1)",border:"1px solid rgba(76,175,80,0.25)"}}>
+        <div className="rounded-xl p-3" style={{background:"#F1F8E9",border:"2px solid #66BB6A"}}>
           <p className="font-sans text-xs text-green-400 font-bold mb-2 text-center">🌱 Good Actions</p>
           <div className="grid grid-cols-2 gap-2">
             {GOOD.map(a=>(
@@ -117,13 +117,13 @@ export default function KarmaForest() {
             ))}
           </div>
         </div>
-        <div className="rounded-xl p-3" style={{background:"rgba(244,67,54,0.1)",border:"1px solid rgba(244,67,54,0.25)"}}>
+        <div className="rounded-xl p-3" style={{background:"#FFEBEE",border:"2px solid #EF5350"}}>
           <p className="font-sans text-xs text-red-400 font-bold mb-2 text-center">⚠️ Bad Actions</p>
           <div className="grid grid-cols-2 gap-2">
             {BAD.map(a=>(
               <button key={a.id} onClick={()=>act(a.pts,a.remove,false,a.label)}
                 className="rounded-lg p-2 text-center transition-all hover:scale-105 active:scale-95"
-                style={{background:"rgba(244,67,54,0.1)",border:"1px solid rgba(244,67,54,0.25)"}}>
+                style={{background:"#FFEBEE",border:"2px solid #EF5350"}}>
                 <div className="text-xl">{a.emoji}</div>
                 <p className="font-sans text-[9px] text-white/70 mt-0.5">{a.label}</p>
                 <p className="font-sans text-[9px] font-bold text-red-400">{a.pts}</p>

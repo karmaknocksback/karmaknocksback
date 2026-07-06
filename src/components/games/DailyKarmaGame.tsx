@@ -58,7 +58,7 @@ export default function DailyKarmaGame() {
       )}
 
       {/* Progress */}
-      <div className="mt-4 mb-6 rounded-2xl p-5" style={{background:"rgba(255,215,0,0.08)",border:"1px solid rgba(255,215,0,0.2)"}}>
+      <div className="mt-4 mb-6 rounded-2xl p-5" style={{background:"white",border:"2px solid #FFD700",boxShadow:"0 4px 16px rgba(255,215,0,0.3)"}}>
         <div className="flex items-center justify-between mb-2">
           <div>
             <p className="font-sans text-xs text-white/60">Today&apos;s Karma</p>
@@ -69,7 +69,7 @@ export default function DailyKarmaGame() {
             <p className="font-display text-3xl font-black text-white">{completed.size}/{MISSIONS.length}</p>
           </div>
         </div>
-        <div className="h-3 rounded-full bg-white/10 overflow-hidden">
+        <div className="h-3 rounded-full bg-gray-200 overflow-hidden">
           <div className="h-full rounded-full transition-all duration-700" style={{width:`${pct}%`,background:"linear-gradient(90deg,#FFD700,#FF9800)"}}/>
         </div>
         <p className="font-sans text-xs text-white/40 mt-2 text-center">{pct}% complete · {maxPoints-totalPoints} points remaining</p>
@@ -92,7 +92,7 @@ export default function DailyKarmaGame() {
             <button key={m.id} onClick={e=>complete(m.id,e)} disabled={done}
               className="w-full text-left rounded-2xl p-4 transition-all duration-300 cursor-pointer disabled:cursor-default"
               style={{
-                background:done?`${m.color}18`:"rgba(255,255,255,0.04)",
+                background:done?`${m.color}18`:"rgba(255,255,255,0.7)",
                 border:`1.5px solid ${done?m.color:"rgba(255,255,255,0.1)"}`,
                 boxShadow:done?`0 0 20px ${m.color}30`:"none",
                 transform:done?"scale(1)":"scale(1)",
@@ -101,10 +101,10 @@ export default function DailyKarmaGame() {
                 <div className="text-3xl shrink-0">{done?"✅":m.emoji}</div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
-                    <p className="font-sans text-sm font-bold" style={{color:done?m.color:"white"}}>{m.title}</p>
+                    <p className="font-sans text-sm font-bold" style={{color:done?m.color:"#1a1a1a"}}>{m.title}</p>
                     <span className="font-sans text-xs font-bold ml-2 shrink-0" style={{color:m.color}}>+{m.points} ⭐</span>
                   </div>
-                  <p className="font-display-hi text-xs mb-1" style={{color:done?m.color:"rgba(255,255,255,0.5)"}}>{m.titleHi}</p>
+                  <p className="font-display-hi text-xs mb-1" style={{color:done?m.color:"#555"}}>{m.titleHi}</p>
                   <p className="font-sans text-xs text-white/40">{m.desc}</p>
                   {done && <p className="font-sans text-xs font-bold mt-1" style={{color:m.color}}>🏅 {m.badge}</p>}
                 </div>
@@ -118,7 +118,7 @@ export default function DailyKarmaGame() {
       </div>
 
       {completed.size === MISSIONS.length && (
-        <div className="mt-8 rounded-3xl p-8 text-center" style={{background:"linear-gradient(135deg,#1a1000,#2d2000)",border:"2px solid #FFD700",boxShadow:"0 0 60px rgba(255,215,0,0.4)"}}>
+        <div className="mt-8 rounded-3xl p-8 text-center" style={{background:"linear-gradient(135deg,#fffde7,#fff9c4)",border:"2px solid #FFD700",boxShadow:"0 0 60px rgba(255,215,0,0.4)"}}>
           <div className="text-5xl mb-3">🏆</div>
           <h3 className="font-sans text-2xl font-black text-yellow-300 mb-2">Perfect Day!</h3>
           <p className="font-hindi text-sm text-yellow-200">आपने आज सभी कर्म पूरे किए! 🌟</p>

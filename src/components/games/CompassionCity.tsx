@@ -54,7 +54,7 @@ export default function CompassionCity() {
     <div className="max-w-2xl mx-auto px-3 pb-10">
       {/* City view */}
       <div className="relative rounded-2xl mb-4 mt-2 overflow-hidden"
-        style={{background:stage.bg,height:160,border:"2px solid rgba(255,255,255,0.1)",transition:"all 1s ease"}}>
+        style={{background:stage.bg,height:160,border:"2px solid rgba(0,0,0,0.1)",transition:"all 1s ease"}}>
         <div className="absolute inset-0 flex items-center justify-center">
           <span className="text-7xl" style={{filter:`drop-shadow(0 0 20px rgba(255,255,255,0.4))`,transition:"all 0.5s"}}>{stage.emoji}</span>
         </div>
@@ -67,13 +67,13 @@ export default function CompassionCity() {
           <p className="font-sans text-[10px] text-white/50">{done}/{MISSIONS.length} missions · ⭐ {karma} Karma</p>
         </div>
         {/* Progress */}
-        <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-white/10">
+        <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-gray-200">
           <div className="h-full transition-all duration-700" style={{width:`${(done/MISSIONS.length)*100}%`,background:"linear-gradient(90deg,#FFD700,#FF9800)"}}/>
         </div>
       </div>
 
       {/* Toast */}
-      {toast && <div className="mb-3 text-center font-sans text-sm font-black rounded-full px-5 py-2 animate-bounce" style={{background:"linear-gradient(135deg,#4CAF50,#66BB6A)",color:"white"}}>{toast}</div>}
+      {toast && <div className="mb-3 text-center font-sans text-sm font-black rounded-full px-5 py-2 animate-bounce" style={{background:"linear-gradient(135deg,#4CAF50,#66BB6A)",color:"#1a1a1a"}}>{toast}</div>}
       {celebrating && <div className="mb-3 text-center font-hindi text-sm text-white/70 animate-pulse">🏙️ {celebrating}</div>}
 
       {/* Missions */}
@@ -81,7 +81,7 @@ export default function CompassionCity() {
         {missions.map(m=>(
           <button key={m.id} onClick={()=>complete(m.id)} disabled={m.done}
             className="rounded-xl p-4 text-left transition-all hover:scale-[1.02] active:scale-95 disabled:cursor-default"
-            style={{background:m.done?`${m.color}15`:"rgba(255,255,255,0.04)",border:`1.5px solid ${m.done?m.color:"rgba(255,255,255,0.1)"}`,opacity:m.done?0.8:1}}>
+            style={{background:m.done?`${m.color}15`:"rgba(255,255,255,0.7)",border:`1.5px solid ${m.done?m.color:"rgba(255,255,255,0.1)"}`,opacity:m.done?0.8:1}}>
             <div className="flex items-start gap-3">
               <span className="text-2xl shrink-0">{m.done?"✅":m.emoji}</span>
               <div className="flex-1">
