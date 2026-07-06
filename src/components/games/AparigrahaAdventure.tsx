@@ -2,132 +2,159 @@
 import { useState, useCallback } from "react";
 import Image from "next/image";
 
-const ITEMS = [
-  {id:"gold",emoji:"💰",label:"Gold Bar",weight:30,needed:false,desc:"Shiny but heavy. Do you really need this?"},
-  {id:"diamond",emoji:"💎",label:"Diamond",weight:25,needed:false,desc:"Beautiful but unnecessary. Monks need nothing."},
-  {id:"phone",emoji:"📱",label:"Old Phone",weight:20,needed:false,desc:"Gadgets weigh down the mind and the backpack!"},
-  {id:"food",emoji:"🍎",label:"Apple",weight:5,needed:true,desc:"Essential food for your journey. Take it!"},
-  {id:"water",emoji:"💧",label:"Water",weight:5,needed:true,desc:"Water keeps you alive. Necessary!"},
-  {id:"scroll",emoji:"📜",label:"Jain Scroll",weight:3,needed:true,desc:"Sacred knowledge — light but priceless!"},
-  {id:"toys",emoji:"🧸",label:"Toy Collection",weight:40,needed:false,desc:"You have 20 toys at home. Do you need more?"},
-  {id:"clothes",emoji:"👕",label:"Extra Clothes",weight:15,needed:false,desc:"You already have clothes on. 1 set is enough."},
-  {id:"medicine",emoji:"💊",label:"Medicine",weight:3,needed:true,desc:"May be needed on the journey. Take it!"},
-  {id:"umbrella",emoji:"☂️",label:"Umbrella",weight:4,needed:true,desc:"Practical protection. Take only what you need!"},
-  {id:"jewels",emoji:"💍",label:"Jewel Box",weight:35,needed:false,desc:"Attachment to jewels creates heavy karma."},
-  {id:"books",emoji:"📚",label:"10 Books",weight:25,needed:false,desc:"Wisdom lives in the heart, not the bag!"},
+const ITEMS=[
+  {id:"gold",   img:"/games/temptation/gold.jpg",      emoji:"💰",label:"Gold Bar",     weight:30,needed:false,desc:"Shiny but heavy. Do you really need this?"},
+  {id:"phone",  img:"/games/temptation/phone.jpg",     emoji:"📱",label:"Phone",        weight:20,needed:false,desc:"Gadgets weigh down the mind and the bag!"},
+  {id:"diamond",img:"/games/temptation/gold.jpg",      emoji:"💎",label:"Diamonds",     weight:25,needed:false,desc:"Beautiful but unnecessary for a temple journey."},
+  {id:"food",   img:"/games/challenge/feedbirds.jpg",  emoji:"🍎",label:"Food",         weight:5, needed:true, desc:"Essential for your journey. Take it!"},
+  {id:"water",  img:"/games/challenge/water.jpg",      emoji:"💧",label:"Water",        weight:5, needed:true, desc:"Water keeps you going. A must!"},
+  {id:"scroll", img:"/games/challenge/navkar.jpg",     emoji:"📜",label:"Jain Scroll",  weight:3, needed:true, desc:"Sacred knowledge — light but priceless!"},
+  {id:"toys",   img:"/games/shared/collectibles.jpg",  emoji:"🧸",label:"Toy Box",      weight:40,needed:false,desc:"You have toys at home. Do you need more?"},
+  {id:"mala",   img:"/games/temptation/mala.jpg",      emoji:"📿",label:"Prayer Mala",  weight:2, needed:true, desc:"Light prayer beads — a monk's companion!"},
+  {id:"jewels", img:"/games/temptation/gold.jpg",      emoji:"💍",label:"Jewel Box",    weight:35,needed:false,desc:"Attachment to jewels creates heavy karma."},
+  {id:"book",   img:"/games/temple/library.jpg",       emoji:"📚",label:"Jain Book",    weight:4, needed:true, desc:"A single scripture is enough!"},
+  {id:"med",    img:"/games/challenge/meditate.jpg",   emoji:"💊",label:"Medicine",     weight:3, needed:true, desc:"May be needed — practical and light!"},
+  {id:"clothes",img:"/games/chintu/idle.jpg",          emoji:"👕",label:"Extra Clothes", weight:15,needed:false,desc:"You already have clothes on. Enough!"},
 ];
 
-const MAX_WEIGHT = 30;
+const MAX_WEIGHT=30;
 
-export default function AparigrahaAdventure() {
-  const [backpack, setBackpack] = useState<string[]>([]);
-  const [started, setStarted] = useState(false);
-  const [step, setStep] = useState(0);
-  const [result, setResult] = useState<"success"|"fail"|null>(null);
+export default function AparigrahaAdventure(){
+  const [backpack,setBackpack]=useState<string[]>([]);
+  const [journeyStep,setJourneyStep]=useState<number|null>(null);
+  const [result,setResult]=useState<"success"|"fail"|null>(null);
 
-  const weight = backpack.reduce((a,id)=>a+(ITEMS.find(i=>i.id===id)?.weight||0),0);
-  const pct = Math.min(100,(weight/MAX_WEIGHT)*100);
-  const speed = weight<=10?"🏃 Very Fast!":weight<=20?"🚶 Normal":weight<=30?"🐢 Slow...":"❌ Too Heavy!";
-  const canJourney = weight <= MAX_WEIGHT;
+  const weight=backpack.reduce((a,id)=>a+(ITEMS.find(i=>i.id===id)?.weight||0),0);
+  const pct=Math.min(100,(weight/MAX_WEIGHT)*100);
+  const canJourney=weight<=MAX_WEIGHT;
+  const speed=weight<=10?"🏃 Very Fast!":weight<=20?"🚶 Normal":weight<=MAX_WEIGHT?"🐢 Slow...":"❌ Too Heavy!";
 
-  const toggle = useCallback((id:string)=>{
+  function toggleItem(id:string){
+    if(journeyStep!==null)return;
     setBackpack(b=>b.includes(id)?b.filter(x=>x!==id):[...b,id]);
-  },[]);
-
-  function journey(){
-    setStarted(true);setStep(0);setResult(null);
-    const essentials = ITEMS.filter(i=>i.needed).map(i=>i.id);
-    const hasAll = essentials.every(e=>backpack.includes(e));
-    const interval = setInterval(()=>{
-      setStep(s=>{
-        if(s>=100){clearInterval(interval);setResult(hasAll&&canJourney?"success":"fail");return 100;}
-        return s+2;
-      });
-    },50);
   }
+
+  function startJourney(){
+    if(!canJourney)return;
+    setResult(null);
+    const essentials=ITEMS.filter(i=>i.needed).map(i=>i.id);
+    const hasEssentials=essentials.every(e=>backpack.includes(e));
+    let step=0;
+    const iv=setInterval(()=>{
+      step+=2;
+      setJourneyStep(step);
+      if(step>=100){
+        clearInterval(iv);
+        setResult(hasEssentials&&canJourney?"success":"fail");
+        setJourneyStep(null);
+      }
+    },60);
+  }
+
+  function reset(){setBackpack([]);setJourneyStep(null);setResult(null);}
+
+  const charImg=result==="success"?"/games/chintu/victory.jpg":result==="fail"?"/games/chintu/sad.jpg":"/games/chintu/idle.jpg";
 
   return (
     <div className="max-w-lg mx-auto px-3 pb-10">
-      <div className="mt-2 mb-4 rounded-2xl p-4" style={{background:"white",border:"2px solid #795548",boxShadow:"0 4px 16px rgba(121,85,72,0.2)"}}>
-        <div className="flex justify-between mb-2">
-          <span className="font-sans text-xs text-white/50">🎒 Backpack Weight</span>
-          <span className="font-sans text-xs font-bold" style={{color:weight>MAX_WEIGHT?"#EF5350":"#4CAF50"}}>{weight}/{MAX_WEIGHT}kg · {speed}</span>
+      {/* Weight bar */}
+      <div className="mt-2 mb-4 rounded-2xl p-4 bg-white shadow-md" style={{border:`3px solid ${weight>MAX_WEIGHT?"#EF5350":"#795548"}`}}>
+        <div className="flex justify-between mb-1">
+          <span className="font-sans text-xs font-black text-gray-600">🎒 Backpack Weight</span>
+          <span className="font-sans text-xs font-black" style={{color:weight>MAX_WEIGHT?"#EF5350":"#795548"}}>{weight}/{MAX_WEIGHT}kg · {speed}</span>
         </div>
-        <div className="h-4 rounded-full bg-gray-200 overflow-hidden">
+        <div className="h-4 rounded-full bg-gray-100 overflow-hidden">
           <div className="h-full rounded-full transition-all duration-300"
-            style={{width:`${pct}%`,background:`linear-gradient(90deg,${pct<60?"#4CAF50":pct<90?"#FF9800":"#EF5350"},${pct<60?"#66BB6A":pct<90?"#FFC107":"#FF5722"})`}}/>
+            style={{width:`${pct}%`,background:pct<60?"linear-gradient(90deg,#4CAF50,#66BB6A)":pct<100?"linear-gradient(90deg,#FF9800,#FFC107)":"linear-gradient(90deg,#EF5350,#FF5722)"}}/>
         </div>
-        {weight>MAX_WEIGHT&&<p className="font-sans text-xs text-red-400 mt-1">⚠️ Too heavy! You cannot begin the journey. Remove some items.</p>}
+        {weight>MAX_WEIGHT&&<p className="font-sans text-xs font-black text-red-500 mt-1">⚠️ Too heavy! Remove items to start the journey.</p>}
       </div>
 
-      {/* Journey progress */}
-      {started && result===null && (
-        <div className="mb-4 rounded-xl p-4" style={{background:"rgba(255,255,255,0.8)",border:"1.5px solid rgba(0,0,0,0.1)"}}>
-          <p className="font-sans text-xs text-white/60 mb-2">🛤️ Journey to the Temple...</p>
-          <div className="h-3 rounded-full bg-gray-200 overflow-hidden">
-            <div className="h-full rounded-full transition-all" style={{width:`${step}%`,background:"linear-gradient(90deg,#795548,#A1887F)"}}/>
-          </div>
-          <div className="flex justify-between mt-1 items-center">
-            <div className="relative w-12 h-14 rounded-lg overflow-hidden" style={{transform:`translateX(${step*2.5}px)`,transition:"all 0.1s"}}>
-              <Image src="/games/chintu/run.jpg" alt="chintu" fill className="object-cover" unoptimized/>
-            </div>
-            <div className="relative w-12 h-14 rounded-lg overflow-hidden">
-              <Image src="/games/aparigraha/temple.jpg" alt="temple" fill className="object-cover" unoptimized/>
-            </div>
-          </div>
+      {/* Journey path — RESPONSIVE IMAGE */}
+      <div className="relative w-full rounded-3xl overflow-hidden mb-4" style={{aspectRatio:"16/7",minHeight:130,border:"3px solid #795548",boxShadow:"0 8px 24px rgba(121,85,72,0.25)"}}>
+        <Image src="/games/aparigraha/forest_path.jpg" alt="path" fill className="object-cover" unoptimized/>
+
+        {/* Character walking */}
+        <div className="absolute top-1/2 -translate-y-1/2 transition-all duration-100 rounded-xl overflow-hidden"
+          style={{left:`${journeyStep!==null?journeyStep*0.7+4:4}%`,width:44,height:56,boxShadow:"0 4px 12px rgba(0,0,0,0.3)"}}>
+          <Image src={charImg} alt="chintu" fill className="object-cover" unoptimized/>
         </div>
-      )}
+
+        {/* Temple goal */}
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl overflow-hidden" style={{width:52,height:60,boxShadow:"0 0 16px rgba(255,215,0,0.8)"}}>
+          <Image src="/games/aparigraha/temple.jpg" alt="temple" fill className="object-cover" unoptimized/>
+        </div>
+
+        {/* Progress bar */}
+        {journeyStep!==null&&(
+          <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-white/30">
+            <div className="h-full bg-yellow-400 transition-all" style={{width:`${journeyStep}%`}}/>
+          </div>
+        )}
+      </div>
 
       {/* Result */}
-      {result && (
-        <div className="mb-4 rounded-2xl p-6 text-center" style={{background:result==="success"?"linear-gradient(135deg,#1a3a00,#2d5c00)":"linear-gradient(135deg,#2d0000,#4a0000)",border:`2px solid ${result==="success"?"#4CAF50":"#EF5350"}`}}>
-          <div className="text-5xl mb-3">{result==="success"?"🕌":"😔"}</div>
-          <h3 className="font-sans text-xl font-black mb-2" style={{color:result==="success"?"#4CAF50":"#EF5350"}}>
-            {result==="success"?"Temple Reached! ✨":"Journey Failed..."}
-          </h3>
-          <p className="font-hindi text-sm mb-4" style={{color:result==="success"?"#A5D6A7":"#FFCDD2"}}>
-            {result==="success"
-              ?"You carried only what was needed — your soul felt light and free! That is Aparigraha! 🌟"
-              :"Too much weight slowed you down, or you forgot something essential. Remember: take only what you need!"}
-          </p>
-          <button onClick={()=>{setStarted(false);setResult(null);setBackpack([]);setStep(0);}}
-            className="px-6 py-2.5 rounded-full font-sans font-black text-sm"
-            style={{background:result==="success"?"linear-gradient(135deg,#4CAF50,#66BB6A)":"linear-gradient(135deg,#795548,#A1887F)",color:"#1a1a1a"}}>
-            Try Again ↺
-          </button>
+      {result&&(
+        <div className="mb-4 rounded-3xl overflow-hidden" style={{border:`3px solid ${result==="success"?"#4CAF50":"#EF5350"}`,animation:"popIn 0.4s ease"}}>
+          <div className="relative" style={{aspectRatio:"16/6"}}>
+            <Image src={result==="success"?"/games/chintu/victory.jpg":"/games/chintu/sad.jpg"} alt="result" fill className="object-cover" unoptimized/>
+            <div className="absolute inset-0" style={{background:"rgba(0,0,0,0.3)"}}/>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <p className="font-sans font-black text-white text-xl text-center px-4" style={{textShadow:"0 2px 8px rgba(0,0,0,0.8)"}}>
+                {result==="success"?"🕌 Temple Reached! ✨":"😔 Journey Failed..."}
+              </p>
+            </div>
+          </div>
+          <div className="p-4 text-center" style={{background:result==="success"?"#E8F5E9":"#FFEBEE"}}>
+            <p className="font-hindi text-sm mb-3" style={{color:result==="success"?"#1B5E20":"#B71C1C"}}>
+              {result==="success"?"आपने केवल जरूरी चीजें लीं! यही है अपरिग्रह!":"बहुत भारी था या जरूरी चीजें छूट गईं। फिर कोशिश करो!"}
+            </p>
+            <button onClick={reset} className="px-6 py-2 rounded-full font-sans font-black text-sm text-white"
+              style={{background:result==="success"?"linear-gradient(135deg,#4CAF50,#66BB6A)":"linear-gradient(135deg,#795548,#A1887F)"}}>
+              Try Again ↺
+            </button>
+          </div>
         </div>
       )}
 
-      <p className="font-sans text-xs text-white/50 mb-3">Choose wisely — take only what you need for the temple journey (max {MAX_WEIGHT}kg):</p>
+      <p className="font-sans text-xs text-gray-500 mb-3">Select wisely — take only what you need (max {MAX_WEIGHT}kg):</p>
 
-      {/* Items grid */}
-      <div className="grid grid-cols-2 gap-2 mb-4">
+      {/* Items grid — IMAGE CARDS */}
+      <div className="grid grid-cols-2 gap-3 mb-4">
         {ITEMS.map(item=>{
           const inPack=backpack.includes(item.id);
           return (
-            <button key={item.id} onClick={()=>toggle(item.id)} disabled={started&&result===null}
-              className="rounded-xl p-3 text-left transition-all hover:scale-[1.02] active:scale-95"
-              style={{background:inPack?item.needed?"rgba(76,175,80,0.2)":"rgba(244,67,54,0.15)":item.needed?"rgba(76,175,80,0.06)":"rgba(255,255,255,0.7)",
-                border:`1.5px solid ${inPack?item.needed?"rgba(76,175,80,0.5)":"rgba(244,67,54,0.4)":"rgba(255,255,255,0.1)"}`}}>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-2xl">{item.emoji}</span>
-                <div className="flex-1">
-                  <p className="font-sans text-xs font-bold text-white leading-tight">{item.label}</p>
-                  <p className="font-sans text-[9px]" style={{color:item.needed?"#4CAF50":"#EF9A9A"}}>{item.weight}kg · {item.needed?"✅ Needed":"❌ Unnecessary"}</p>
+            <button key={item.id} onClick={()=>toggleItem(item.id)} disabled={journeyStep!==null}
+              className="rounded-2xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-95"
+              style={{
+                border:`3px solid ${inPack?item.needed?"#4CAF50":"#EF5350":"rgba(0,0,0,0.08)"}`,
+                boxShadow:inPack?`0 6px 20px ${item.needed?"rgba(76,175,80,0.4)":"rgba(239,83,80,0.3)"}`:"0 2px 8px rgba(0,0,0,0.06)",
+                transform:inPack?"translateY(-2px)":"translateY(0)",
+              }}>
+              <div className="relative" style={{aspectRatio:"4/3"}}>
+                <Image src={item.img} alt={item.label} fill className="object-cover" unoptimized
+                  style={{filter:inPack?"saturate(1.3)":"saturate(0.8)"}}/>
+                <div className="absolute inset-0" style={{background:`linear-gradient(transparent 40%,${inPack?item.needed?"rgba(27,94,32,0.85)":"rgba(183,28,28,0.85)":"rgba(0,0,0,0.55)"})`}}/>
+                {inPack&&<div className="absolute top-2 right-2 text-xl">✓</div>}
+                <div className="absolute bottom-0 left-0 right-0 p-2">
+                  <p className="font-sans text-[10px] font-black text-white">{item.emoji} {item.label}</p>
+                  <p className="font-sans text-[9px]" style={{color:item.needed?"#A5D6A7":"#FFCDD2"}}>{item.weight}kg · {item.needed?"✅ Needed":"❌ Skip"}</p>
                 </div>
-                {inPack&&<span className="text-base">✓</span>}
               </div>
-              <p className="font-sans text-[9px] text-white/40 leading-tight">{item.desc}</p>
+              <div className="p-2 bg-white">
+                <p className="font-sans text-[9px] text-gray-400 leading-tight">{item.desc}</p>
+              </div>
             </button>
           );
         })}
       </div>
 
-      <button onClick={journey} disabled={started&&result===null||!canJourney}
-        className="w-full py-3 rounded-xl font-sans font-black text-sm transition-all disabled:opacity-50"
-        style={{background:canJourney?"linear-gradient(135deg,#795548,#A1887F)":"rgba(255,255,255,0.85)",color:"#1a1a1a",boxShadow:canJourney?"0 4px 20px rgba(121,85,72,0.4)":"none"}}>
-        {!canJourney?"Too Heavy — Remove Items First":"🏔️ Begin Temple Journey!"}
+      <button onClick={startJourney} disabled={journeyStep!==null||!canJourney}
+        className="w-full py-4 rounded-2xl font-sans font-black text-sm text-white transition-all disabled:opacity-50"
+        style={{background:canJourney?"linear-gradient(135deg,#795548,#A1887F)":"#ccc",boxShadow:canJourney?"0 6px 24px rgba(121,85,72,0.4)":"none"}}>
+        {!canJourney?"Too Heavy — Remove Items First":journeyStep!==null?"🏃 Travelling...":"🏔️ Begin Temple Journey!"}
       </button>
+      <style>{`@keyframes popIn{0%{transform:scale(0.8);opacity:0}100%{transform:scale(1);opacity:1}}`}</style>
     </div>
   );
 }
