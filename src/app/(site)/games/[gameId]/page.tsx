@@ -29,6 +29,7 @@ const GAME_BG: Record<string, string> = {
   "karma-ludo":     "linear-gradient(160deg,#EDE7F6,#D1C4E9,#FCE4EC)",
   "karma-grid":     "linear-gradient(160deg,#EDE7F6,#D1C4E9,#E8EAF6)",
   "word-builder":   "linear-gradient(160deg,#F3E5F5,#EDE7F6,#FCE4EC)",
+  "karma-crush":    "linear-gradient(160deg,#FCE4EC,#F8BBD9,#EDE7F6)",
 };
 
 const GAME_TEXT: Record<string, string> = {
@@ -38,6 +39,7 @@ const GAME_TEXT: Record<string, string> = {
   "aparigraha":"#3E2723","compassion-city":"#0D47A1","karma-ludo":"#311B92",
   "karma-grid":"#4527A0",
   "word-builder":"#6A1B9A",
+  "karma-crush":"#880E4F",
 };
 
 export default async function GamePage({ params }: Props) {

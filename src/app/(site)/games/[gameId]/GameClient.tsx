@@ -17,6 +17,7 @@ const LOADERS: Record<string,()=>React.ReactNode> = {
   "karma-ludo":     ()=><Skeleton e="🎯" c="#7B1FA2"/>,
   "karma-grid":     ()=><Skeleton e="🪷" c="#7C4DFF"/>,
   "word-builder":   ()=><Skeleton e="📝" c="#9C27B0"/>,
+  "karma-crush":    ()=><Skeleton e="🪷" c="#E91E63"/>,
 };
 
 function Skeleton({e,c}:{e:string;c:string}){
@@ -50,6 +51,7 @@ const GAMES: Record<string, React.ComponentType> = {
   "karma-ludo":     dynamic(()=>import("@/components/games/KarmaLudo"),          {loading:LOADERS["karma-ludo"],    ssr:false}),
   "karma-grid":     dynamic(()=>import("@/components/games/KarmaGrid"),          {loading:LOADERS["karma-grid"],    ssr:false}),
   "word-builder":   dynamic(()=>import("@/components/games/KarmaWordGame"),      {loading:LOADERS["word-builder"],  ssr:false}),
+  "karma-crush":    dynamic(()=>import("@/components/games/KarmaCrush"),          {loading:LOADERS["karma-crush"],   ssr:false}),
 };
 
 export default function GameClient({gameId,emoji,color}:{gameId:string;emoji:string;color:string}){

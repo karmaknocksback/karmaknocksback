@@ -211,6 +211,20 @@ export const GAMES: GameMeta[] = [
     value: "Knowledge & Wisdom",
     difficulty: 2,
   },
+  {
+    id: "karma-crush",
+    title: "Karma Crush",
+    titleHi: "कर्म क्रश",
+    desc: "Match Jain karma symbols — Lotus, Navkar, Peacock, Crystal, Leaf. Clear bad karma, earn Punya Points, reach Moksha!",
+    emoji: "🪷",
+    color: "#E91E63",
+    bg: "linear-gradient(135deg,#FCE4EC,#E91E63)",
+    age: "6+",
+    players: "1",
+    available: true,
+    value: "All Jain Values",
+    difficulty: 2,
+  },
 ];
 
 export function getGame(id: string) {
