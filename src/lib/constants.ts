@@ -15,6 +15,7 @@ export const NAV_LINKS = [
   { label: "Karma Mirror", labelHi: "Karma Mirror", href: "/karma-mirror" },
   { label: "Know Karma", labelHi: "कर्म जानो", href: "/know-karma-more" },
   { label: "Games", labelHi: "गेम्स", href: "/games" },
+  { label: "Academy", labelHi: "अकादमी", href: "/academy" },
   { label: "Shop", labelHi: "शॉप", href: "/shop" },
   { label: "Services", labelHi: "सेवाएँ", href: "/services" },
   { label: "Community", labelHi: "समुदाय", href: "/community" },
