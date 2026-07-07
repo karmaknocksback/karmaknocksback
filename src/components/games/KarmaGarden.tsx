@@ -76,7 +76,7 @@ export default function KarmaGarden() {
       {/* Garden scene — FULL WIDTH RESPONSIVE */}
       <div className="relative w-full max-w-lg rounded-3xl overflow-hidden mb-5"
         style={{aspectRatio:"4/3",minHeight:220,boxShadow:"0 12px 40px rgba(76,175,80,0.3)",border:"4px solid #4CAF50"}}>
-        <Image src={stage.img} alt="garden" fill className="object-cover transition-all duration-1000" unoptimized priority/>
+        <Image src={stage.img} alt="garden" fill className="object-cover transition-all duration-1000" unoptimized priority sizes="(max-width:768px)100vw,500px"/>
 
         {/* Overlay nature elements as karma grows */}
         <div className="absolute inset-0 pointer-events-none">
@@ -91,7 +91,7 @@ export default function KarmaGarden() {
         {celebrating&&(
           <div className="absolute inset-0 flex items-center justify-center" style={{background:"rgba(0,0,0,0.15)"}}>
             <div className="rounded-2xl px-6 py-4 text-center" style={{background:"rgba(255,255,255,0.95)",boxShadow:"0 8px 32px rgba(76,175,80,0.5)",animation:"popIn 0.3s ease"}}>
-              {lastDeed&&<div className="relative w-16 h-16 rounded-xl overflow-hidden mx-auto mb-2"><Image src={lastDeed.img} alt="" fill className="object-cover" unoptimized/></div>}
+              {lastDeed&&<div className="relative w-16 h-16 rounded-xl overflow-hidden mx-auto mb-2"><Image src={lastDeed.img} alt="" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/></div>}
               <p className="font-sans font-black text-green-600 text-xl">+{celebrating.pts} ⭐</p>
               <p className="font-hindi text-xs text-gray-600">{celebrating.deed}</p>
             </div>
@@ -113,7 +113,7 @@ export default function KarmaGarden() {
               className="rounded-2xl overflow-hidden transition-all hover:scale-105 active:scale-95 text-left"
               style={{boxShadow:"0 4px 12px rgba(76,175,80,0.25)",border:"2px solid #4CAF50"}}>
               <div className="relative" style={{aspectRatio:"4/3"}}>
-                <Image src={d.img} alt={d.label} fill className="object-cover" unoptimized/>
+                <Image src={d.img} alt={d.label} fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
                 <div className="absolute inset-0" style={{background:"linear-gradient(transparent 40%,rgba(0,0,0,0.6))"}}/>
                 <div className="absolute bottom-0 left-0 right-0 p-1.5">
                   <p className="font-sans text-[9px] font-black text-white leading-tight">{d.label}</p>

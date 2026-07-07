@@ -4,34 +4,57 @@ import { useEffect, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import NProgress from "nprogress";
 
-// Configure NProgress
-NProgress.configure({ showSpinner: false, speed: 300, minimum: 0.1 });
+NProgress.configure({ showSpinner: false, speed: 250, minimum: 0.15, trickleSpeed: 100 });
 
-// Inject gold-colored progress bar CSS
 const STYLE = `
-#nprogress .bar { background: #c89b3c !important; height: 3px !important; }
-#nprogress .peg { box-shadow: 0 0 10px #c89b3c, 0 0 5px #c89b3c !important; }
+#nprogress .bar {
+  background: linear-gradient(90deg,#FFD700,#FF9800,#E91E63) !important;
+  height: 4px !important;
+  box-shadow: 0 0 8px #FFD700 !important;
+}
+#nprogress .peg {
+  box-shadow: 0 0 12px #FFD700, 0 0 6px #FF9800 !important;
+  width: 120px !important;
+}
 `;
 
 function ProgressBar() {
-  const pathname = usePathname();
+  const pathname  = usePathname();
   const searchParams = useSearchParams();
 
+  // Done when pathname changes (navigation complete)
   useEffect(() => {
     NProgress.done();
   }, [pathname, searchParams]);
 
   useEffect(() => {
-    // Intercept link clicks to start progress
+    let timer: ReturnType<typeof setTimeout>;
+
     const handleClick = (e: MouseEvent) => {
-      const target = (e.target as HTMLElement).closest("a");
-      if (!target) return;
-      const href = target.getAttribute("href");
-      if (!href || href.startsWith("#") || href.startsWith("http") || href.startsWith("mailto") || target.target === "_blank") return;
+      const anchor = (e.target as HTMLElement).closest("a");
+      if (!anchor) return;
+      const href = anchor.getAttribute("href");
+      if (
+        !href ||
+        href.startsWith("#") ||
+        href.startsWith("http") ||
+        href.startsWith("mailto") ||
+        href.startsWith("tel") ||
+        anchor.target === "_blank" ||
+        anchor.hasAttribute("download")
+      ) return;
+
+      // Start progress immediately on click
       NProgress.start();
+      // Ensure it keeps moving even if navigation is slow
+      timer = setTimeout(() => NProgress.set(0.6), 500);
     };
-    document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
+
+    document.addEventListener("click", handleClick, true); // capture phase = instant
+    return () => {
+      document.removeEventListener("click", handleClick, true);
+      clearTimeout(timer);
+    };
   }, []);
 
   return <style>{STYLE}</style>;

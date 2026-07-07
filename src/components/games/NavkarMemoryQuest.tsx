@@ -105,7 +105,7 @@ export default function NavkarMemoryQuest() {
         <div className="mb-3 flex items-center gap-3 rounded-2xl px-4 py-2 shadow-lg animate-bounce"
           style={{background:"white",border:`3px solid ${lastMatch.color}`,boxShadow:`0 8px 24px ${lastMatch.color}50`}}>
           <div className="relative w-10 h-10 rounded-lg overflow-hidden">
-            <Image src={lastMatch.img} alt={lastMatch.label} fill className="object-cover" unoptimized/>
+            <Image src={lastMatch.img} alt={lastMatch.label} fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
           </div>
           <div>
             <p className="font-display-hi text-sm font-black" style={{color:lastMatch.color}}>{lastMatch.label} matched!</p>
@@ -131,7 +131,7 @@ export default function NavkarMemoryQuest() {
                 <div style={{position:"absolute",inset:0,backfaceVisibility:"hidden",borderRadius:12,overflow:"hidden",
                   border:`3px solid ${isMatched?card.color:"rgba(255,255,255,0.3)"}`,
                   boxShadow:isMatched?`0 0 24px ${card.color}50,0 6px 16px rgba(0,0,0,0.15)`:"0 4px 12px rgba(0,0,0,0.12)"}}>
-                  <Image src={card.img} alt={card.label} fill className="object-cover" unoptimized/>
+                  <Image src={card.img} alt={card.label} fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
                   {/* Label overlay */}
                   <div style={{position:"absolute",bottom:0,left:0,right:0,background:`linear-gradient(transparent,${card.color}ee)`,padding:"14px 4px 5px",textAlign:"center"}}>
                     <p style={{fontFamily:"sans-serif",fontSize:9,fontWeight:900,color:"white",textShadow:"0 1px 3px rgba(0,0,0,0.5)"}}>{card.label}</p>
@@ -142,7 +142,7 @@ export default function NavkarMemoryQuest() {
                 {/* BACK — card back image */}
                 <div style={{position:"absolute",inset:0,backfaceVisibility:"hidden",transform:"rotateY(180deg)",borderRadius:12,overflow:"hidden",
                   border:"3px solid #9C27B0",boxShadow:"0 4px 12px rgba(0,0,0,0.12)"}}>
-                  <Image src="/games/memory/card_back.jpg" alt="card back" fill className="object-cover" unoptimized/>
+                  <Image src="/games/memory/card_back.jpg" alt="card back" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
                 </div>
               </div>
             </div>
@@ -156,7 +156,7 @@ export default function NavkarMemoryQuest() {
           <div className="rounded-3xl overflow-hidden max-w-sm w-full" style={{border:"4px solid #9C27B0",boxShadow:"0 24px 80px rgba(156,39,176,0.5)",animation:"popIn 0.4s ease"}}>
             {/* Chintu celebrating */}
             <div className="relative h-40">
-              <Image src="/games/chintu/celebrate.jpg" alt="win" fill className="object-cover" unoptimized/>
+              <Image src="/games/chintu/celebrate.jpg" alt="win" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
               <div className="absolute inset-0 flex items-center justify-center" style={{background:"rgba(0,0,0,0.15)"}}>
                 <span className="text-6xl">🎉</span>
               </div>

@@ -78,7 +78,7 @@ export default function JainStoryAdventures(){
             className="rounded-3xl overflow-hidden text-left transition-all hover:scale-[1.02] active:scale-[0.98]"
             style={{boxShadow:`0 8px 24px ${s.color}30, 0 0 0 3px ${s.color}30`}}>
             <div className="relative h-40">
-              <Image src={s.coverImg} alt={s.title} fill className="object-cover" unoptimized/>
+              <Image src={s.coverImg} alt={s.title} fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
               <div className="absolute inset-0" style={{background:"linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.65))"}}/>
               <div className="absolute bottom-0 left-0 right-0 p-4">
                 <p className="font-sans font-black text-white text-lg">{s.title}</p>
@@ -106,7 +106,7 @@ export default function JainStoryAdventures(){
       {/* Story scene — big image */}
       <div className="w-full rounded-3xl overflow-hidden mb-4" style={{boxShadow:`0 8px 32px ${story.color}30, 0 0 0 3px ${story.color}40`}}>
         <div className="relative h-52">
-          <Image src={page.img} alt="scene" fill className="object-cover" unoptimized style={{transition:"all 0.5s"}}/>
+          <Image src={page.img} alt="scene" fill className="object-cover" unoptimized style={{transition:"all 0.5s"}} sizes="(max-width:768px)100vw,500px"/>
           <div className="absolute inset-0" style={{background:"linear-gradient(to bottom,transparent 50%,rgba(0,0,0,0.6))"}}/>
         </div>
         <div className="p-5" style={{background:"white"}}>
@@ -141,7 +141,7 @@ export default function JainStoryAdventures(){
       ):done?(
         <div className="w-full rounded-3xl overflow-hidden" style={{border:"3px solid #FFD700",boxShadow:"0 16px 48px rgba(255,215,0,0.4)"}}>
           <div className="relative h-36">
-            <Image src="/games/chintu/celebrate.jpg" alt="done" fill className="object-cover" unoptimized/>
+            <Image src="/games/chintu/celebrate.jpg" alt="done" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
           </div>
           <div className="p-6 text-center" style={{background:"linear-gradient(135deg,#FFFDE7,#FFF9C4)"}}>
             <h3 className="font-sans text-xl font-black text-yellow-700 mb-1">Story Complete! 🏆</h3>

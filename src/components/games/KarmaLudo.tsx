@@ -156,7 +156,7 @@ export default function KarmaLudo(){
               boxShadow:turn===i&&!event&&!winner?`0 6px 20px ${p.glow}`:"0 2px 8px rgba(0,0,0,0.07)",
               transform:moving===i?"scale(1.04)":"scale(1)"}}>
             <div className="relative rounded-xl overflow-hidden shrink-0" style={{width:44,height:52}}>
-              <Image src={moving===i?p.runImg:p.tokenImg} alt={p.name} fill className="object-cover" unoptimized/>
+              <Image src={moving===i?p.runImg:p.tokenImg} alt={p.name} fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
             </div>
             <div>
               <p className="font-sans text-xs font-black" style={{color:p.color}}>{p.name}</p>
@@ -172,7 +172,7 @@ export default function KarmaLudo(){
       <div className="w-full max-w-md relative rounded-2xl overflow-hidden"
         style={{boxShadow:"0 0 0 3px white,0 0 0 6px #FFD700,0 12px 40px rgba(0,0,0,0.2)"}}>
         <div className="relative w-full" style={{aspectRatio:"1/1"}}>
-          <Image src="/games/ludo/board_temple.jpg" alt="Karma Ludo Board" fill className="object-cover" unoptimized priority/>
+          <Image src="/games/ludo/board_standard.jpg" alt="Karma Ludo Board" fill className="object-cover" unoptimized priority sizes="(max-width:768px)100vw,500px"/>
 
           {/* Token overlay */}
           <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 ${BS} ${BS}`}>
@@ -234,7 +234,7 @@ export default function KarmaLudo(){
               boxShadow:`0 24px 60px rgba(${isGoodEv?"76,175,80":"239,83,80"},0.55)`,
               animation:"popIn 0.35s ease"}}>
             <div className="relative" style={{aspectRatio:"4/3"}}>
-              <Image src={isGoodEv?PLAYERS[event.pi].celebImg:PLAYERS[event.pi].runImg} alt="" fill className="object-cover" unoptimized/>
+              <Image src={isGoodEv?PLAYERS[event.pi].celebImg:PLAYERS[event.pi].runImg} alt="" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
               <div className="absolute inset-0 flex items-center justify-center" style={{background:"rgba(0,0,0,0.18)"}}>
                 <span className="text-6xl drop-shadow-lg">{isBonus?"🎲":(ev?.emoji||"⭐")}</span>
               </div>
@@ -268,7 +268,7 @@ export default function KarmaLudo(){
           <div className="rounded-3xl overflow-hidden w-full max-w-sm"
             style={{border:"4px solid #FFD700",boxShadow:"0 24px 80px rgba(255,215,0,0.6)",animation:"popIn 0.4s ease"}}>
             <div className="relative" style={{aspectRatio:"4/3"}}>
-              <Image src={PLAYERS[winner].celebImg} alt="winner" fill className="object-cover" unoptimized/>
+              <Image src={PLAYERS[winner].celebImg} alt="winner" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
               <div className="absolute bottom-3 inset-x-0 text-center text-5xl">🏆</div>
             </div>
             <div className="p-6 text-center" style={{background:"linear-gradient(135deg,#FFFDE7,#FFF9C4)"}}>
@@ -276,7 +276,7 @@ export default function KarmaLudo(){
               <div className="grid grid-cols-2 gap-3 mb-4">
                 {PLAYERS.map((p,i)=>(
                   <div key={i} className="rounded-2xl p-3" style={{background:i===winner?"rgba(255,215,0,0.25)":"white",border:`2px solid ${p.color}`}}>
-                    <div className="relative w-10 h-12 rounded-lg overflow-hidden mx-auto mb-1"><Image src={p.tokenImg} alt={p.name} fill className="object-cover" unoptimized/></div>
+                    <div className="relative w-10 h-12 rounded-lg overflow-hidden mx-auto mb-1"><Image src={p.tokenImg} alt={p.name} fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/></div>
                     <p className="font-sans text-xs font-black" style={{color:p.color}}>{p.name}</p>
                     <p className="font-display text-xl font-black text-gray-700">⭐{karmaPoints[i]}</p>
                   </div>

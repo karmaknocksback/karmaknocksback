@@ -49,7 +49,7 @@ export default function DailyKarmaGame() {
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-2xl px-6 py-3 animate-bounce"
           style={{background:"linear-gradient(135deg,#FFD700,#FF9800)",boxShadow:"0 8px 32px rgba(255,215,0,0.6)"}}>
           <div className="relative w-10 h-10 rounded-lg overflow-hidden">
-            <Image src="/games/challenge/trophy.jpg" alt="badge" fill className="object-cover" unoptimized/>
+            <Image src="/games/challenge/trophy.jpg" alt="badge" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
           </div>
           <div>
             <p className="font-sans font-black text-white text-sm">🏅 New Badge!</p>
@@ -67,7 +67,7 @@ export default function DailyKarmaGame() {
           </div>
           <div className="text-right">
             <div className="relative w-16 h-16">
-              <Image src="/games/challenge/trophy.jpg" alt="trophy" fill className="object-cover rounded-xl" unoptimized/>
+              <Image src="/games/challenge/trophy.jpg" alt="trophy" fill className="object-cover rounded-xl" unoptimized sizes="(max-width:768px)100vw,500px"/>
             </div>
           </div>
         </div>
@@ -90,7 +90,7 @@ export default function DailyKarmaGame() {
               }}>
               {/* Image */}
               <div className="relative h-32 overflow-hidden">
-                <Image src={m.img} alt={m.title} fill className="object-cover" unoptimized style={{filter:done?"saturate(1.3) brightness(1.1)":"none",transition:"filter 0.4s"}}/>
+                <Image src={m.img} alt={m.title} fill className="object-cover" unoptimized style={{filter:done?"saturate(1.3) brightness(1.1)":"none",transition:"filter 0.4s"}} sizes="(max-width:768px)100vw,500px"/>
                 {done&&(
                   <div className="absolute inset-0 flex items-center justify-center" style={{background:"rgba(0,0,0,0.15)"}}>
                     <div className="text-5xl" style={{filter:"drop-shadow(0 2px 8px rgba(255,255,255,0.5))"}}>✅</div>
@@ -118,7 +118,7 @@ export default function DailyKarmaGame() {
       {completed.size===MISSIONS.length&&(
         <div className="mt-6 rounded-3xl overflow-hidden" style={{border:"3px solid #FFD700",boxShadow:"0 16px 48px rgba(255,215,0,0.4)"}}>
           <div className="relative h-40">
-            <Image src="/games/chintu/victory.jpg" alt="complete" fill className="object-cover" unoptimized/>
+            <Image src="/games/chintu/victory.jpg" alt="complete" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
           </div>
           <div className="p-6 text-center" style={{background:"linear-gradient(135deg,#FFFDE7,#FFF9C4)"}}>
             <h3 className="font-sans text-2xl font-black text-yellow-700">Perfect Day! 🌟</h3>

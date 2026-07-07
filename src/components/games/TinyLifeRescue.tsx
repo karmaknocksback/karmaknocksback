@@ -72,7 +72,7 @@ export default function TinyLifeRescue(){
         <div className="w-full max-w-lg mb-6">
           {/* Garden intro image */}
           <div className="relative w-full rounded-3xl overflow-hidden mb-4" style={{aspectRatio:"16/9",border:"3px solid #4CAF50",boxShadow:"0 8px 24px rgba(76,175,80,0.3)"}}>
-            <Image src="/games/jungle/forest_healthy.jpg" alt="garden" fill className="object-cover" unoptimized priority/>
+            <Image src="/games/jungle/forest_healthy.jpg" alt="garden" fill className="object-cover" unoptimized priority sizes="(max-width:768px)100vw,500px"/>
             <div className="absolute inset-0 flex flex-col items-center justify-center" style={{background:"rgba(0,0,0,0.25)"}}>
               <div className="text-center">
                 <p className="font-sans font-black text-white text-2xl mb-1">🦋 Tiny Life Rescue!</p>
@@ -92,7 +92,7 @@ export default function TinyLifeRescue(){
       {playing&&(
         <div className="relative w-full max-w-lg rounded-3xl overflow-hidden mb-4"
           style={{aspectRatio:"4/3",minHeight:260,border:"4px solid #4CAF50",boxShadow:"0 8px 32px rgba(76,175,80,0.3)",cursor:"crosshair"}}>
-          <Image src="/games/jungle/forest_healthy.jpg" alt="garden" fill className="object-cover" unoptimized priority/>
+          <Image src="/games/jungle/forest_healthy.jpg" alt="garden" fill className="object-cover" unoptimized priority sizes="(max-width:768px)100vw,500px"/>
           <div className="absolute inset-0" style={{background:"rgba(0,0,0,0.08)"}}/>
 
           {/* Timer bar */}
@@ -102,7 +102,7 @@ export default function TinyLifeRescue(){
 
           {/* Monk helper */}
           <div className="absolute bottom-2 right-2 rounded-xl overflow-hidden" style={{width:40,height:50,boxShadow:"0 4px 12px rgba(0,0,0,0.3)"}}>
-            <Image src="/games/monk/compassion.jpg" alt="monk" fill className="object-cover" unoptimized/>
+            <Image src="/games/monk/compassion.jpg" alt="monk" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
           </div>
 
           {/* Creatures */}

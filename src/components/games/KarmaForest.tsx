@@ -69,7 +69,7 @@ export default function KarmaForest() {
       {toast && (
         <div className="mb-3 flex items-center gap-3 rounded-2xl px-4 py-2 animate-bounce shadow-lg"
           style={{background:toast.good?"#E8F5E9":"#FFEBEE",border:`2px solid ${toast.good?"#4CAF50":"#EF5350"}`}}>
-          {toast.img&&<div className="relative w-10 h-10 rounded-lg overflow-hidden"><Image src={toast.img} alt="" fill className="object-cover" unoptimized/></div>}
+          {toast.img&&<div className="relative w-10 h-10 rounded-lg overflow-hidden"><Image src={toast.img} alt="" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/></div>}
           <span className="font-hindi text-sm font-bold" style={{color:toast.good?"#1B5E20":"#B71C1C"}}>{toast.msg}</span>
         </div>
       )}
@@ -77,7 +77,7 @@ export default function KarmaForest() {
       {/* Forest scene — FULL RESPONSIVE image */}
       <div className="relative w-full max-w-lg rounded-3xl overflow-hidden mb-5"
         style={{aspectRatio:"16/9",minHeight:200,boxShadow:"0 8px 32px rgba(0,0,0,0.15)",border:"3px solid #4CAF50"}}>
-        <Image src={bgImg} alt="forest" fill className="object-cover transition-all duration-1000" unoptimized priority/>
+        <Image src={bgImg} alt="forest" fill className="object-cover transition-all duration-1000" unoptimized priority sizes="(max-width:768px)100vw,500px"/>
         {/* Overlay elements */}
         <div className="absolute inset-0">
           {items.map(item=>(
@@ -91,7 +91,7 @@ export default function KarmaForest() {
         {health>60&&(
           <div className="absolute bottom-2 right-2">
             <div className="relative w-16 h-16 rounded-xl overflow-hidden opacity-80">
-              <Image src="/games/jungle/waterfall.jpg" alt="" fill className="object-cover" unoptimized/>
+              <Image src="/games/jungle/waterfall.jpg" alt="" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
             </div>
           </div>
         )}
@@ -111,7 +111,7 @@ export default function KarmaForest() {
                 className="rounded-xl overflow-hidden transition-all hover:scale-105 active:scale-95 text-left"
                 style={{boxShadow:"0 2px 8px rgba(76,175,80,0.2)"}}>
                 <div className="relative" style={{aspectRatio:"4/3"}}>
-                  <Image src={a.img} alt={a.label} fill className="object-cover" unoptimized/>
+                  <Image src={a.img} alt={a.label} fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
                   <div className="absolute bottom-0 left-0 right-0 bg-green-500 bg-opacity-90 py-0.5 px-1">
                     <p className="font-sans text-[9px] font-black text-white truncate">{a.label}</p>
                     <p className="font-sans text-[8px] text-green-100">+{a.pts} pts</p>

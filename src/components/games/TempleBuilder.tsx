@@ -66,7 +66,7 @@ export default function TempleBuilder(){
       {toast&&(
         <div className="mb-3 flex items-center gap-3 rounded-2xl px-4 py-3 animate-bounce shadow-lg"
           style={{background:"linear-gradient(135deg,#FFFDE7,#FFF9C4)",border:"3px solid #FFD700",boxShadow:"0 8px 24px rgba(255,215,0,0.4)"}}>
-          {toast.img&&<div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0"><Image src={toast.img} alt="" fill className="object-cover" unoptimized/></div>}
+          {toast.img&&<div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0"><Image src={toast.img} alt="" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/></div>}
           <p className="font-sans font-black text-yellow-700">{toast.msg}</p>
         </div>
       )}
@@ -74,7 +74,7 @@ export default function TempleBuilder(){
       {/* Temple preview — RESPONSIVE IMAGE */}
       <div className="relative w-full rounded-3xl overflow-hidden mb-4"
         style={{aspectRatio:"16/7",minHeight:140,boxShadow:"0 12px 40px rgba(255,215,0,0.3)",border:"4px solid #FFD700"}}>
-        <Image src={templeImg} alt="temple" fill className="object-cover transition-all duration-1000" unoptimized/>
+        <Image src={templeImg} alt="temple" fill className="object-cover transition-all duration-1000" unoptimized sizes="(max-width:768px)100vw,500px"/>
         <div className="absolute inset-0" style={{background:"linear-gradient(transparent 40%,rgba(0,0,0,0.4))"}}/>
 
         {/* Placed items overlay */}
@@ -83,7 +83,7 @@ export default function TempleBuilder(){
             const item=ITEMS.find(i=>i.id===id);
             return item?(
               <div key={id} className="relative w-10 h-10 rounded-lg overflow-hidden" style={{boxShadow:"0 2px 8px rgba(255,215,0,0.6)"}}>
-                <Image src={item.img} alt={item.label} fill className="object-cover" unoptimized/>
+                <Image src={item.img} alt={item.label} fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
               </div>
             ):null;
           })}
@@ -106,7 +106,7 @@ export default function TempleBuilder(){
               className="rounded-xl overflow-hidden transition-all hover:scale-105 active:scale-95"
               style={{boxShadow:"0 2px 8px rgba(76,175,80,0.2)"}}>
               <div className="relative" style={{aspectRatio:"1"}}>
-                <Image src={d.img} alt={d.label} fill className="object-cover" unoptimized/>
+                <Image src={d.img} alt={d.label} fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
                 <div className="absolute inset-0" style={{background:"linear-gradient(transparent 40%,rgba(0,0,0,0.6))"}}/>
                 <div className="absolute bottom-0 left-0 right-0 p-1 text-center">
                   <p className="font-sans text-[8px] font-black text-white leading-tight">{d.label}</p>
@@ -133,7 +133,7 @@ export default function TempleBuilder(){
                 transform:done?"translateY(-2px)":"translateY(0)",
               }}>
               <div className="relative" style={{aspectRatio:"1"}}>
-                <Image src={item.img} alt={item.label} fill className="object-cover" unoptimized/>
+                <Image src={item.img} alt={item.label} fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
                 <div className="absolute inset-0" style={{background:`linear-gradient(transparent 35%,${done?"rgba(255,215,0,0.85)":"rgba(0,0,0,0.6)"})`}}/>
                 {done&&<div className="absolute top-2 right-2 text-xl">✅</div>}
                 <div className="absolute bottom-0 left-0 right-0 p-1.5 text-center">

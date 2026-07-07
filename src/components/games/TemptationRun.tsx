@@ -120,7 +120,7 @@ export default function TemptationRun(){
       {lastMsg&&(
         <div className="mb-3 flex items-center gap-3 rounded-2xl px-4 py-2 animate-bounce shadow-lg"
           style={{background:lastMsg.good?"#E8F5E9":"#FFEBEE",border:`2px solid ${lastMsg.good?"#4CAF50":"#EF5350"}`}}>
-          {lastMsg.img&&<div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0"><Image src={lastMsg.img} alt="" fill className="object-cover" unoptimized/></div>}
+          {lastMsg.img&&<div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0"><Image src={lastMsg.img} alt="" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/></div>}
           <span className="font-hindi text-sm font-black" style={{color:lastMsg.good?"#1B5E20":"#B71C1C"}}>{lastMsg.text}</span>
         </div>
       )}
@@ -129,7 +129,7 @@ export default function TemptationRun(){
         <div className="text-center max-w-sm mb-6 w-full">
           {/* Temple preview */}
           <div className="relative w-full rounded-2xl overflow-hidden mb-4" style={{aspectRatio:"16/9"}}>
-            <Image src="/games/temptation/temple.jpg" alt="temple" fill className="object-cover" unoptimized/>
+            <Image src="/games/temptation/temple.jpg" alt="temple" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
             <div className="absolute inset-0 flex items-center justify-center" style={{background:"rgba(0,0,0,0.3)"}}>
               <div className="text-center">
                 <div className="text-5xl mb-2">🏃</div>
@@ -152,12 +152,12 @@ export default function TemptationRun(){
           <div className="relative w-full max-w-lg rounded-3xl overflow-hidden mb-4"
             style={{height:220,border:"3px solid #FF9800",boxShadow:"0 8px 24px rgba(255,152,0,0.3)"}}>
             {/* Background path */}
-            <Image src="/games/temptation/path.jpg" alt="path" fill className="object-cover" unoptimized/>
+            <Image src="/games/temptation/path.jpg" alt="path" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
             <div className="absolute inset-0" style={{background:"rgba(0,0,0,0.1)"}}/>
 
             {/* Temple goal */}
             <div className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl overflow-hidden" style={{width:52,height:64,boxShadow:"0 0 12px rgba(255,215,0,0.8)"}}>
-              <Image src="/games/temptation/temple.jpg" alt="temple" fill className="object-cover" unoptimized/>
+              <Image src="/games/temptation/temple.jpg" alt="temple" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
             </div>
 
             {/* Lane dividers */}
@@ -166,7 +166,7 @@ export default function TemptationRun(){
             {/* Character */}
             <div className="absolute rounded-xl overflow-hidden transition-all duration-150"
               style={{left:56,top:`${LANES_Y[lane]}%`,transform:"translateY(-50%)",width:44,height:56,filter:`drop-shadow(0 0 ${glow/10}px rgba(255,215,0,0.8))`}}>
-              <Image src={charImg} alt="chintu" fill className="object-cover" unoptimized/>
+              <Image src={charImg} alt="chintu" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
             </div>
 
             {/* Aura glow around character when high glow */}
@@ -177,7 +177,7 @@ export default function TemptationRun(){
               <div key={item.id} className="absolute" style={{left:item.x,top:`${LANES_Y[item.lane]}%`,transform:"translateY(-50%)",width:42,height:42}}>
                 {item.img?(
                   <div className="relative w-full h-full rounded-lg overflow-hidden" style={{border:`2px solid ${item.type==="bad"?"#EF5350":"#4CAF50"}`,boxShadow:`0 0 8px ${item.type==="bad"?"rgba(239,83,80,0.5)":"rgba(76,175,80,0.5)"}`}}>
-                    <Image src={item.img} alt={item.label} fill className="object-cover" unoptimized/>
+                    <Image src={item.img} alt={item.label} fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
                   </div>
                 ):(
                   <div className="w-full h-full rounded-lg flex items-center justify-center text-2xl"

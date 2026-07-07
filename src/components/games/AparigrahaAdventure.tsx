@@ -72,17 +72,17 @@ export default function AparigrahaAdventure(){
 
       {/* Journey path — RESPONSIVE IMAGE */}
       <div className="relative w-full rounded-3xl overflow-hidden mb-4" style={{aspectRatio:"16/7",minHeight:130,border:"3px solid #795548",boxShadow:"0 8px 24px rgba(121,85,72,0.25)"}}>
-        <Image src="/games/aparigraha/forest_path.jpg" alt="path" fill className="object-cover" unoptimized/>
+        <Image src="/games/aparigraha/forest_path.jpg" alt="path" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
 
         {/* Character walking */}
         <div className="absolute top-1/2 -translate-y-1/2 transition-all duration-100 rounded-xl overflow-hidden"
           style={{left:`${journeyStep!==null?journeyStep*0.7+4:4}%`,width:44,height:56,boxShadow:"0 4px 12px rgba(0,0,0,0.3)"}}>
-          <Image src={charImg} alt="chintu" fill className="object-cover" unoptimized/>
+          <Image src={charImg} alt="chintu" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
         </div>
 
         {/* Temple goal */}
         <div className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl overflow-hidden" style={{width:52,height:60,boxShadow:"0 0 16px rgba(255,215,0,0.8)"}}>
-          <Image src="/games/aparigraha/temple.jpg" alt="temple" fill className="object-cover" unoptimized/>
+          <Image src="/games/aparigraha/temple.jpg" alt="temple" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
         </div>
 
         {/* Progress bar */}
@@ -97,7 +97,7 @@ export default function AparigrahaAdventure(){
       {result&&(
         <div className="mb-4 rounded-3xl overflow-hidden" style={{border:`3px solid ${result==="success"?"#4CAF50":"#EF5350"}`,animation:"popIn 0.4s ease"}}>
           <div className="relative" style={{aspectRatio:"16/6"}}>
-            <Image src={result==="success"?"/games/chintu/victory.jpg":"/games/chintu/sad.jpg"} alt="result" fill className="object-cover" unoptimized/>
+            <Image src={result==="success"?"/games/chintu/victory.jpg":"/games/chintu/sad.jpg"} alt="result" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
             <div className="absolute inset-0" style={{background:"rgba(0,0,0,0.3)"}}/>
             <div className="absolute inset-0 flex items-center justify-center">
               <p className="font-sans font-black text-white text-xl text-center px-4" style={{textShadow:"0 2px 8px rgba(0,0,0,0.8)"}}>
@@ -133,7 +133,7 @@ export default function AparigrahaAdventure(){
               }}>
               <div className="relative" style={{aspectRatio:"4/3"}}>
                 <Image src={item.img} alt={item.label} fill className="object-cover" unoptimized
-                  style={{filter:inPack?"saturate(1.3)":"saturate(0.8)"}}/>
+                  style={{filter:inPack?"saturate(1.3)":"saturate(0.8)"}} sizes="(max-width:768px)100vw,500px"/>
                 <div className="absolute inset-0" style={{background:`linear-gradient(transparent 40%,${inPack?item.needed?"rgba(27,94,32,0.85)":"rgba(183,28,28,0.85)":"rgba(0,0,0,0.55)"})`}}/>
                 {inPack&&<div className="absolute top-2 right-2 text-xl">✓</div>}
                 <div className="absolute bottom-0 left-0 right-0 p-2">

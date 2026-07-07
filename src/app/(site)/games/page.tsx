@@ -7,8 +7,6 @@ export const metadata: Metadata = {
   description: "12 fun Jain educational games for kids! Ages 4–12.",
 };
 
-export const dynamic = "force-dynamic";
-
 const DIFFICULTY_LABEL = ["", "⭐ Easy", "⭐⭐ Medium", "⭐⭐⭐ Hard"];
 
 export default function GamesPage() {
@@ -114,7 +112,7 @@ const BRIGHT_CARDS: Record<string,{bg:string;border:string;text:string;badge:str
 function GameCard({ game }: { game: typeof GAMES[0] }) {
   const theme = BRIGHT_CARDS[game.id] || { bg:"linear-gradient(135deg,#f5f5f5,#eeeeee)", border:"#999", text:"#333", badge:"#666" };
   return (
-    <Link href={`/games/${game.id}`}
+    <Link href={`/games/${game.id}`} prefetch={true}
       className="group block rounded-3xl overflow-hidden transition-all duration-300 hover:-translate-y-3 hover:rotate-1"
       style={{ background:theme.bg, border:`3px solid ${theme.border}`,
         boxShadow:`0 8px 24px ${theme.border}30, 0 2px 8px rgba(0,0,0,0.08)` }}>

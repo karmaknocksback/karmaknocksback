@@ -167,7 +167,7 @@ export default function KarmaSnakesLadders(){
               boxShadow:turn===i&&!event&&!winner?`0 6px 20px ${p.glow}`:"0 2px 8px rgba(0,0,0,0.07)",
               transform:moving===i?"scale(1.04)":"scale(1)"}}>
             <div className="relative rounded-xl overflow-hidden shrink-0" style={{width:40,height:48,boxShadow:`0 3px 10px ${p.glow}`}}>
-              <Image src={moving===i?p.runImg:p.idleImg} alt={p.name} fill className="object-cover" unoptimized/>
+              <Image src={moving===i?p.runImg:p.idleImg} alt={p.name} fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
             </div>
             <div className="min-w-0">
               <p className="font-sans text-xs font-black truncate" style={{color:p.color}}>{p.name}</p>
@@ -182,7 +182,7 @@ export default function KarmaSnakesLadders(){
       <div className="w-full max-w-md relative"
         style={{boxShadow:"0 0 0 3px white,0 0 0 6px #FFD700,0 12px 40px rgba(0,0,0,0.2)",borderRadius:16,overflow:"hidden"}}>
         <div className="relative w-full" style={{aspectRatio:"1/1"}}>
-          <Image src="/games/snl/board3.jpg" alt="board" fill className="object-cover" unoptimized priority/>
+          <Image src="/games/snl/karma_path_board.jpg" alt="board" fill className="object-cover" unoptimized priority sizes="(max-width:768px)100vw,500px"/>
 
           {/* SVG overlay — viewBox makes it scale perfectly */}
           <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 ${VBOX} ${VBOX}`}>
@@ -260,7 +260,7 @@ export default function KarmaSnakesLadders(){
               animation:"popIn 0.35s cubic-bezier(0.34,1.56,0.64,1)"}}>
             {/* Image header */}
             <div className="relative" style={{aspectRatio:"4/3"}}>
-              <Image src={event.type==="bonus"?PLAYERS[event.pi].celebImg:isGoodEvent?"/games/snl/ladder2.jpg":"/games/snl/snake2.jpg"} alt="" fill className="object-cover" unoptimized/>
+              <Image src={event.type==="bonus"?PLAYERS[event.pi].celebImg:isGoodEvent?"/games/snl/ladder2.jpg":"/games/snl/snake2.jpg"} alt="" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
               <div className="absolute inset-0 flex items-center justify-center" style={{background:"rgba(0,0,0,0.2)"}}>
                 <span className="text-6xl drop-shadow-lg">{vsq?.emoji||vcsq?.emoji||(event.type==="bonus"?"🎲":isGoodEvent?"🪜":"🐍")}</span>
               </div>
@@ -282,7 +282,7 @@ export default function KarmaSnakesLadders(){
               )}
               {/* Character */}
               <div className="relative w-16 h-20 rounded-xl overflow-hidden mx-auto mb-4">
-                <Image src={isGoodEvent||event.type==="bonus"?PLAYERS[event.pi].celebImg:PLAYERS[event.pi].sadImg} alt="" fill className="object-cover" unoptimized/>
+                <Image src={isGoodEvent||event.type==="bonus"?PLAYERS[event.pi].celebImg:PLAYERS[event.pi].sadImg} alt="" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
               </div>
               <button onClick={closeEvent}
                 className="px-8 py-3 rounded-full font-sans font-black text-sm text-white"
@@ -302,7 +302,7 @@ export default function KarmaSnakesLadders(){
           <div className="rounded-3xl overflow-hidden w-full max-w-sm"
             style={{border:"4px solid #FFD700",boxShadow:"0 24px 80px rgba(255,215,0,0.6)",animation:"popIn 0.4s ease"}}>
             <div className="relative" style={{aspectRatio:"4/3"}}>
-              <Image src={PLAYERS[winner].celebImg} alt="winner" fill className="object-cover" unoptimized/>
+              <Image src={PLAYERS[winner].celebImg} alt="winner" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
               <div className="absolute bottom-2 inset-x-0 text-center text-5xl">🏆</div>
             </div>
             <div className="p-6 text-center" style={{background:"linear-gradient(135deg,#FFFDE7,#FFF9C4)"}}>
@@ -310,7 +310,7 @@ export default function KarmaSnakesLadders(){
               <div className="grid grid-cols-2 gap-3 mb-4">
                 {PLAYERS.map((p,i)=>(
                   <div key={i} className="rounded-2xl p-3" style={{background:i===winner?"rgba(255,215,0,0.25)":"white",border:`2px solid ${p.color}`}}>
-                    <div className="relative w-10 h-12 rounded-lg overflow-hidden mx-auto mb-1"><Image src={p.idleImg} alt={p.name} fill className="object-cover" unoptimized/></div>
+                    <div className="relative w-10 h-12 rounded-lg overflow-hidden mx-auto mb-1"><Image src={p.idleImg} alt={p.name} fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/></div>
                     <p className="font-sans text-xs font-black" style={{color:p.color}}>{p.name}</p>
                     <p className="font-display text-xl font-black text-gray-700">⭐{karmaPoints[i]}</p>
                   </div>

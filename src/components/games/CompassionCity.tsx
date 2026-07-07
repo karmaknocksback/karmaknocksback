@@ -42,7 +42,7 @@ export default function CompassionCity(){
       {/* City panorama — FULL RESPONSIVE */}
       <div className="relative w-full rounded-3xl overflow-hidden mt-2 mb-4"
         style={{aspectRatio:"16/7",minHeight:140,boxShadow:"0 8px 32px rgba(0,0,0,0.15)",border:"3px solid #FFD700"}}>
-        <Image src={cityImg} alt="city" fill className="object-cover transition-all duration-1000" unoptimized priority/>
+        <Image src={cityImg} alt="city" fill className="object-cover transition-all duration-1000" unoptimized priority sizes="(max-width:768px)100vw,500px"/>
         <div className="absolute inset-0" style={{background:"linear-gradient(transparent 50%,rgba(0,0,0,0.45)"}}/>
 
         {/* City header */}
@@ -69,7 +69,7 @@ export default function CompassionCity(){
         <div className="mb-3 flex items-center gap-3 rounded-2xl p-3 animate-bounce shadow-lg"
           style={{background:"white",border:`3px solid ${lastDone.color}`,boxShadow:`0 8px 24px ${lastDone.color}40`}}>
           <div className="relative w-14 h-14 rounded-xl overflow-hidden shrink-0">
-            <Image src={lastDone.img} alt={lastDone.title} fill className="object-cover" unoptimized/>
+            <Image src={lastDone.img} alt={lastDone.title} fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
           </div>
           <div>
             <p className="font-sans text-sm font-black" style={{color:lastDone.color}}>✅ {lastDone.title}</p>
@@ -91,7 +91,7 @@ export default function CompassionCity(){
             {/* Image */}
             <div className="relative" style={{aspectRatio:"4/3"}}>
               <Image src={m.img} alt={m.title} fill className="object-cover" unoptimized
-                style={{filter:m.done?"saturate(1.4) brightness(1.05)":"none",transition:"filter 0.4s"}}/>
+                style={{filter:m.done?"saturate(1.4) brightness(1.05)":"none",transition:"filter 0.4s"}} sizes="(max-width:768px)100vw,500px"/>
               <div className="absolute inset-0" style={{background:`linear-gradient(transparent 45%,${m.done?m.color+"dd":"rgba(0,0,0,0.55)"})`}}/>
               {m.done&&(
                 <div className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-lg font-black"
@@ -113,7 +113,7 @@ export default function CompassionCity(){
       {done===MISSIONS.length&&(
         <div className="mt-5 rounded-3xl overflow-hidden" style={{border:"3px solid #FFD700",boxShadow:"0 16px 48px rgba(255,215,0,0.4)"}}>
           <div className="relative" style={{aspectRatio:"16/6"}}>
-            <Image src="/games/compassion/city_happy.jpg" alt="paradise" fill className="object-cover" unoptimized/>
+            <Image src="/games/compassion/city_happy.jpg" alt="paradise" fill className="object-cover" unoptimized sizes="(max-width:768px)100vw,500px"/>
             <div className="absolute inset-0 flex items-center justify-center" style={{background:"rgba(0,0,0,0.25)"}}>
               <div className="text-center">
                 <p className="font-sans text-2xl font-black text-white">🌃 Compassion City Complete!</p>
