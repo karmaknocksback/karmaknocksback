@@ -1,4 +1,5 @@
 "use client";
+import { playSound } from "@/lib/sounds";
 import { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
 import Dice3D from "./Dice3D";
@@ -128,7 +129,7 @@ export default function KarmaLudo() {
     if (tok.pos === -1) {
       // Must roll 6 to enter
       if (d !== 6) return null;
-      tok.pos = 0; // enter at start
+      tok.pos = 0; playSound.tokenEnter(); // enter at start
     } else {
       tok.pos = tok.pos + d;
       if (tok.pos > FINISH_POS) tok.pos = tok.pos; // don't overshoot
@@ -143,6 +144,7 @@ export default function KarmaLudo() {
         const oppBoardPos = (opp.pos + START_OFFSET[player === USER ? CPU : USER]) % TRACK_LEN;
         if (myBoardPos === oppBoardPos && tok.pos < TRACK_LEN) {
           // Hit opponent — send home
+          playSound.sendHome();
           const sentHome = { ...newTokens[i], pos: -1 };
           newTokens[i] = sentHome;
           addLog(`💥 ${player===USER?"You":"CPU"} sent opponent home!`);
@@ -168,9 +170,9 @@ export default function KarmaLudo() {
 
   const roll = useCallback(() => {
     if (rolling || diceResult !== null || event || winner !== null || turn !== USER || cpuThinking) return;
-    setRolling(true);
+    setRolling(true);playSound.diceRoll();
     setTimeout(() => {
-      const d = Math.ceil(Math.random() * 6);
+      const d = Math.ceil(Math.random() * 6);playSound.diceResult(d);
       setDice(d); setRolling(false);
 
       const movable = getMovableTokens(USER, d);

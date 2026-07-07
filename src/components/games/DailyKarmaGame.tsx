@@ -1,4 +1,5 @@
 "use client";
+import { playSound } from "@/lib/sounds";
 import { useState, useCallback } from "react";
 import Image from "next/image";
 

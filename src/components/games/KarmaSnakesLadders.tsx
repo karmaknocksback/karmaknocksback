@@ -1,4 +1,5 @@
 "use client";
+import { playSound } from "@/lib/sounds";
 import { useState, useCallback } from "react";
 import Image from "next/image";
 import Dice3D from "./Dice3D";
@@ -64,9 +65,9 @@ export default function KarmaSnakesLadders(){
 
   const roll=useCallback(()=>{
     if(rolling||event||winner!==null)return;
-    setRolling(true);
+    setRolling(true);playSound.diceRoll();
     setTimeout(()=>{
-      const d=Math.ceil(Math.random()*6);
+      const d=Math.ceil(Math.random()*6);playSound.diceResult(d);
       setDice(d);setRolling(false);
       const cur=positions[turn];
 
@@ -89,7 +90,7 @@ export default function KarmaSnakesLadders(){
       const isSix=d===6;
 
       // Check for win
-      if(next===100){setWinner(turn);return;}
+      if(next===100){setWinner(turn);playSound.win();return;}
 
       // Check for snake/ladder/virtue/vice
       const delay=800;
@@ -119,7 +120,7 @@ export default function KarmaSnakesLadders(){
     if(type==="ladder"||type==="virtue"){
       const dest=nextPos||pos;
       kp=20;
-      addLog(`🪜 ${PLAYERS[pi].name} climbs to ${dest}! +20 Karma!`);
+      addLog(`🪜 ${PLAYERS[pi].name} climbs to ${dest}! +20 Karma!`);playSound.ladderClimb();
       setKarmaPoints(k=>{const n=[...k];n[pi]+=kp;return n;});
       setPositions(p=>{const n=[...p];n[pi]=dest;return n;});
       setEvent(null);
@@ -129,7 +130,7 @@ export default function KarmaSnakesLadders(){
     }else if(type==="snake"||type==="vice"){
       const dest=nextPos||pos;
       kp=-10;
-      addLog(`🐍 ${PLAYERS[pi].name} slides to ${dest}. −10 Karma`);
+      addLog(`🐍 ${PLAYERS[pi].name} slides to ${dest}. −10 Karma`);playSound.snakeSlide();
       setKarmaPoints(k=>{const n=[...k];n[pi]=Math.max(0,n[pi]+kp);return n;});
       setPositions(p=>{const n=[...p];n[pi]=dest;return n;});
       setEvent(null);

@@ -1,4 +1,5 @@
 "use client";
+import { playSound } from "@/lib/sounds";
 import { useState, useCallback } from "react";
 import Image from "next/image";
 
@@ -93,10 +94,11 @@ export default function KarmaGrid() {
 
     // ── SYMBOL LOGIC: ◯ = positive karma, ✕ = negative karma ──
     const symbol: "circle"|"cross" = kp >= 0 ? "circle" : "cross";
+    if(kp>=0) playSound.goodChoice(); else playSound.badChoice();
 
     // Meditation tile — special handling
     if (tile.situation.isMeditation) {
-      setMeditating(true); setCountdown(5);
+      setMeditating(true); setCountdown(5); playSound.meditation();
       let c = 5;
       const iv = setInterval(() => {
         c--;
@@ -139,7 +141,7 @@ export default function KarmaGrid() {
     setActiveTile(null);
 
     if (newTiles.every(t => t.revealed)) {
-      setGameOver(true);
+      setGameOver(true); playSound.win();
     } else {
       setTurn(t => t===0?1:0);
     }
@@ -222,7 +224,7 @@ export default function KarmaGrid() {
 
             return (
               <button key={i}
-                onClick={() => !tile.revealed && !gameOver && setActiveTile(i)}
+                onClick={() => { if(!tile.revealed && !gameOver){ playSound.tileFlip(); setActiveTile(i); }}}
                 disabled={tile.revealed || gameOver}
                 className="relative rounded-2xl flex flex-col items-center justify-center overflow-hidden transition-all hover:scale-105 active:scale-95 disabled:cursor-default"
                 style={{

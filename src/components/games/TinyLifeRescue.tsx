@@ -1,4 +1,5 @@
 "use client";
+import { playSound } from "@/lib/sounds";
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 
@@ -115,14 +116,7 @@ export default function TinyLifeRescue() {
             flash(`✨ ${c.hi} बचाया! +15`, true, c.x, c.y);
             setRescued(r => r+1);
             setKarma(k => k+15);
-            try {
-              const ctx = new AudioContext();
-              const o = ctx.createOscillator(); const g = ctx.createGain();
-              o.connect(g); g.connect(ctx.destination);
-              o.frequency.value = 660; g.gain.setValueAtTime(0.2, ctx.currentTime);
-              g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.3);
-              o.start(); o.stop(ctx.currentTime+0.3);
-            } catch {}
+            playSound.rescue();
             return {...c, rescued:true, alive:false};
           }
         }

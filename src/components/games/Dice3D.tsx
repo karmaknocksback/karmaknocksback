@@ -1,4 +1,5 @@
 "use client";
+import { playSound } from "@/lib/sounds";
 import { useEffect, useRef, useState } from "react";
 
 /* ── Dot layout for each face 1–6 ── */
@@ -35,6 +36,11 @@ export default function Dice3D({ size=96, result=1, rolling=false, color="#fff",
   const [rz, setRz] = useState(0);
   const animRef = useRef<ReturnType<typeof setInterval>|null>(null);
   const half = size / 2;
+
+  useEffect(() => {
+    if (rolling) playSound.diceRoll();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rolling]);
 
   useEffect(() => {
     if (rolling) {

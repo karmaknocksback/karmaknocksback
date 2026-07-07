@@ -1,4 +1,5 @@
 "use client";
+import { playSound } from "@/lib/sounds";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { JAIN_WORDS, getRandomWords, type JainWord } from "@/lib/jain-words";
 
@@ -88,6 +89,7 @@ export default function KarmaWordGame() {
 
   function tapLetter(i: number) {
     if (selected.includes(i)) return;
+    playSound.letterTap();
     setSelected(s => [...s, i]);
   }
 
@@ -109,11 +111,12 @@ export default function KarmaWordGame() {
       setScore(sc => sc + currentWord.karma);
       setGems(g => g + 3);
       setSparkle(true);
+      playSound.wordCorrect();
       setTimeout(() => setSparkle(false), 800);
       setShowCard(currentWord);
       setSelected([]); setHinted([]);
     } else {
-      setShake(true);
+      setShake(true); playSound.wordWrong();
       setTimeout(() => { setShake(false); setSelected(s => s.filter(i => hinted.includes(i))); }, 500);
     }
   }, [selected, letters, currentWord, hinted]);
@@ -141,7 +144,7 @@ export default function KarmaWordGame() {
     const hintedPrefix = selected.filter(i => hinted.includes(i));
     setSelected([...hintedPrefix, letterIdx]);
     setHinted(h => [...h, letterIdx]);
-    setHintPoints(h => h - 10);
+    playSound.hint(); setHintPoints(h => h - 10);
   }
 
   function buyHintPoints(pkg: typeof HINT_PACKAGES[0]) {
