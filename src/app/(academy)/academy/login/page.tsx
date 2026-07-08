@@ -2,10 +2,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  const redirectTo = searchParams?.get("redirect") || "/academy/dashboard";
   const [form, setForm] = useState({ email:"", password:"" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -20,7 +24,7 @@ export default function LoginPage() {
       const data = await res.json();
       if (!res.ok) { setError(data.error); return; }
       localStorage.setItem("academy_token", data.token);
-      router.push("/academy/dashboard");
+      router.push(redirectTo);
     } catch { setError("Login failed. Please try again."); }
     finally { setLoading(false); }
   }

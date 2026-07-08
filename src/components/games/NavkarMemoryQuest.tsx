@@ -35,14 +35,29 @@ const CARDS_DATA = [
 
 interface Card { id:string;img:string;label:string;sub:string;color:string;pairId:string;key:string; }
 
-function buildDeck():Card[] {
+const LEVEL_PAIRS = [2, 4, 6, 8, 10];
+const LEVEL_NAMES = ["Beginner","Easy","Medium","Hard","Master"];
+const LEVEL_COLORS = ["#4CAF50","#00BCD4","#FF9800","#9C27B0","#FFD700"];
+const LEVEL_EMOJIS = ["🌱","🌸","🌿","🌺","🌟"];
+
+function buildDeck(pairs = 6):Card[] {
   const d:Card[]=[];
-  CARDS_DATA.forEach(c=>{d.push({...c,pairId:c.id,key:`${c.id}-A`});d.push({...c,pairId:c.id,key:`${c.id}-B`});});
+  for(let i=0;i<pairs;i++){
+    const c=CARDS_DATA[i%CARDS_DATA.length];
+    const uid=i<CARDS_DATA.length?c.id:`${c.id}_${Math.floor(i/CARDS_DATA.length)}`;
+    d.push({...c,pairId:uid,key:`${uid}-A`});
+    d.push({...c,pairId:uid,key:`${uid}-B`});
+  }
   return d.sort(()=>Math.random()-0.5);
 }
 
 export default function NavkarMemoryQuest() {
-  const [deck,setDeck]=useState<Card[]>(buildDeck);
+  const [level,setLevel]=useState<number>(()=>{
+    if(typeof window==="undefined")return 0;
+    return parseInt(localStorage.getItem("nq_level")||"0",10);
+  });
+  const pairCount = LEVEL_PAIRS[Math.min(level,LEVEL_PAIRS.length-1)];
+  const [deck,setDeck]=useState<Card[]>(()=>buildDeck(LEVEL_PAIRS[Math.min(parseInt(typeof window!=="undefined"?localStorage.getItem("nq_level")||"0":"0",10),LEVEL_PAIRS.length-1)]));
   const [flipped,setFlipped]=useState<string[]>([]);
   const [matched,setMatched]=useState<string[]>([]);
   const [moves,setMoves]=useState(0);
@@ -62,7 +77,7 @@ export default function NavkarMemoryQuest() {
   },[started,won]);
 
   useEffect(()=>{
-    if(matched.length>0&&matched.length===CARDS_DATA.length){
+    if(matched.length>0&&matched.length===pairCount){
       const t=setTimeout(()=>setWon(true),500);
       return ()=>clearTimeout(t);
     }
@@ -99,6 +114,34 @@ export default function NavkarMemoryQuest() {
 
   return (
     <div className="flex flex-col items-center w-full px-3 pb-10 overflow-x-hidden">
+      {/* Level selector */}
+      <div className="w-full max-w-lg mb-3 mt-2">
+        <div className="flex gap-2 justify-center">
+          {LEVEL_PAIRS.map((pairs,i)=>(
+            <button key={i} onClick={()=>{
+              const nl=i; setLevel(nl);
+              localStorage.setItem("nq_level",String(nl));
+              const pc=LEVEL_PAIRS[nl];
+              setDeck(buildDeck(pc));setMatched([]);setFlipped([]);setScore(0);setMoves(0);setTime(0);setWon(false);
+            }}
+              className="flex-1 rounded-xl py-2 font-sans text-xs font-black transition-all"
+              style={{
+                background:level===i?LEVEL_COLORS[i]:"rgba(255,255,255,0.7)",
+                color:level===i?"white":"#666",
+                border:`2px solid ${LEVEL_COLORS[i]}`,
+                transform:level===i?"scale(1.05)":"scale(1)",
+                boxShadow:level===i?`0 4px 12px ${LEVEL_COLORS[i]}50`:"none",
+              }}>
+              <div>{LEVEL_EMOJIS[i]}</div>
+              <div className="text-[9px] mt-0.5">L{i+1}</div>
+              <div className="text-[8px] opacity-75">{pairs*2} cards</div>
+            </button>
+          ))}
+        </div>
+        <p className="font-sans text-[10px] text-center text-gray-400 mt-1">
+          Level {level+1}: {LEVEL_NAMES[level]} — {pairCount*2} cards ({pairCount} pairs)
+        </p>
+      </div>
       {/* Floating particles */}
       <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:60}}>
         {particles.map(p=>(
@@ -108,7 +151,7 @@ export default function NavkarMemoryQuest() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4 mt-2 w-full max-w-xl">
-        {[{l:"⭐ Score",v:score,c:"#FF9800"},{l:"🎯 Moves",v:moves,c:"#9C27B0"},{l:"⏱️",v:fmt(time),c:"#2196F3"},{l:"✅ Pairs",v:`${matched.length}/${CARDS_DATA.length}`,c:"#4CAF50"}].map(s=>(
+        {[{l:"⭐ Score",v:score,c:"#FF9800"},{l:"🎯 Moves",v:moves,c:"#9C27B0"},{l:"⏱️",v:fmt(time),c:"#2196F3"},{l:`✅ L${level+1}`,v:`${matched.length}/${pairCount}`,c:"#4CAF50"}].map(s=>(
           <div key={s.l} className="rounded-2xl p-3 text-center" style={{background:"white",border:`3px solid ${s.c}30`,boxShadow:`0 4px 12px ${s.c}20`}}>
             <p className="font-sans text-[10px] text-gray-400">{s.l}</p>
             <p className="font-display text-xl font-black" style={{color:s.c}}>{s.v}</p>
@@ -131,7 +174,7 @@ export default function NavkarMemoryQuest() {
       )}
 
       {/* Card grid */}
-      <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 w-full max-w-lg">
+      <div className={`grid ${pairCount<=4?"grid-cols-4":pairCount<=6?"grid-cols-6":"grid-cols-5"} gap-1.5 w-full max-w-lg`}>
         {deck.map(card=>{
           const isFlipped=flipped.includes(card.key);
           const isMatched=matched.includes(card.pairId);
@@ -188,6 +231,20 @@ export default function NavkarMemoryQuest() {
                 ))}
               </div>
               <p className="font-hindi text-sm mb-4" style={{color:"#6A1B9A"}}>🧠 You learned all 12 Jain values! णमो सिद्धाणं 🙏</p>
+              <div className="flex gap-3 mb-3">
+                {level<LEVEL_PAIRS.length-1&&(
+                  <button onClick={()=>{
+                    const nl=level+1;setLevel(nl);
+                    localStorage.setItem("nq_level",String(nl));
+                    const pc=LEVEL_PAIRS[nl];
+                    setDeck(buildDeck(pc));setMatched([]);setFlipped([]);setScore(0);setMoves(0);setTime(0);setWon(false);
+                  }}
+                    className="flex-1 py-3 rounded-2xl font-sans font-black text-sm text-white"
+                    style={{background:`linear-gradient(135deg,#FFD700,#FF9800)`,color:"#1a0800"}}>
+                    ▶ Level {level+2}: {LEVEL_PAIRS[level+1]*2} cards!
+                  </button>
+                )}
+              </div>
               <button onClick={restart} className="px-8 py-3 rounded-full font-sans font-black text-sm text-white"
                 style={{background:"linear-gradient(135deg,#9C27B0,#E91E63)",boxShadow:"0 6px 20px rgba(156,39,176,0.5)"}}>
                 Play Again! 🧩

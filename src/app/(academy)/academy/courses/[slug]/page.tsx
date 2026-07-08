@@ -18,21 +18,43 @@ export default function CourseDetailPage() {
   const [activeVideo, setActiveVideo] = useState<CourseData["videos"][0]|null>(null);
   const [enrolled, setEnrolled] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
-  const token = typeof window !== "undefined" ? localStorage.getItem("academy_token") : null;
 
-  useEffect(() => {
-    fetch(`/api/academy/courses/${slug}`, { headers: token?{Authorization:`Bearer ${token}`}:{} })
-      .then(r=>r.json())
-      .then(d => { setData(d); setEnrolled(!!d.enrollment); if(d.videos?.[0]) setActiveVideo(d.videos[0]); })
-      .finally(() => setLoading(false));
-  }, [slug, token]);
+  // Always read token fresh
+  const getToken = () => typeof window !== "undefined" ? localStorage.getItem("academy_token") : null;
+  const isLoggedIn = !!getToken();
+
+  const loadCourse = useCallback(async () => {
+    const token = getToken();
+    const headers: Record<string,string> = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    const res = await fetch(`/api/academy/courses/${slug}`, { headers });
+    const d = await res.json();
+    setData(d);
+    setEnrolled(!!d.enrollment);
+    if (d.videos?.[0]) setActiveVideo(d.videos[0]);
+    setLoading(false);
+  }, [slug]);
+
+  useEffect(() => { loadCourse(); }, [loadCourse]);
 
   const enroll = useCallback(async () => {
-    if (!token) { router.push("/academy/login"); return; }
+    const token = getToken();
+    if (!token) { router.push(`/academy/login?redirect=/academy/courses/${slug}`); return; }
     setEnrolling(true);
-    await fetch(`/api/academy/courses/${slug}/enroll`, { method:"POST", headers:{Authorization:`Bearer ${token}`} });
-    setEnrolled(true); setEnrolling(false);
-  }, [slug, token, router]);
+    const res = await fetch(`/api/academy/courses/${slug}/enroll`, {
+      method:"POST",
+      headers:{ "Authorization": `Bearer ${token}`, "Content-Type":"application/json" }
+    });
+    if (res.ok) {
+      setEnrolled(true);
+      await loadCourse(); // refresh progress
+    }
+    setEnrolling(false);
+  }, [slug, router, loadCourse]);
+
+  function canWatch(v: CourseData["videos"][0]) {
+    return enrolled || v.is_free_preview === 1;
+  }
 
   function getYTId(url: string): string {
     const m = url.match(/(?:v=|youtu\.be\/)([^&?]+)/);
@@ -44,28 +66,62 @@ export default function CourseDetailPage() {
 
   const { course, videos, quiz, enrollment } = data;
   const completedVideos = videos.filter(v=>v.completed).length;
+  const ytId = activeVideo ? (activeVideo.youtube_id || getYTId(activeVideo.youtube_url)) : null;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 pb-20">
-      {/* Breadcrumb */}
       <div className="flex items-center gap-2 font-sans text-xs text-gray-400 mb-4">
         <Link href="/academy">Academy</Link><span>/</span>
         <Link href="/academy/courses">Courses</Link><span>/</span>
-        <span className="text-amber-700 font-bold">{course.title}</span>
+        <span className="text-amber-700 font-bold truncate max-w-[200px]">{course.title}</span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Video player area */}
+        {/* Left: Player */}
         <div className="lg:col-span-2 space-y-4">
-          {/* Player */}
-          <div className="rounded-2xl overflow-hidden bg-black" style={{aspectRatio:"16/9"}}>
-            {activeVideo ? (
+          {/* Video player */}
+          <div className="rounded-2xl overflow-hidden bg-black relative" style={{aspectRatio:"16/9"}}>
+            {activeVideo && canWatch(activeVideo) && ytId ? (
               <iframe
-                src={`https://www.youtube.com/embed/${activeVideo.youtube_id||getYTId(activeVideo.youtube_url)}?rel=0&modestbranding=1`}
-                className="w-full h-full" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowFullScreen/>
+                src={`https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1`}
+                className="w-full h-full"
+                allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture"
+                allowFullScreen/>
+            ) : activeVideo && !canWatch(activeVideo) ? (
+              /* Locked video */
+              <div className="w-full h-full flex flex-col items-center justify-center gap-4 px-6 text-center"
+                style={{background:"linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)"}}>
+                <div className="text-6xl">🔒</div>
+                <div>
+                  <p className="font-sans font-black text-white text-xl mb-2">Video Locked</p>
+                  <p className="font-sans text-gray-300 text-sm mb-4">
+                    {isLoggedIn ? "Enroll in this course to watch all videos" : "Sign in and enroll to watch this video"}
+                  </p>
+                </div>
+                {isLoggedIn ? (
+                  <button onClick={enroll} disabled={enrolling}
+                    className="px-8 py-3 rounded-full font-sans font-black text-sm text-amber-900 disabled:opacity-60"
+                    style={{background:"linear-gradient(135deg,#FFD700,#FF9800)"}}>
+                    {enrolling ? "Enrolling..." : "🎓 Enroll Free to Watch"}
+                  </button>
+                ) : (
+                  <div className="flex gap-3">
+                    <Link href={`/academy/login?redirect=/academy/courses/${slug}`}
+                      className="px-6 py-2.5 rounded-full font-sans font-black text-sm text-amber-900"
+                      style={{background:"linear-gradient(135deg,#FFD700,#FF9800)"}}>
+                      Sign In
+                    </Link>
+                    <Link href="/academy/register"
+                      className="px-6 py-2.5 rounded-full font-sans font-black text-sm text-white"
+                      style={{background:"linear-gradient(135deg,#9C27B0,#7B1FA2)"}}>
+                      Register Free
+                    </Link>
+                  </div>
+                )}
+              </div>
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <div className="text-center text-white"><div className="text-5xl mb-2">▶️</div><p className="font-sans text-sm">Select a video to watch</p></div>
+              <div className="w-full h-full flex items-center justify-center text-white">
+                <div className="text-center"><span className="text-5xl">▶️</span><p className="mt-2 font-sans text-sm">Select a video</p></div>
               </div>
             )}
           </div>
@@ -75,7 +131,9 @@ export default function CourseDetailPage() {
               <h2 className="font-sans font-black text-base text-gray-800 mb-1">{activeVideo.title}</h2>
               <div className="flex items-center gap-3 text-xs text-gray-400 font-sans">
                 <span>⏱️ {Math.round(activeVideo.duration_seconds/60)} min</span>
-                {activeVideo.completed ? <span className="text-green-600 font-bold">✅ Completed</span> : activeVideo.watch_percent ? <span>{activeVideo.watch_percent}% watched</span> : null}
+                {activeVideo.completed ? <span className="text-green-600 font-bold">✅ Completed</span>
+                  : activeVideo.watch_percent ? <span>{activeVideo.watch_percent}% watched</span> : null}
+                {!canWatch(activeVideo) && <span className="text-orange-500 font-bold">🔒 Login to watch</span>}
               </div>
             </div>
           )}
@@ -96,12 +154,12 @@ export default function CourseDetailPage() {
 
         {/* Right sidebar */}
         <div className="space-y-4">
-          {/* Enroll card */}
+          {/* Enroll / Progress */}
           <div className="bg-white rounded-2xl p-5 shadow-md sticky top-20" style={{border:"2px solid rgba(255,215,0,0.4)"}}>
-            {enrollment ? (
+            {enrollment && (
               <div className="mb-4">
                 <div className="flex justify-between text-xs font-sans mb-1">
-                  <span className="text-gray-500">Progress</span>
+                  <span className="text-gray-500">Your Progress</span>
                   <span className="font-bold text-amber-700">{enrollment.progress_percent}%</span>
                 </div>
                 <div className="h-3 rounded-full bg-gray-100 overflow-hidden">
@@ -109,54 +167,76 @@ export default function CourseDetailPage() {
                 </div>
                 <p className="font-sans text-xs text-gray-400 mt-1">{completedVideos}/{videos.length} videos completed</p>
               </div>
-            ) : null}
+            )}
 
-            {!enrolled ? (
+            {!isLoggedIn ? (
+              <div className="space-y-2.5">
+                <p className="font-sans text-sm text-gray-600 text-center mb-3">Sign in to enroll and watch all videos</p>
+                <Link href={`/academy/login?redirect=/academy/courses/${slug}`}
+                  className="block w-full text-center py-3 rounded-2xl font-sans font-black text-sm text-amber-900"
+                  style={{background:"linear-gradient(135deg,#FFD700,#FF9800)"}}>
+                  🔑 Sign In to Enroll
+                </Link>
+                <Link href="/academy/register"
+                  className="block w-full text-center py-2.5 rounded-2xl font-sans font-bold text-sm text-purple-700 bg-purple-50 border-2 border-purple-200">
+                  ✨ Create Free Account
+                </Link>
+              </div>
+            ) : !enrolled ? (
               <button onClick={enroll} disabled={enrolling}
                 className="w-full py-3.5 rounded-2xl font-sans font-black text-sm text-amber-900 disabled:opacity-60"
                 style={{background:"linear-gradient(135deg,#FFD700,#FF9800)",boxShadow:"0 4px 16px rgba(255,215,0,0.4)"}}>
-                {enrolling ? "Enrolling..." : "🎓 Enroll Free"}
+                {enrolling ? "Enrolling..." : "🎓 Enroll Free — Watch Now!"}
               </button>
-            ) : quiz && enrollment ? (
-              enrollment.progress_percent >= 80 ? (
+            ) : quiz ? (
+              (enrollment?.progress_percent || 0) >= 80 ? (
                 <Link href={`/academy/quiz/${quiz.id}?course=${course.id}`}
                   className="block w-full text-center py-3.5 rounded-2xl font-sans font-black text-sm text-white"
                   style={{background:"linear-gradient(135deg,#4CAF50,#66BB6A)"}}>
                   🎯 Take Quiz & Get Certificate
                 </Link>
               ) : (
-                <p className="text-center font-sans text-xs text-gray-500">Watch {80 - enrollment.progress_percent}% more to unlock quiz</p>
+                <p className="text-center font-sans text-xs text-gray-500">
+                  Watch {80 - (enrollment?.progress_percent || 0)}% more videos to unlock quiz
+                </p>
               )
             ) : null}
 
-            <div className="mt-4 space-y-2 text-xs font-sans text-gray-500">
-              <p>✅ Self-paced learning</p>
-              <p>⭐ Earn {course.stars_reward} stars on completion</p>
-              <p>🏅 Certificate on passing quiz</p>
-              <p>♾️ Lifetime access</p>
+            <div className="mt-4 space-y-1.5 text-xs font-sans text-gray-500">
+              <p>✅ Enroll once, watch anytime</p>
+              <p>⭐ Earn {course.stars_reward} Karma Stars</p>
+              <p>🏅 Certificate after passing quiz</p>
+              <p>♾️ Lifetime free access</p>
             </div>
           </div>
 
           {/* Video playlist */}
           <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
             <div className="px-4 py-3 border-b border-gray-100">
-              <h3 className="font-sans font-black text-sm text-gray-800">📹 Course Content</h3>
-              <p className="font-sans text-[10px] text-gray-400">{videos.length} videos</p>
+              <h3 className="font-sans font-black text-sm text-gray-800">📹 Course Videos</h3>
+              <p className="font-sans text-[10px] text-gray-400">{videos.length} video{videos.length!==1?"s":""} · Enroll to unlock all</p>
             </div>
             <div className="max-h-80 overflow-y-auto">
-              {videos.map((v,i)=>(
-                <button key={v.id} onClick={()=>enrolled||v.is_free_preview?setActiveVideo(v):enroll()}
-                  className={`w-full text-left flex items-center gap-3 px-4 py-3 border-b border-gray-50 transition-colors hover:bg-amber-50 ${activeVideo?.id===v.id?"bg-amber-50":""}`}>
-                  <span className="text-sm shrink-0 w-6">
-                    {v.completed ? "✅" : activeVideo?.id===v.id ? "▶️" : `${i+1}.`}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className={`font-sans text-xs font-bold truncate ${enrolled||v.is_free_preview?"text-gray-800":"text-gray-400"}`}>{v.title}</p>
-                    <p className="font-sans text-[10px] text-gray-400">{Math.round(v.duration_seconds/60)} min {v.is_free_preview&&!enrolled?"· Free preview":""}</p>
-                  </div>
-                  {!enrolled && !v.is_free_preview && <span className="text-gray-300 text-xs">🔒</span>}
-                </button>
-              ))}
+              {videos.map((v,i) => {
+                const watchable = canWatch(v);
+                const isActive = activeVideo?.id === v.id;
+                return (
+                  <button key={v.id}
+                    onClick={() => watchable ? setActiveVideo(v) : enroll()}
+                    className={`w-full text-left flex items-center gap-3 px-4 py-3 border-b border-gray-50 transition-colors hover:bg-amber-50 ${isActive?"bg-amber-50":""}`}>
+                    <span className="text-sm shrink-0 w-6">
+                      {v.completed ? "✅" : isActive ? "▶️" : watchable ? `${i+1}.` : "🔒"}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-sans text-xs font-bold truncate ${watchable?"text-gray-800":"text-gray-400"}`}>{v.title}</p>
+                      <p className="font-sans text-[10px] text-gray-400">
+                        {Math.round(v.duration_seconds/60)} min
+                        {v.is_free_preview ? " · Free preview" : !enrolled ? " · Enroll to watch" : ""}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

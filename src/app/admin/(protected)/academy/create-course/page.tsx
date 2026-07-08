@@ -8,6 +8,8 @@ interface MCQRow { q: string; a: string; b: string; c: string; d: string; ans: s
 export default function CreateCoursePage() {
   const [step, setStep] = useState<1|2|3>(1);
   const [saving, setSaving] = useState(false);
+  const [slugExists, setSlugExists] = useState(false);
+  const [slugChecking, setSlugChecking] = useState(false);
   const [result, setResult] = useState<{success:boolean;message:string;courseId?:number;quizId?:number}|null>(null);
 
   // Step 1 — Course details
@@ -27,6 +29,16 @@ export default function CreateCoursePage() {
   const [xlsxName, setXlsxName] = useState("");
   const [xlsxError, setXlsxError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  async function checkSlug(s: string) {
+    if (!s) return;
+    setSlugChecking(true);
+    try {
+      const res = await fetch(`/api/academy/courses/${s}`);
+      setSlugExists(res.ok); // 200 = exists
+    } catch { setSlugExists(false); }
+    setSlugChecking(false);
+  }
 
   function makeSlug(t: string) {
     return t.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
@@ -183,7 +195,7 @@ export default function CreateCoursePage() {
               </div>
             </div>
           </div>
-          <button onClick={()=>title.trim()&&setStep(2)} disabled={!title.trim()}
+          <button onClick={()=>title.trim()&&!slugExists&&setStep(2)} disabled={!title.trim()||slugExists}
             className="w-full py-3.5 rounded-2xl font-sans font-black text-sm disabled:opacity-40"
             style={{background:"linear-gradient(135deg,#FFD700,#FF9800)",color:"#1a0800"}}>
             Next: Add Videos →
