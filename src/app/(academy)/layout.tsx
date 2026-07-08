@@ -3,13 +3,12 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Jain Learning Academy | KarmaKnocksBack",
-  description: "Learn Jain philosophy, earn stars, get certified. Watch videos, take quizzes, and grow spiritually.",
+  description: "Learn Jain philosophy through videos, quizzes, and earn certificates.",
 };
 
 export default function AcademyLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen" style={{ background: "linear-gradient(160deg,#FFFDE7 0%,#FFF9C4 30%,#F3E5F5 100%)" }}>
-      {/* Academy nav bar */}
       <nav className="sticky top-0 z-40 border-b" style={{ background: "rgba(255,253,231,0.92)", backdropFilter: "blur(12px)", borderColor: "rgba(184,134,11,0.2)" }}>
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/academy" className="flex items-center gap-2">

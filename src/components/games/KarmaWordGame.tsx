@@ -1,4 +1,6 @@
 "use client";
+import { usePlayer } from "@/context/PlayerContext";
+import PlayerModal from "./PlayerModal";
 import { playSound } from "@/lib/sounds";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { JAIN_WORDS, getRandomWords, type JainWord } from "@/lib/jain-words";
@@ -46,8 +48,9 @@ function makeLetters(word: string, extra: number): {char:string;colorIdx:number}
 }
 
 export default function KarmaWordGame() {
+  const {player,isReady}=usePlayer();
   const [screen, setScreen]     = useState<"name"|"pick"|"game"|"result">("name");
-  const [playerName, setPlayerName] = useState("");
+  const [_unusedName, _setUnusedName] = useState("");
   const [selLvl, setSelLvl]     = useState(LEVEL_CFG[0]);
   const [wordPool, setWordPool] = useState<JainWord[]>([]);
   const [wordIdx, setWordIdx]   = useState(0);
@@ -183,16 +186,16 @@ export default function KarmaWordGame() {
           </label>
           <input
             type="text" placeholder="Enter your name..."
-            value={playerName}
-            onChange={e => setPlayerName(e.target.value)}
-            onKeyDown={e => e.key==="Enter" && playerName.trim() && setScreen("pick")}
+            value={player?.name||""}
+            onChange={e => { void e; }}
+            onKeyDown={e => e.key==="Enter" && setScreen("pick")}
             className="w-full rounded-xl px-4 py-3 font-sans text-base border-2 outline-none focus:border-purple-400 mb-4"
             style={{borderColor:"#E0E0E0",background:"#FAFAFA"}}
             autoFocus
           />
           <button
-            onClick={() => playerName.trim() && setScreen("pick")}
-            disabled={!playerName.trim()}
+            onClick={() => (player?.name||"").trim() && setScreen("pick")}
+            disabled={!(player?.name||"").trim()}
             className="w-full py-4 rounded-2xl font-sans font-black text-sm text-white disabled:opacity-40"
             style={{background:"linear-gradient(135deg,#7C4DFF,#E91E63)"}}>
             Start Learning! →
@@ -208,7 +211,7 @@ export default function KarmaWordGame() {
       <div className="w-full max-w-md mt-2 mb-5 text-center">
         <div className="text-5xl mb-2">📝</div>
         <h2 className="font-display-hi text-2xl font-black text-purple-800 mb-1">
-          नमस्ते, {playerName}! 🙏
+          नमस्ते, {(player?.name||"")}! 🙏
         </h2>
         <p className="font-sans text-sm text-purple-600">Choose your level</p>
         <div className="inline-flex items-center gap-1.5 mt-2 rounded-full px-4 py-1.5" style={{background:"rgba(124,77,255,0.1)",border:"1px solid #7C4DFF40"}}>
@@ -248,7 +251,7 @@ export default function KarmaWordGame() {
       <div className="w-full max-w-sm rounded-3xl p-8 text-center"
         style={{background:"linear-gradient(135deg,#F3E5F5,#EDE7F6)",border:"4px solid #7C4DFF",boxShadow:"0 24px 80px rgba(124,77,255,0.4)"}}>
         <div className="text-6xl mb-3">🏆</div>
-        <h2 className="font-display-hi text-2xl font-black text-purple-900 mb-1">शाबाश {playerName}!</h2>
+        <h2 className="font-display-hi text-2xl font-black text-purple-900 mb-1">शाबाश {(player?.name||"")}!</h2>
         <div className="grid grid-cols-3 gap-3 my-5">
           {[{l:"Words",v:solved.length,c:"#7C4DFF"},{l:"Score ⭐",v:score,c:"#FF9800"},{l:"Gems 💎",v:gems,c:"#2196F3"}].map(s=>(
             <div key={s.l} className="rounded-xl p-3 bg-white shadow-sm">

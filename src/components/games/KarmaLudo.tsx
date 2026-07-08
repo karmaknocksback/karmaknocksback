@@ -1,460 +1,405 @@
 "use client";
-import { playSound } from "@/lib/sounds";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import Image from "next/image";
 import Dice3D from "./Dice3D";
+import { usePlayer } from "@/context/PlayerContext";
+import PlayerModal from "./PlayerModal";
+import { playSound } from "@/lib/sounds";
 
-/* ══════════════════════════════════════════════════════════
-   KARMA LUDO — User vs Computer
-   Proper rules:
-   - Need 6 to bring token out of home base
-   - Roll 6 → bonus turn
-   - Land on opponent → send them home
-   - Win when both tokens reach finish (step 57)
-══════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════════
+   KARMA LUDO — Proper 2-Player (User vs CPU)
+   
+   Board: 15×15 SVG drawn board, CELL=32px, size=480×480
+   
+   Track: 52 outer squares clockwise:
+   [0,6]→[0,7]→[0,8]→[1,8..5,8]→[6,9..6,14]→[7,14][8,14]
+   →[8,13..8,9]→[9,8..14,8]→[14,7][14,6]→[13,6..9,6]
+   →[8,5..8,0]→[7,0][6,0]→[6,1..6,5]→[5,6..1,6] →back to [0,6]
 
-const MORAL: Record<number, { title: string; emoji: string; msg: string; karma: number; type: "virtue" | "vice" }> = {
-  6:  { title:"Ahimsa!",   emoji:"🕊️", msg:"You saved a tiny life. Compassion shines!", karma:15,  type:"virtue" },
-  13: { title:"Krodh!",    emoji:"😤", msg:"Anger hurts your soul. Breathe deeply.",    karma:-10, type:"vice" },
-  20: { title:"Satya!",    emoji:"✅", msg:"You spoke truth bravely. Honesty lifts you!", karma:20, type:"virtue" },
-  27: { title:"Lobh!",     emoji:"💰", msg:"Greed weighs the soul down. Let go!",       karma:-12, type:"vice" },
-  34: { title:"Kshama!",   emoji:"💝", msg:"Forgiveness sets your soul free!",          karma:25,  type:"virtue" },
-  40: { title:"Ahankar!",  emoji:"😤", msg:"Pride blocks your path. Be humble.",        karma:-8,  type:"vice" },
-  48: { title:"Dhyan!",    emoji:"🧘", msg:"Meditation brings inner peace!",             karma:18,  type:"virtue" },
-  53: { title:"Maya!",     emoji:"🤥", msg:"Deceit creates heavy karma.",               karma:-15, type:"vice" },
-};
+   RED (User):   home top-left,  enters track at pos 42 (6,1)
+   BLUE (CPU):   home bot-right, enters track at pos 16 (8,13)
+   
+   Home columns (6 steps to finish):
+   RED:  col7 rows 1→6  [(1,7),(2,7),(3,7),(4,7),(5,7),(6,7)]
+   BLUE: col7 rows 13→8 [(13,7),(12,7),(11,7),(10,7),(9,7),(8,7)]
+   
+   Token images: gold/red (User), green/blue (CPU)
+════════════════════════════════════════════════════════════════ */
 
-// Each player has 2 tokens. Position: -1=home, 0..56=on board (56=finish)
-const TRACK_LEN = 52;
-const FINISH_POS = 57;
-const START_OFFSET = [0, 26]; // where each player enters the board
+const C = 32; // cell size px
 
-interface Token { pos: number; } // -1=home, 0..56=board
-
-const USER = 0;
-const CPU  = 1;
-
-// Ludo board track coordinates (row,col) on a 15x15 board — outer path 52 squares
-// Going clockwise starting from Blue (bottom-left)
-const TRACK_COORDS: Array<[number,number]> = [
-  // Bottom row, moving right (squares 0-5)
-  [13,6],[13,7],[13,8],[13,9],[13,10],[13,11],
-  // Right-side going up (6-11)
-  [12,12],[11,12],[10,12],[9,12],[8,12],[7,12],
-  // Top row going left (12-19, but only 8 across the top-right)
-  [6,13],[6,12],[6,11],[6,10],[6,9],[6,8],
-  // Top center going up then left (20-25)
-  [5,8],[4,8],[3,8],[2,8],[1,8],[0,8],
-  // Top row going left (26-31)
-  [0,7],[0,6],[1,6],[2,6],[3,6],[4,6],
-  // Going down left side (32-37)
-  [5,6],[6,5],[6,4],[6,3],[6,2],[6,1],
-  // Bottom-left area (38-43)
-  [6,0],[7,0],[8,0],[9,0],[10,0],[11,0],
-  // Bottom row going right (44-51)
-  [12,2],[13,2],[14,2],[14,3],[14,4],[14,5],[13,5],[13,6],
-] as Array<[number,number]>;
-
-// For home columns (when token heads home from finish approach)
-const HOME_COLS: Array<Array<[number,number]>> = [
-  // Blue home column (user) going from bottom-center up
-  [[13,7],[12,7],[11,7],[10,7],[9,7],[8,7]],
-  // Red home column (CPU) going from top-center down
-  [[1,7],[2,7],[3,7],[4,7],[5,7],[6,7]],
+// 52-square outer track (verified count)
+const TRACK: [number,number][] = [
+  [0,6],[0,7],[0,8],                          // 0-2
+  [1,8],[2,8],[3,8],[4,8],[5,8],              // 3-7
+  [6,9],[6,10],[6,11],[6,12],[6,13],[6,14],   // 8-13
+  [7,14],[8,14],                               // 14-15
+  [8,13],[8,12],[8,11],[8,10],[8,9],           // 16-20
+  [9,8],[10,8],[11,8],[12,8],[13,8],[14,8],   // 21-26
+  [14,7],[14,6],                               // 27-28
+  [13,6],[12,6],[11,6],[10,6],[9,6],           // 29-33
+  [8,5],[8,4],[8,3],[8,2],[8,1],[8,0],         // 34-39
+  [7,0],[6,0],                                 // 40-41
+  [6,1],[6,2],[6,3],[6,4],[6,5],               // 42-46
+  [5,6],[4,6],[3,6],[2,6],[1,6],               // 47-51
 ];
 
-function getTokenGridPos(player: 0|1, tokenPos: number): { x: number; y: number } {
-  const CS = 100/15; // percent per cell
+// Home columns (6 steps each, going toward center)
+const HOME_RED:  [number,number][] = [[1,7],[2,7],[3,7],[4,7],[5,7],[6,7]];
+const HOME_BLUE: [number,number][] = [[13,7],[12,7],[11,7],[10,7],[9,7],[8,7]];
 
-  if (tokenPos < 0) {
-    // Home base position
-    const homePositions: Array<Array<[number,number]>> = [
-      [[11,1],[11,3],[13,1],[13,3]],  // Blue (user) — bottom left
-      [[1,11],[1,13],[3,11],[3,13]],  // Red (CPU) — top right
-    ];
-    return {
-      x: homePositions[player][0][1] * CS + CS/2,
-      y: homePositions[player][0][0] * CS + CS/2,
-    };
+// Entry positions on outer track (index into TRACK array)
+const ENTRY = [42, 16]; // RED=42, BLUE=16
+const FINISH = 58; // pos=52+6 means finished (6 home column steps)
+
+// Safe squares (cannot be captured here)
+const SAFE_TRACK = new Set([0,8,14,21,27,34,40,47, 42, 16]);
+
+// Moral events (track position, relative to player start)
+const MORAL: Record<number,{title:string;emoji:string;msg:string;karma:number}> = {
+  6:  {title:"Ahimsa!",   emoji:"🕊️",msg:"You saved a tiny ant!",      karma:15},
+  13: {title:"Krodh!",    emoji:"😤",msg:"Anger blocks your path.",    karma:-10},
+  20: {title:"Satya!",    emoji:"✅",msg:"Truth brings you closer!",   karma:20},
+  27: {title:"Lobh!",     emoji:"💰",msg:"Greed slows the soul.",      karma:-12},
+  34: {title:"Kshama!",   emoji:"💝",msg:"Forgiveness lifts you up!", karma:25},
+  40: {title:"Dhyan!",    emoji:"🧘",msg:"Meditation brings peace!",   karma:18},
+};
+
+interface Token { pos: number; } // -1=home, 0-51=outer(relative), 52-57=home col, 58=done
+
+const USER=0, CPU=1;
+const TOKEN_IMGS = [
+  ["/games/ludo/token_gold_sm.png", "/games/ludo/token_red_sm.png"],
+  ["/games/ludo/token_blue_sm.png", "/games/ludo/token_green_sm.png"],
+];
+const PLAYER_COLOR = ["#E53935","#1565C0"];
+const PLAYER_GLOW  = ["rgba(229,57,53,0.5)","rgba(21,101,192,0.5)"];
+const HOME_POS: [number,number][][] = [
+  [[2,2],[3,2],[2,4],[3,4]], // Red home spots (user)
+  [[11,11],[12,11],[11,13],[12,13]], // Blue home spots (CPU)
+];
+
+function tokenToXY(player:number, tokenIdx:number, pos:number):{x:number,y:number} {
+  if(pos < 0) {
+    // In home base
+    const [r,c] = HOME_POS[player][tokenIdx];
+    return {x:c*C+C/2, y:r*C+C/2};
   }
-
-  if (tokenPos >= TRACK_LEN) {
-    // On home column
-    const homeStep = tokenPos - TRACK_LEN;
-    const coords = HOME_COLS[player][Math.min(homeStep, HOME_COLS[player].length-1)];
-    return { x: coords[1]*CS+CS/2, y: coords[0]*CS+CS/2 };
+  if(pos >= 52) {
+    // In home column
+    const step = pos-52;
+    const hc = player===USER ? HOME_RED : HOME_BLUE;
+    const [r,c] = hc[Math.min(step, 5)];
+    return {x:c*C+C/2, y:r*C+C/2};
   }
-
-  // On outer track — offset by player start
-  const idx = (tokenPos + START_OFFSET[player]) % TRACK_LEN;
-  const coords = TRACK_COORDS[Math.min(idx, TRACK_COORDS.length-1)] || [7,7];
-  return { x: coords[1]*CS+CS/2, y: coords[0]*CS+CS/2 };
+  // On outer track (relative to player start)
+  const absIdx = (ENTRY[player]+pos)%52;
+  const [r,c] = TRACK[absIdx];
+  // Offset tokens from each other slightly
+  const offX = (tokenIdx===0||tokenIdx===2)?-6:6;
+  return {x:c*C+C/2+offX, y:r*C+C/2};
 }
 
-export default function KarmaLudo() {
-  // tokens: [user token0, user token1, cpu token0, cpu token1]
-  // positions: -1=home, 0..56=on board
-  const [tokens, setTokens] = useState<[Token, Token, Token, Token]>([
-    { pos: -1 }, { pos: -1 }, // User tokens
-    { pos: -1 }, { pos: -1 }, // CPU tokens
+function getAbsPos(player:number, relPos:number){
+  return (ENTRY[player]+relPos)%52;
+}
+
+export default function KarmaLudo(){
+  const {player, isReady} = usePlayer();
+  const [tokens, setTokens] = useState<[Token,Token,Token,Token]>([
+    {pos:-1},{pos:-1},{pos:-1},{pos:-1}
   ]);
-  const [karma, setKarma]     = useState([0, 0]);
-  const [turn, setTurn]       = useState<0|1>(USER);
-  const [dice, setDice]       = useState<number|null>(null);
+  const [karma, setKarma]   = useState([0,0]);
+  const [turn, setTurn]     = useState<0|1>(USER);
+  const [dice, setDice]     = useState<number|null>(null);
   const [rolling, setRolling] = useState(false);
-  const [diceResult, setDiceResult] = useState<number|null>(null); // rolled value waiting for move
-  const [event, setEvent]     = useState<{ pi:0|1; sq:number }|null>(null);
-  const [winner, setWinner]   = useState<0|1|null>(null);
-  const [log, setLog]         = useState<string[]>(["🎯 Karma Ludo! Roll 6 to enter the board!"]);
-  const [cpuThinking, setCpuThinking] = useState(false);
-  const [selectable, setSelectable]   = useState<number[]>([]); // which token indices user can move
+  const [movable, setMovable] = useState<number[]>([]);
+  const [pendingDice, setPendingDice] = useState<number|null>(null);
+  const [event, setEvent]   = useState<{pi:0|1;moral:typeof MORAL[0]}|null>(null);
+  const [winner, setWinner] = useState<0|1|null>(null);
+  const [log, setLog]       = useState<string[]>(["🎯 Karma Ludo! Roll 6 to enter!"]);
+  const [cpuTimer, setCpuTimer] = useState(false);
+  const addLog = useCallback((m:string)=>setLog(p=>[m,...p.slice(0,5)]),[]);
 
-  const addLog = useCallback((m: string) => setLog(p => [m, ...p.slice(0, 5)]), []);
-
-  function checkWin(newTokens: typeof tokens, player: 0|1): boolean {
-    const t0 = newTokens[player*2];
-    const t1 = newTokens[player*2+1];
-    return t0.pos >= FINISH_POS && t1.pos >= FINISH_POS;
+  function checkWin(toks:typeof tokens, p:0|1){
+    return toks[p*2].pos>=FINISH && toks[p*2+1].pos>=FINISH;
   }
 
-  function getRelativePos(tokenIdx: number, tokenPos: number): number {
-    return tokenPos; // already relative to player
-  }
-
-  function applyMove(tokenIdx: number, d: number): typeof tokens | null {
-    const newTokens = [...tokens] as typeof tokens;
-    const tok = { ...newTokens[tokenIdx] };
-    const player = tokenIdx < 2 ? USER : CPU;
-
-    if (tok.pos === -1) {
-      // Must roll 6 to enter
-      if (d !== 6) return null;
-      tok.pos = 0; playSound.tokenEnter(); // enter at start
-    } else {
-      tok.pos = tok.pos + d;
-      if (tok.pos > FINISH_POS) tok.pos = tok.pos; // don't overshoot
+  function getMovableTokens(toks:typeof tokens, p:0|1, d:number):number[]{
+    const result:number[]=[];
+    for(let i=p*2;i<p*2+2;i++){
+      const pos=toks[i].pos;
+      if(pos<0 && d===6){ result.push(i); continue; }
+      if(pos>=0 && pos<52){ const next=pos+d; if(next<=57) result.push(i); }
+      if(pos>=52 && pos+d<=57) result.push(i);
     }
+    return result;
+  }
 
-    // Check if lands on opponent
-    const oppStart = player === USER ? 2 : 0;
-    for (let i = oppStart; i < oppStart+2; i++) {
-      const opp = newTokens[i];
-      if (opp.pos >= 0 && opp.pos < TRACK_LEN) {
-        const myBoardPos = (tok.pos + START_OFFSET[player]) % TRACK_LEN;
-        const oppBoardPos = (opp.pos + START_OFFSET[player === USER ? CPU : USER]) % TRACK_LEN;
-        if (myBoardPos === oppBoardPos && tok.pos < TRACK_LEN) {
-          // Hit opponent — send home
-          playSound.sendHome();
-          const sentHome = { ...newTokens[i], pos: -1 };
-          newTokens[i] = sentHome;
-          addLog(`💥 ${player===USER?"You":"CPU"} sent opponent home!`);
+  function applyMove(toks:typeof tokens, tokenIdx:number, d:number):typeof tokens{
+    const next=[...toks] as typeof tokens;
+    const tok={...next[tokenIdx]};
+    const player=tokenIdx<2?USER:CPU;
+    if(tok.pos<0){ tok.pos=0; } // enter board
+    else { tok.pos=tok.pos+d; }
+
+    // Check if finished
+    if(tok.pos>57) tok.pos=57; // cap
+
+    // Check capture opponent (only on outer track 0-51)
+    if(tok.pos>=0 && tok.pos<52){
+      const myAbs=getAbsPos(player,tok.pos);
+      if(!SAFE_TRACK.has(myAbs)){
+        const opp=player===USER?CPU:USER;
+        for(let i=opp*2;i<opp*2+2;i++){
+          const op=next[i];
+          if(op.pos>=0&&op.pos<52){
+            const oppAbs=getAbsPos(opp,op.pos);
+            if(oppAbs===myAbs){
+              next[i]={pos:-1}; // send home
+              addLog(`💥 ${player===USER?(player_name||"You") + " sent CPU":"CPU sent you"} home!`);
+              playSound.sendHome();
+            }
+          }
         }
       }
     }
-
-    newTokens[tokenIdx] = tok;
-    return newTokens;
+    next[tokenIdx]=tok;
+    return next;
   }
 
-  // Which tokens can the player move with dice result d?
-  function getMovableTokens(player: 0|1, d: number): number[] {
-    const start = player * 2;
-    const movable: number[] = [];
-    for (let i = start; i < start+2; i++) {
-      const pos = tokens[i].pos;
-      if (pos === -1 && d === 6) movable.push(i);
-      else if (pos >= 0 && pos + d <= FINISH_POS) movable.push(i);
-    }
-    return movable;
-  }
+  const player_name = player?.name || "You";
 
-  const roll = useCallback(() => {
-    if (rolling || diceResult !== null || event || winner !== null || turn !== USER || cpuThinking) return;
-    setRolling(true);playSound.diceRoll();
-    setTimeout(() => {
-      const d = Math.ceil(Math.random() * 6);playSound.diceResult(d);
-      setDice(d); setRolling(false);
-
-      const movable = getMovableTokens(USER, d);
-      if (movable.length === 0) {
-        addLog(`You rolled ${d} — no moves available. CPU's turn.`);
-        setTurn(CPU);
-        setTimeout(() => doCpuTurn(), 800);
-      } else if (movable.length === 1) {
-        // Auto move if only one option
-        addLog(`You rolled ${d}!`);
-        handleUserMove(movable[0], d);
-      } else {
-        // Let user pick which token to move
-        addLog(`You rolled ${d}! Choose which token to move (highlighted).`);
-        setDiceResult(d);
-        setSelectable(movable);
-      }
-    }, 1200);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rolling, diceResult, event, winner, turn, cpuThinking, tokens]);
-
-  function handleUserMove(tokenIdx: number, d: number) {
-    const newTokens = applyMove(tokenIdx, d);
-    if (!newTokens) return;
-
-    setTokens(newTokens);
-    setSelectable([]);
-    setDiceResult(null);
-
-    const pos = newTokens[tokenIdx].pos;
-    addLog(`You moved Token ${tokenIdx+1} to step ${pos}`);
-
-    if (checkWin(newTokens, USER)) { setWinner(USER); return; }
-
+  function doMove(tokenIdx:number, d:number, toks:typeof tokens){
+    const newToks=applyMove(toks, tokenIdx, d);
+    setTokens(newToks);
+    setPendingDice(null);
+    setMovable([]);
+    const p=tokenIdx<2?USER:CPU;
+    const pos=newToks[tokenIdx].pos;
+    addLog(`${p===USER?player_name:"CPU"} moved token ${(tokenIdx%2)+1} → step ${pos}`);
+    // Check win
+    if(checkWin(newToks, p as 0|1)){setWinner(p as 0|1);playSound.win();return;}
     // Check moral event
-    const relStep = pos; // 0-relative steps from start
-    if (MORAL[relStep] && pos < TRACK_LEN) {
-      setTimeout(() => setEvent({ pi: USER, sq: relStep }), 500);
-    } else if (d === 6) {
-      addLog("Rolled 6! 🎲 You get another turn!");
-      // Bonus turn — user rolls again
-    } else {
-      setTurn(CPU);
-      setTimeout(() => doCpuTurn(), 1000);
+    if(pos>=0&&pos<52){
+      const m=MORAL[pos];
+      if(m){setTimeout(()=>setEvent({pi:p as 0|1,moral:m}),500);return;}
     }
+    // Bonus turn or switch
+    if(d===6){addLog(`🎲 Rolled 6 — ${p===USER?player_name:"CPU"} rolls again!`);if(p===CPU)setTimeout(()=>doCPU(newToks),1000);}
+    else{setTurn(p===USER?CPU:USER as 0|1);if(p===USER)setTimeout(()=>doCPU(newToks),800);}
   }
 
-  function doCpuTurn() {
-    setCpuThinking(true);
-    setTimeout(() => {
-      const d = Math.ceil(Math.random() * 6);
-      setDice(d);
-      addLog(`CPU rolled ${d}!`);
+  const roll=useCallback(()=>{
+    if(rolling||pendingDice!==null||!!event||winner!==null||turn!==USER||cpuTimer)return;
+    setRolling(true);
+    playSound.diceRoll();
+    setTimeout(()=>{
+      const d=Math.ceil(Math.random()*6);
+      setDice(d); setRolling(false); playSound.diceResult(d);
+      const mv=getMovableTokens(tokens,USER,d);
+      if(mv.length===0){addLog(`${player_name} rolled ${d} — no moves! CPU's turn.`);setTurn(CPU);setTimeout(()=>doCPU(tokens),800);}
+      else if(mv.length===1){addLog(`${player_name} rolled ${d}!`);doMove(mv[0],d,tokens);}
+      else{addLog(`${player_name} rolled ${d}! Choose a token to move.`);setPendingDice(d);setMovable(mv);}
+    },1200);
+  },[rolling,pendingDice,event,winner,turn,cpuTimer,tokens,player_name]); // eslint-disable-line
 
-      const movable = getMovableTokens(CPU, d);
-      if (movable.length === 0) {
-        addLog(`CPU rolled ${d} — no moves. Your turn!`);
-        setCpuThinking(false);
-        setTurn(USER);
-        return;
-      }
+  function onTokenClick(tokenIdx:number){
+    if(pendingDice===null||!movable.includes(tokenIdx))return;
+    doMove(tokenIdx,pendingDice,tokens);
+  }
 
-      // CPU strategy: prefer moving token that's furthest along
-      const best = movable.reduce((a, b) =>
-        tokens[b].pos > tokens[a].pos ? b : a, movable[0]
-      );
-
-      setTimeout(() => {
-        const newTokens = applyMove(best, d);
-        if (!newTokens) { setCpuThinking(false); setTurn(USER); return; }
-
-        setTokens(newTokens);
-        const pos = newTokens[best].pos;
-        addLog(`CPU moved Token ${best-1} to step ${pos}`);
-
-        if (checkWin(newTokens, CPU)) { setWinner(CPU); setCpuThinking(false); return; }
-
-        const relStep = pos;
-        if (MORAL[relStep] && pos < TRACK_LEN) {
-          setTimeout(() => { setEvent({ pi: CPU, sq: relStep }); setCpuThinking(false); }, 500);
-        } else if (d === 6) {
-          addLog("CPU rolled 6! CPU gets another turn!");
-          setCpuThinking(false);
-          setTimeout(() => doCpuTurn(), 1200);
-        } else {
-          setCpuThinking(false);
-          setTurn(USER);
+  function doCPU(toks:typeof tokens){
+    setCpuTimer(true);
+    setTimeout(()=>{
+      const d=Math.ceil(Math.random()*6);
+      setDice(d);playSound.diceRoll();
+      setTimeout(()=>{
+        playSound.diceResult(d);
+        addLog(`CPU rolled ${d}!`);
+        const mv=getMovableTokens(toks,CPU,d);
+        if(mv.length===0){addLog("CPU has no moves. Your turn!");setCpuTimer(false);setTurn(USER);return;}
+        // CPU picks furthest token
+        const best=mv.reduce((a,b)=>toks[b].pos>toks[a].pos?b:a,mv[0]);
+        const newToks=applyMove(toks,best,d);
+        setTokens(newToks);
+        addLog(`CPU moved token ${(best%2)+1} → step ${newToks[best].pos}`);
+        if(checkWin(newToks,CPU)){setWinner(CPU);playSound.lose();setCpuTimer(false);return;}
+        const pos=newToks[best].pos;
+        if(pos>=0&&pos<52&&MORAL[pos]){
+          setTimeout(()=>{setEvent({pi:CPU,moral:MORAL[pos]});setCpuTimer(false);},500);return;
         }
-      }, 800);
-    }, 600);
+        setCpuTimer(false);
+        if(d===6){addLog("CPU rolled 6 — bonus turn!");setTimeout(()=>doCPU(newToks),1000);}
+        else{setTurn(USER);}
+      },600);
+    },400);
   }
 
-  function closeEvent() {
-    if (!event) return;
-    const m = MORAL[event.sq];
-    if (m) {
-      setKarma(k => { const n=[...k]; n[event.pi] = Math.max(0, n[event.pi]+m.karma); return n; });
-      addLog(`${m.emoji} ${m.title} ${m.karma>0?"+":""}${m.karma} Karma!`);
-    }
-    const wasUser = event.pi === USER;
+  function closeEvent(){
+    if(!event)return;
+    const{pi,moral}=event;
+    setKarma(k=>{const n=[...k];n[pi]=Math.max(0,n[pi]+moral.karma);return n;});
+    addLog(`${moral.emoji} ${moral.title} ${moral.karma>0?"+":""}${moral.karma} Karma`);
+    const d=dice||1;
     setEvent(null);
-    if (wasUser) { setTurn(CPU); setTimeout(() => doCpuTurn(), 800); }
-    else { setTurn(USER); }
+    if(d===6){if(pi===CPU)setTimeout(()=>doCPU(tokens),800);} else{setTurn(pi===USER?CPU:USER);if(pi===USER)setTimeout(()=>doCPU(tokens),800);}
   }
 
-  // Handle user token selection
-  function onTokenClick(tokenIdx: number) {
-    if (diceResult === null || !selectable.includes(tokenIdx)) return;
-    handleUserMove(tokenIdx, diceResult);
-  }
+  function reset(){setTokens([{pos:-1},{pos:-1},{pos:-1},{pos:-1}]);setKarma([0,0]);setTurn(USER);setDice(null);setWinner(null);setEvent(null);setPendingDice(null);setMovable([]);setCpuTimer(false);setLog(["🎯 New game! Roll 6 to enter!"]);}
 
-  function reset() {
-    setTokens([{pos:-1},{pos:-1},{pos:-1},{pos:-1}]);
-    setKarma([0,0]); setTurn(USER); setDice(null); setDiceResult(null);
-    setWinner(null); setEvent(null); setSelectable([]); setCpuThinking(false);
-    setLog(["🎯 New game! Roll 6 to enter the board!"]);
-  }
+  if(!isReady)return null;
+  if(!player)return <PlayerModal/>;
 
-  const ev = event ? MORAL[event.sq] : null;
-  const isGoodEv = ev?.type === "virtue";
+  const B=15*C; // board px
 
-  const PLAYER_COLORS = ["#EF5350", "#42A5F5"];
-  const PLAYER_NAMES  = ["You", "CPU"];
-  const TOKEN_EMOJIS  = ["🧒","🧒","👾","👾"];
-
-  return (
+  return(
     <div className="flex flex-col items-center w-full px-2 pb-10 overflow-x-hidden">
-
-      {/* Scorecards */}
-      <div className="flex gap-3 mb-4 mt-2 w-full max-w-md">
-        {[USER, CPU].map(i => (
-          <div key={i} className="flex-1 rounded-2xl p-3 text-center transition-all"
-            style={{
-              background: turn===i&&!winner?"white":"rgba(255,255,255,0.6)",
-              border:`2.5px solid ${turn===i&&!winner?PLAYER_COLORS[i]:"transparent"}`,
-              boxShadow: turn===i&&!winner?`0 6px 20px ${PLAYER_COLORS[i]}40`:"0 2px 8px rgba(0,0,0,0.07)"
-            }}>
-            <p className="font-sans text-xs font-black" style={{color:PLAYER_COLORS[i]}}>{PLAYER_NAMES[i]}</p>
-            <p className="font-display text-xl font-black text-gray-700">⭐ {karma[i]}</p>
-            <div className="flex justify-center gap-1 mt-1">
-              {[0,1].map(ti => {
-                const tok = tokens[i*2+ti];
-                const isHome = tok.pos < 0;
-                const isDone = tok.pos >= FINISH_POS;
-                const isSelectable = selectable.includes(i*2+ti);
-                return (
-                  <div key={ti}
-                    onClick={() => onTokenClick(i*2+ti)}
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black transition-all"
-                    style={{
-                      background: isDone?"#4CAF50":isHome?"rgba(0,0,0,0.1)":PLAYER_COLORS[i],
-                      border:`2px solid ${isSelectable?"#FFD700":isDone?"#4CAF50":"transparent"}`,
-                      boxShadow: isSelectable?"0 0 12px #FFD700":"none",
-                      transform: isSelectable?"scale(1.2)":"scale(1)",
-                      cursor: isSelectable?"pointer":"default",
-                      animation: isSelectable?"pulse 0.8s ease-in-out infinite":"none",
-                    }}>
-                    {isDone?"✅":isHome?"🏠":<span style={{color:"white",fontSize:14}}>{i===USER?"🧒":"👾"}</span>}
-                  </div>
-                );
-              })}
+      {/* Player cards */}
+      <div className="flex gap-3 mb-3 mt-2 w-full max-w-lg">
+        {[USER,CPU].map(i=>(
+          <div key={i} className="flex-1 rounded-2xl p-3 transition-all"
+            style={{background:turn===i&&!winner?"white":"rgba(255,255,255,0.7)",border:`2.5px solid ${turn===i&&!winner?PLAYER_COLOR[i]:"transparent"}`,boxShadow:turn===i&&!winner?`0 6px 20px ${PLAYER_GLOW[i]}`:"0 2px 8px rgba(0,0,0,0.07)"}}>
+            <div className="flex items-center gap-2">
+              <div className="relative w-9 h-9 shrink-0">
+                <Image src={TOKEN_IMGS[i][0]} alt="" fill className="object-contain" unoptimized sizes="40px"/>
+              </div>
+              <div>
+                <p className="font-sans text-xs font-black" style={{color:PLAYER_COLOR[i]}}>{i===USER?(player.avatar+" "+player.name):"👾 CPU"}</p>
+                <p className="font-sans text-[10px] text-gray-400">⭐ {karma[i]}</p>
+                {turn===i&&!winner&&<p className="font-sans text-[9px] font-black animate-pulse" style={{color:PLAYER_COLOR[i]}}>{cpuTimer&&i===CPU?"🤔 thinking...":"▶ ACTIVE"}</p>}
+              </div>
             </div>
-            {turn===i&&!winner&&<p className="font-sans text-[9px] font-black mt-1 animate-pulse" style={{color:PLAYER_COLORS[i]}}>{cpuThinking&&i===CPU?"CPU thinking...":"▶ ACTIVE"}</p>}
           </div>
         ))}
       </div>
 
-      {/* Rules reminder */}
-      <div className="w-full max-w-md mb-3 rounded-xl px-4 py-2 text-center" style={{background:"rgba(255,215,0,0.15)",border:"1px solid rgba(255,215,0,0.3)"}}>
-        <p className="font-sans text-[10px] font-bold text-amber-800">
-          🎲 Roll 6 to enter · Roll 6 again = bonus turn · Land on opponent = send home · Reach step 57 to win!
-        </p>
+      {/* Board SVG */}
+      <div className="rounded-2xl overflow-hidden w-full max-w-lg"
+        style={{maxWidth:B,boxShadow:"0 0 0 4px white,0 0 0 8px #FFD700,0 16px 48px rgba(0,0,0,0.25)"}}>
+        <svg viewBox={`0 0 ${B} ${B}`} className="w-full h-auto" style={{display:"block"}}>
+          {/* Background */}
+          <rect width={B} height={B} fill="#FFF9E6"/>
+
+          {/* Home areas */}
+          <rect x={0} y={0} width={6*C} height={6*C} rx={8} fill="#FFCDD2"/>
+          <rect x={9*C} y={0} width={6*C} height={6*C} rx={8} fill="#C8E6C9"/>
+          <rect x={0} y={9*C} width={6*C} height={6*C} rx={8} fill="#BBDEFB"/>
+          <rect x={9*C} y={9*C} width={6*C} height={6*C} rx={8} fill="#FFF9C4"/>
+
+          {/* Inner home circles */}
+          {([[1.5,1.5,"#EF5350"],[3.5,1.5,"#EF5350"],[1.5,3.5,"#EF5350"],[3.5,3.5,"#EF5350"]] as [number,number,string][]).map(([r,c,fill],i)=>(
+            <circle key={i} cx={c*C+C/2} cy={r*C+C/2} r={C*0.7} fill={fill} opacity={0.3}/>
+          ))}
+          {([[1.5,10.5,"#4CAF50"],[3.5,10.5,"#4CAF50"],[1.5,12.5,"#4CAF50"],[3.5,12.5,"#4CAF50"]] as [number,number,string][]).map(([r,c,fill],i)=>(
+            <circle key={i} cx={c*C+C/2} cy={r*C+C/2} r={C*0.7} fill={fill} opacity={0.3}/>
+          ))}
+          {([[10.5,1.5,"#2196F3"],[12.5,1.5,"#2196F3"],[10.5,3.5,"#2196F3"],[12.5,3.5,"#2196F3"]] as [number,number,string][]).map(([r,c,fill],i)=>(
+            <circle key={i} cx={c*C+C/2} cy={r*C+C/2} r={C*0.7} fill={fill} opacity={0.3}/>
+          ))}
+
+          {/* Track squares */}
+          {TRACK.map(([r,c],idx)=>{
+            const isSafe=SAFE_TRACK.has(idx);
+            const isEntryRed=idx===ENTRY[USER];
+            const isEntryCPU=idx===ENTRY[CPU];
+            return(
+              <rect key={idx} x={c*C+1} y={r*C+1} width={C-2} height={C-2} rx={3}
+                fill={isEntryRed?"#FFCDD2":isEntryCPU?"#BBDEFB":isSafe?"#FFF9C4":"#FAFAFA"}
+                stroke={isEntryRed?"#EF5350":isEntryCPU?"#2196F3":isSafe?"#FFD700":"#E0E0E0"}
+                strokeWidth={isSafe||isEntryRed||isEntryCPU?2:1}/>
+            );
+          })}
+
+          {/* Home columns */}
+          {HOME_RED.map(([r,c],i)=>(
+            <rect key={i} x={c*C+1} y={r*C+1} width={C-2} height={C-2} rx={3}
+              fill={`rgba(239,83,80,${0.1+i*0.1})`} stroke="#EF5350" strokeWidth={1}/>
+          ))}
+          {HOME_BLUE.map(([r,c],i)=>(
+            <rect key={i} x={c*C+1} y={r*C+1} width={C-2} height={C-2} rx={3}
+              fill={`rgba(33,150,243,${0.1+i*0.1})`} stroke="#2196F3" strokeWidth={1}/>
+          ))}
+
+          {/* Center finish triangle */}
+          <polygon points={`${7*C},${7*C} ${8*C},${7*C} ${7.5*C},${7.5*C}`} fill="#EF5350" opacity={0.4}/>
+          <polygon points={`${7*C},${8*C} ${8*C},${8*C} ${7.5*C},${7.5*C}`} fill="#2196F3" opacity={0.4}/>
+          <polygon points={`${7*C},${7*C} ${7*C},${8*C} ${7.5*C},${7.5*C}`} fill="#4CAF50" opacity={0.4}/>
+          <polygon points={`${8*C},${7*C} ${8*C},${8*C} ${7.5*C},${7.5*C}`} fill="#FFD700" opacity={0.4}/>
+          <text x={7.5*C} y={7.5*C+5} textAnchor="middle" fontSize={10} fontWeight="bold" fill="#333">🏆</text>
+
+          {/* Token images as foreignObject */}
+          {tokens.map((tok,i)=>{
+            const player_i=i<2?USER:CPU;
+            const {x,y}=tokenToXY(player_i,i%2,tok.pos);
+            const isMovable=movable.includes(i);
+            const imgSrc=TOKEN_IMGS[player_i][i%2];
+            return(
+              <g key={i} onClick={()=>onTokenClick(i)} style={{cursor:isMovable?"pointer":"default"}}>
+                {/* Glow ring for movable */}
+                {isMovable&&<circle cx={x} cy={y} r={C*0.55} fill="none" stroke="#FFD700" strokeWidth={3} opacity={0.9} style={{animation:"tkPulse 0.7s ease-in-out infinite"}}/>}
+                {/* Shadow */}
+                <ellipse cx={x} cy={y+C*0.3} rx={C*0.38} ry={C*0.12} fill="rgba(0,0,0,0.22)"/>
+                {/* Token image via foreignObject */}
+                <image href={imgSrc} x={x-C*0.45} y={y-C*0.55} width={C*0.9} height={C*0.9}
+                  style={{filter:isMovable?"drop-shadow(0 0 6px #FFD700)":"drop-shadow(0 3px 4px rgba(0,0,0,0.4))"}}/>
+                {/* Home label */}
+                {tok.pos<0&&<text x={x} y={y+C*0.45} textAnchor="middle" fontSize={7} fill="#888">HOME</text>}
+                {/* Done badge */}
+                {tok.pos>=FINISH&&<text x={x} y={y+5} textAnchor="middle" fontSize={16}>✅</text>}
+              </g>
+            );
+          })}
+        </svg>
       </div>
 
-      {/* Board with token overlays */}
-      <div className="relative w-full max-w-md rounded-2xl overflow-hidden"
-        style={{aspectRatio:"1/1",boxShadow:"0 0 0 4px white,0 0 0 8px #FFD700,0 16px 40px rgba(0,0,0,0.2)"}}>
-        <Image src="/games/ludo/board_standard.jpg" alt="Karma Ludo" fill className="object-cover" unoptimized priority sizes="500px"/>
-
-        {/* Tokens as absolute-positioned elements */}
-        {tokens.map((tok, i) => {
-          const player: 0|1 = i < 2 ? USER : CPU;
-          const pos = getTokenGridPos(player, tok.pos < 0 ? -1 : tok.pos);
-          const isSelectable2 = selectable.includes(i);
-
-          // Home base positions for 2 tokens each
-          const homeOffsets: Record<number, [number,number][]> = {
-            0: [[73,13],[83,13]], // User token 0,1 home (bottom-left area %)
-            1: [[73,23],[83,23]],
-            2: [[13,73],[13,83]], // CPU token 0,1 home (top-right area %)
-            3: [[23,73],[23,83]],
-          };
-
-          let pctX: number, pctY: number;
-          if (tok.pos < 0) {
-            // Home base - use fixed position
-            const homeCoords: [number,number][] = [[75,10],[85,10],[75,20],[85,20],[10,75],[10,85],[20,75],[20,85]];
-            const base = homeCoords[i] || [50,50];
-            pctY = base[0]; pctX = base[1];
-          } else {
-            pctX = pos.x;
-            pctY = pos.y;
-          }
-
-          return (
-            <div key={i}
-              onClick={() => onTokenClick(i)}
-              className="absolute transition-all duration-500"
-              style={{
-                left: `${pctX}%`, top: `${pctY}%`,
-                transform: "translate(-50%,-50%)",
-                width: 28, height: 28,
-                zIndex: 10,
-                cursor: isSelectable2 ? "pointer" : "default",
-              }}>
-              <div style={{
-                width: "100%", height: "100%",
-                borderRadius: "50%",
-                background: `radial-gradient(circle at 35% 35%, ${player===USER?"#FF8A80":"#82B1FF"}, ${PLAYER_COLORS[player]})`,
-                border: `3px solid ${isSelectable2?"#FFD700":tok.pos>=FINISH_POS?"#4CAF50":"white"}`,
-                boxShadow: isSelectable2
-                  ? "0 0 16px #FFD700, 0 4px 8px rgba(0,0,0,0.4)"
-                  : "0 4px 8px rgba(0,0,0,0.4), inset 0 -2px 4px rgba(0,0,0,0.2)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 13,
-                animation: isSelectable2 ? "tokenPulse 0.8s ease-in-out infinite" : "none",
-              }}>
-                {tok.pos >= FINISH_POS ? "✅" : player === USER ? "🧒" : "👾"}
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Dice result indicator */}
-        {diceResult && selectable.length > 0 && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full px-4 py-2 font-sans font-black text-sm text-amber-900 animate-bounce"
-            style={{background:"#FFD700",boxShadow:"0 4px 16px rgba(255,215,0,0.6)"}}>
-            Rolled {diceResult}! Tap your token to move!
-          </div>
-        )}
-      </div>
-
-      {/* Dice + Button */}
-      <div className="flex items-center gap-4 mt-4 mb-3 w-full max-w-md justify-center">
-        <div onClick={roll} style={{cursor:turn===USER&&!rolling&&!diceResult&&!cpuThinking&&!event&&!winner?"pointer":"default",flexShrink:0}}>
-          <Dice3D size={80} result={dice||1} rolling={rolling||cpuThinking} color="#EDE7F6" dotColor="#311B92"/>
+      {/* Selectable hint */}
+      {pendingDice!==null&&movable.length>1&&(
+        <div className="mt-2 rounded-xl px-4 py-2 font-sans text-xs font-black text-amber-900 animate-bounce"
+          style={{background:"#FFD700",boxShadow:"0 4px 12px rgba(255,215,0,0.5)"}}>
+          🎲 Rolled {pendingDice}! Tap a glowing token to move it!
         </div>
+      )}
+
+      {/* Dice + Roll */}
+      <div className="flex items-center gap-4 mt-4 mb-3 w-full max-w-lg justify-center">
+        <Dice3D size={80} result={dice||1} rolling={rolling||cpuTimer} color="#EDE7F6" dotColor="#311B92"/>
         <div className="flex flex-col gap-2 flex-1">
           <button onClick={roll}
-            disabled={turn!==USER||rolling||diceResult!==null||cpuThinking||!!event||winner!==null}
-            className="w-full py-3 rounded-2xl font-sans font-black text-sm disabled:opacity-40"
-            style={{background:"linear-gradient(135deg,#EF5350,#FFD700)",color:"#1a0800",boxShadow:"0 5px 16px rgba(239,83,80,0.3)"}}>
-            {rolling?"🎲 Rolling…":cpuThinking?"👾 CPU thinking…":diceResult?"Tap your token!":turn===CPU?"CPU's turn":"🎲 Roll Dice!"}
+            disabled={turn!==USER||rolling||pendingDice!==null||cpuTimer||!!event||winner!==null}
+            className="w-full py-3.5 rounded-2xl font-sans font-black text-sm disabled:opacity-40"
+            style={{background:`linear-gradient(135deg,${PLAYER_COLOR[turn]},#FFD700)`,color:"#1a0800"}}>
+            {rolling?"🎲 Rolling…":cpuTimer?"👾 CPU thinking…":pendingDice?"Tap your token!":turn===CPU?"CPU's turn":`${player.avatar} ${player.name} — Roll!`}
           </button>
-          <button onClick={reset} className="py-1.5 rounded-xl font-sans text-xs font-bold text-gray-500 bg-white shadow-sm">↺ New Game</button>
+          <button onClick={reset} className="py-1.5 rounded-xl font-sans text-xs font-bold text-gray-400 bg-white shadow-sm">↺ New Game</button>
         </div>
       </div>
 
       {/* Log */}
-      <div className="w-full max-w-md rounded-2xl p-3 bg-white shadow-sm" style={{border:"1px solid #EDE7F6"}}>
+      <div className="w-full max-w-lg rounded-2xl p-3 bg-white shadow-sm" style={{border:"1px solid #EDE7F6"}}>
         {log.slice(0,4).map((l,i)=>(
           <p key={i} className="font-hindi text-xs py-0.5 truncate" style={{color:i===0?"#7B1FA2":"#bbb",fontWeight:i===0?700:400}}>{l}</p>
         ))}
       </div>
 
       {/* Moral Event Modal */}
-      {event && ev && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:"rgba(0,0,0,0.45)",backdropFilter:"blur(8px)"}}>
+      {event&&(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{background:"rgba(0,0,0,0.5)",backdropFilter:"blur(10px)"}}>
           <div className="rounded-3xl overflow-hidden w-full max-w-xs"
-            style={{border:`4px solid ${isGoodEv?"#4CAF50":"#EF5350"}`,animation:"popIn 0.35s ease",boxShadow:`0 24px 60px rgba(${isGoodEv?"76,175,80":"239,83,80"},0.55)`}}>
-            <div className="relative" style={{aspectRatio:"4/3"}}>
-              <Image src={isGoodEv?(event.pi===USER?"/games/chintu/celebrate.jpg":"/games/chintu/namaste.jpg"):"/games/chintu/sad.jpg"} alt="" fill className="object-cover" unoptimized sizes="300px"/>
-              <div className="absolute inset-0 flex items-center justify-center" style={{background:"rgba(0,0,0,0.2)"}}>
-                <span className="text-7xl drop-shadow-lg">{ev.emoji}</span>
-              </div>
-            </div>
-            <div className="p-5 text-center" style={{background:isGoodEv?"#E8F5E9":"#FFEBEE"}}>
-              <h3 className="font-sans text-2xl font-black mb-2" style={{color:isGoodEv?"#1B5E20":"#B71C1C"}}>{ev.title}</h3>
-              <p className="font-hindi text-sm mb-3" style={{color:isGoodEv?"#2E7D32":"#C62828"}}>{ev.msg}</p>
-              <p className="font-sans text-sm font-black mb-4" style={{color:isGoodEv?"#388E3C":"#D32F2F"}}>{ev.karma>0?"+":""}{ ev.karma} Karma</p>
-              <button onClick={closeEvent} className="px-8 py-3 rounded-full font-sans font-black text-sm text-white"
-                style={{background:isGoodEv?"linear-gradient(135deg,#4CAF50,#66BB6A)":"linear-gradient(135deg,#FF5722,#FF7043)"}}>
+            style={{background:"white",border:`4px solid ${event.moral.karma>0?"#4CAF50":"#EF5350"}`,animation:"popIn 0.3s ease"}}>
+            <div className="p-6 text-center">
+              <div className="text-6xl mb-3">{event.moral.emoji}</div>
+              <h3 className="font-sans text-xl font-black mb-2"
+                style={{color:event.moral.karma>0?"#1B5E20":"#B71C1C"}}>{event.moral.title}</h3>
+              <p className="font-hindi text-sm text-gray-600 mb-3">{event.moral.msg}</p>
+              <p className="font-sans text-lg font-black mb-4"
+                style={{color:event.moral.karma>0?"#4CAF50":"#EF5350"}}>
+                {event.moral.karma>0?"+":""}{event.moral.karma} Karma
+              </p>
+              <button onClick={closeEvent}
+                className="px-8 py-3 rounded-full font-sans font-black text-sm text-white"
+                style={{background:event.moral.karma>0?"linear-gradient(135deg,#4CAF50,#66BB6A)":"linear-gradient(135deg,#FF5722,#EF5350)"}}>
                 Continue →
               </button>
             </div>
@@ -463,32 +408,30 @@ export default function KarmaLudo() {
       )}
 
       {/* Winner */}
-      {winner !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:"rgba(0,0,0,0.5)",backdropFilter:"blur(12px)"}}>
-          <div className="rounded-3xl overflow-hidden w-full max-w-sm" style={{border:"4px solid #FFD700",animation:"popIn 0.4s ease"}}>
-            <div className="relative" style={{aspectRatio:"4/3"}}>
-              <Image src={winner===USER?"/games/chintu/victory.jpg":"/games/chintu/sad.jpg"} alt="" fill className="object-cover" unoptimized sizes="400px"/>
-              <div className="absolute bottom-3 inset-x-0 text-center text-5xl">{winner===USER?"🏆":"👾"}</div>
+      {winner!==null&&(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{background:"rgba(0,0,0,0.55)",backdropFilter:"blur(14px)"}}>
+          <div className="rounded-3xl p-8 text-center w-full max-w-sm"
+            style={{background:"linear-gradient(135deg,#FFFDE7,#FFF9C4)",border:"4px solid #FFD700",boxShadow:"0 24px 80px rgba(255,215,0,0.6)",animation:"popIn 0.4s ease"}}>
+            <div className="text-6xl mb-3">{winner===USER?"🏆":"👾"}</div>
+            <h2 className="font-sans text-2xl font-black text-amber-900 mb-3">
+              {winner===USER?`${player.avatar} ${player.name} Wins!`:"CPU Wins! 👾"}
+            </h2>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              {[USER,CPU].map(i=>(
+                <div key={i} className="rounded-2xl p-3" style={{background:i===winner?"rgba(255,215,0,0.25)":"white",border:`2px solid ${PLAYER_COLOR[i]}`}}>
+                  <p className="font-sans text-xs font-black" style={{color:PLAYER_COLOR[i]}}>{i===USER?player.name:"CPU"}</p>
+                  <p className="font-display text-xl font-black text-gray-700">⭐ {karma[i]}</p>
+                </div>
+              ))}
             </div>
-            <div className="p-6 text-center" style={{background:"linear-gradient(135deg,#FFFDE7,#FFF9C4)"}}>
-              <h3 className="font-sans text-2xl font-black text-yellow-700 mb-3">{winner===USER?"You Win! 🎉":"CPU Wins! 👾"}</h3>
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                {[USER,CPU].map(i=>(
-                  <div key={i} className="rounded-2xl p-3" style={{background:i===winner?"rgba(255,215,0,0.25)":"white",border:`2px solid ${PLAYER_COLORS[i]}`}}>
-                    <p className="font-sans text-xs font-black" style={{color:PLAYER_COLORS[i]}}>{PLAYER_NAMES[i]}</p>
-                    <p className="font-display text-xl font-black text-gray-700">⭐ {karma[i]}</p>
-                  </div>
-                ))}
-              </div>
-              <p className="font-hindi text-xs text-amber-700 mb-4">कर्म लूडो में हर कदम एक सबक है! 🙏</p>
-              <button onClick={reset} className="px-8 py-3 rounded-full font-sans font-black text-sm" style={{background:"linear-gradient(135deg,#FFD700,#FF9800)",color:"#3E2723"}}>Play Again! 🎯</button>
-            </div>
+            <button onClick={reset} className="w-full py-3 rounded-2xl font-sans font-black text-sm"
+              style={{background:"linear-gradient(135deg,#FFD700,#FF9800)",color:"#3E2723"}}>Play Again! 🎯</button>
           </div>
         </div>
       )}
-
       <style>{`
-        @keyframes tokenPulse{0%,100%{box-shadow:0 0 16px #FFD700,0 4px 8px rgba(0,0,0,0.4)}50%{box-shadow:0 0 28px #FFD700,0 4px 8px rgba(0,0,0,0.4)}}
+        @keyframes tkPulse{0%,100%{opacity:0.9;r:14}50%{opacity:0.5;r:18}}
         @keyframes popIn{0%{transform:scale(0.6);opacity:0}100%{transform:scale(1);opacity:1}}
       `}</style>
     </div>

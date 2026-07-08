@@ -1,4 +1,6 @@
 "use client";
+import { usePlayer } from "@/context/PlayerContext";
+import PlayerModal from "./PlayerModal";
 import { playSound } from "@/lib/sounds";
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
@@ -33,6 +35,7 @@ interface Creature {
 }
 
 export default function TinyLifeRescue() {
+  const { player, isReady } = usePlayer();
   const [creatures, setCreatures]   = useState<Creature[]>([]);
   const [rescued, setRescued]       = useState(0);
   const [tapped, setTapped]         = useState(0);
@@ -66,15 +69,15 @@ export default function TinyLifeRescue() {
     // Auto-miss after 5 seconds
     setTimeout(() => {
       setCreatures(cs => cs.map(cc => cc.id===id&&cc.alive&&!cc.rescued ? {...cc,alive:false} : cc));
-      setTimeout(() => setCreatures(cs => cs.filter(cc => cc.id!==id)), 600);
-    }, 5000);
+      setTapped(t => t+1); setKarma(k => Math.max(0, k-5)); setTimeout(() => setCreatures(cs => cs.filter(cc => cc.id!==id)), 500);
+    }, 2200);
   }, []);
 
   /* ── Start game ── */
   function start() {
     setShowTut(false); setPlaying(true); setOver(false);
     setRescued(0); setTapped(0); setKarma(0); setTimeLeft(60); setCreatures([]);
-    spawnRef.current = setInterval(spawn, 1000);
+    spawnRef.current = setInterval(spawn, 650);
     timerRef.current = setInterval(() => setTimeLeft(t => {
       if (t<=1) { clearInterval(spawnRef.current!); clearInterval(timerRef.current!); setPlaying(false); setOver(true); return 0; }
       return t-1;
@@ -176,6 +179,8 @@ export default function TinyLifeRescue() {
     sweepTrail.current = [];
   }
 
+  if(!isReady)return null;
+  if(!player)return <PlayerModal/>;
   const RATING = rescued>=30?"🏆 Ahimsa Master!":rescued>=20?"🌟 Great Rescuer!":rescued>=10?"😊 Kind Helper!":"🌱 Keep Learning!";
 
   return (
@@ -237,7 +242,7 @@ export default function TinyLifeRescue() {
               <button onClick={start}
                 className="w-full py-4 rounded-2xl font-sans font-black text-sm text-white"
                 style={{background:"linear-gradient(135deg,#4CAF50,#66BB6A)",boxShadow:"0 6px 20px rgba(76,175,80,0.4)"}}>
-                🦋 Start Rescuing!
+                🦋 {player?.name ? player.name+"! " : ""}Start Rescuing!
               </button>
             </div>
           </div>

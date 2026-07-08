@@ -1,260 +1,269 @@
 "use client";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
+import Image from "next/image";
+import { usePlayer } from "@/context/PlayerContext";
+import PlayerModal from "./PlayerModal";
+import { playSound } from "@/lib/sounds";
 
-/* ══════════════════════════════════════════════════════════════
-   KARMA CRUSH — Jain Match-3 Game
-   Match Good Deeds · Clear Bad Karma · Reach Moksha
-══════════════════════════════════════════════════════════════ */
-
-const ROWS = 8, COLS = 8;
-const SYMBOLS = [
-  {id:0, emoji:"🪷", name:"Ahimsa Lotus",  color:"#E91E63", hi:"अहिंसा"},
-  {id:1, emoji:"🙏", name:"Namokar",       color:"#FFD700", hi:"नमोकार"},
-  {id:2, emoji:"🦚", name:"Peacock",       color:"#2196F3", hi:"मयूर"},
-  {id:3, emoji:"💎", name:"Karma Crystal", color:"#9C27B0", hi:"क्रिस्टल"},
-  {id:4, emoji:"🌿", name:"Compassion Leaf",color:"#4CAF50",hi:"करुणा"},
+const ROWS=7,COLS=7;
+const SYMBOLS=[
+  {id:0,name:"Ahimsa Lotus",  hi:"अहिंसा",  img:"/games/karma-crush/lotus_sm.png",  color:"#E91E63",glow:"rgba(233,30,99,0.7)"},
+  {id:1,name:"Namokar",       hi:"नमोकार",   img:"/games/karma-crush/namokar_sm.png",color:"#FFD700",glow:"rgba(255,215,0,0.7)"},
+  {id:2,name:"Karma Crystal", hi:"क्रिस्टल", img:"/games/karma-crush/crystal_sm.png",color:"#9C27B0",glow:"rgba(156,39,176,0.7)"},
+  {id:3,name:"Compassion Leaf",hi:"करुणा",   img:"/games/karma-crush/leaf_sm.png",   color:"#4CAF50",glow:"rgba(76,175,80,0.7)"},
+  {id:4,name:"Tap Symbol",    hi:"तप",       img:"/games/karma-crush/tap_sm.png",    color:"#FF9800",glow:"rgba(255,152,0,0.7)"},
 ];
+const MSGS=["✨ अहिंसा!","🌟 पुण्य अर्जित!","🪷 क्षमावाणी!","💫 कर्म क्षीण!","☀️ मोक्ष के निकट!","🙏 नमो अरिहंताणं!"];
 
-const REWARD_MSGS = ["✨ अहिंसा!","🌟 पुण्य अर्जित!","🪷 क्षमावाणी!","💫 कर्म क्षीण!","☀️ मोक्ष के निकट!","🔥 सम्यक दर्शन!"];
+type Board=(number|null)[][];
 
-type Cell = { sym: number; marked: boolean } | null;
-
-function makeBoard(): Cell[][] {
-  return Array.from({length:ROWS}, () =>
-    Array.from({length:COLS}, () => ({sym: Math.floor(Math.random()*SYMBOLS.length), marked:false}))
-  );
+function rnd(){return Math.floor(Math.random()*SYMBOLS.length);}
+function makeBoard():Board{
+  const b:Board=Array.from({length:ROWS},()=>Array.from({length:COLS},rnd));
+  // Remove initial matches
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    let s=b[r][c];
+    while(
+      (c>=2&&b[r][c-1]===s&&b[r][c-2]===s)||
+      (r>=2&&b[r-1][c]===s&&b[r-2][c]===s)
+    ){b[r][c]=rnd();s=b[r][c];}
+  }
+  return b;
 }
 
-function findMatches(board: Cell[][]): [number,number][] {
-  const hits = new Set<string>();
-  for (let r=0; r<ROWS; r++) {
-    for (let c=0; c<COLS-2; c++) {
-      const a=board[r][c], b=board[r][c+1], cc=board[r][c+2];
-      if (a && b && cc && a.sym===b.sym && b.sym===cc.sym) {
-        [c,c+1,c+2].forEach(x=>hits.add(`${r},${x}`));
-      }
-    }
+function findHits(b:Board):[number,number][]{
+  const set=new Set<string>();
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS-2;c++){
+    const [a,bb,cc]=[b[r][c],b[r][c+1],b[r][c+2]];
+    if(a!==null&&a===bb&&bb===cc){[[r,c],[r,c+1],[r,c+2]].forEach(([rr,cc2])=>set.add(`${rr},${cc2}`));}
   }
-  for (let c=0; c<COLS; c++) {
-    for (let r=0; r<ROWS-2; r++) {
-      const a=board[r][c], b=board[r+1][c], cc=board[r+2][c];
-      if (a && b && cc && a.sym===b.sym && b.sym===cc.sym) {
-        [r,r+1,r+2].forEach(y=>hits.add(`${y},${c}`));
-      }
-    }
+  for(let c=0;c<COLS;c++)for(let r=0;r<ROWS-2;r++){
+    const [a,bb,cc]=[b[r][c],b[r+1][c],b[r+2][c]];
+    if(a!==null&&a===bb&&bb===cc){[[r,c],[r+1,c],[r+2,c]].forEach(([rr,cc2])=>set.add(`${rr},${cc2}`));}
   }
-  return [...hits].map(h=>{const [rr,cc]=h.split(",");return[+rr,+cc] as [number,number];});
+  return [...set].map(s=>{const[r,c]=s.split(",");return[+r,+c] as [number,number];});
 }
 
-function dropBoard(board: Cell[][]): Cell[][] {
-  const nb = board.map(r=>[...r]);
-  for (let c=0; c<COLS; c++) {
-    let empty = ROWS-1;
-    for (let r=ROWS-1; r>=0; r--) {
-      if (nb[r][c]!==null) { nb[empty][c]=nb[r][c]; if(empty!==r) nb[r][c]=null; empty--; }
+function drop(b:Board):Board{
+  const nb=b.map(r=>[...r]);
+  for(let c=0;c<COLS;c++){
+    let empty=ROWS-1;
+    for(let r=ROWS-1;r>=0;r--){
+      if(nb[r][c]!==null){nb[empty][c]=nb[r][c];if(empty!==r)nb[r][c]=null;empty--;}
     }
-    for (let r=empty; r>=0; r--) nb[r][c]={sym:Math.floor(Math.random()*SYMBOLS.length),marked:false};
+    for(let r=empty;r>=0;r--)nb[r][c]=rnd();
   }
   return nb;
 }
 
-export default function KarmaCrush() {
-  const [board, setBoard]       = useState<Cell[][]>(() => makeBoard());
-  const [sel, setSel]           = useState<[number,number]|null>(null);
-  const [score, setScore]       = useState(0);
-  const [moves, setMoves]       = useState(30);
-  const [msg, setMsg]           = useState<string|null>(null);
-  const [animating, setAnimating] = useState(false);
-  const [playerName, setPlayerName] = useState("");
-  const [screen, setScreen]     = useState<"name"|"play"|"over">("name");
-  const [combos, setCombos]     = useState(0);
-  const [target, setTarget]     = useState(500);
+// Count a match row/col length
+function matchLen(b:Board,r:number,c:number,dr:number,dc:number){
+  const s=b[r][c];let len=1,rr=r+dr,cc=c+dc;
+  while(rr>=0&&rr<ROWS&&cc>=0&&cc<COLS&&b[rr][cc]===s){len++;rr+=dr;cc+=dc;}
+  return len;
+}
 
-  const showMsg = useCallback((m: string) => {
-    setMsg(m); setTimeout(() => setMsg(null), 1500);
-  }, []);
+export default function KarmaCrush(){
+  const {player,isReady}=usePlayer();
+  const [board,setBoard]=useState<Board>(()=>makeBoard());
+  const [sel,setSel]=useState<[number,number]|null>(null);
+  const [flashing,setFlashing]=useState<[number,number][]>([]);
+  const [score,setScore]=useState(0);
+  const [moves,setMoves]=useState(30);
+  const [msg,setMsg]=useState<string|null>(null);
+  const [combo,setCombo]=useState(0);
+  const [screen,setScreen]=useState<"play"|"over">("play");
+  const [busy,setBusy]=useState(false);
+  const msgT=useRef<ReturnType<typeof setTimeout>|null>(null);
+  const TARGET=600;
 
-  // Process matches cascade
-  const processMatches = useCallback((b: Cell[][]): Cell[][] => {
-    let cur = b.map(r=>r.map(c=>c?{...c}:null));
-    let pts = 0; let combo = 0;
-    let again = true;
-    while (again) {
-      const hits = findMatches(cur);
-      if (hits.length === 0) { again = false; break; }
-      pts += hits.length * 10 * (combo+1);
-      combo++;
-      hits.forEach(([r,c])=>{ cur[r][c]=null; });
-      cur = dropBoard(cur);
-    }
-    if (pts > 0) {
-      setScore(s => s+pts);
-      setCombos(c => c+combo);
-      showMsg(REWARD_MSGS[Math.floor(Math.random()*REWARD_MSGS.length)] + `  +${pts}`);
-    }
-    return cur;
-  }, [showMsg]);
+  const showMsg=useCallback((m:string)=>{
+    if(msgT.current)clearTimeout(msgT.current);
+    setMsg(m);msgT.current=setTimeout(()=>setMsg(null),1800);
+  },[]);
 
-  // Initial match clear
-  useEffect(() => {
-    if (screen !== "play") return;
-    const cleaned = processMatches(board);
-    if (JSON.stringify(cleaned) !== JSON.stringify(board)) setBoard(cleaned);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screen]);
+  // Process cascades synchronously in steps
+  const processCascade=useCallback((initial:Board)=>{
+    let cur=initial;let pts=0;let cb=0;
 
-  function tap(r: number, c: number) {
-    if (animating || moves <= 0 || screen !== "play") return;
-    if (!sel) { setSel([r,c]); return; }
-    const [sr,sc] = sel;
-    if (sr===r && sc===c) { setSel(null); return; }
-    const adjacent = (Math.abs(sr-r)+Math.abs(sc-c))===1;
-    if (!adjacent) { setSel([r,c]); return; }
+    const step=()=>{
+      const hits=findHits(cur);
+      if(hits.length===0){
+        setFlashing([]);
+        if(pts>0){
+          setScore(s=>{const ns=s+pts;if(ns>=TARGET)setTimeout(()=>setScreen("over"),400);return ns;});
+          setCombo(cb);
+          showMsg(MSGS[Math.floor(Math.random()*MSGS.length)]+(cb>1?` ×${cb} Combo!`:"")+"  +"+pts);
+        }
+        setBusy(false);
+        setMoves(m=>{const nm=m-1;if(nm<=0)setTimeout(()=>setScreen("over"),600);return nm;});
+        return;
+      }
+      // Play sound based on combo
+      if(cb===0)playSound.match(); else if(cb===1)playSound.bigMatch(); else playSound.comboBlast();
+      
+      // Calculate bonus for match length
+      let bonus=0;
+      hits.forEach(([r,c])=>{
+        // Check for 4+ or 5+ in a row for special bonus
+        const maxH=matchLen(cur,r,c,0,1);const maxV=matchLen(cur,r,c,1,0);
+        const ml=Math.max(maxH,maxV);
+        if(ml>=5)bonus+=30; else if(ml===4)bonus+=20; else if(ml===3)bonus+=10;
+      });
+      pts+=hits.length*8*(cb+1)+bonus;
+      cb++;
+
+      // Show flash
+      setFlashing(hits);
+
+      // After delay: remove + drop
+      setTimeout(()=>{
+        hits.forEach(([r,c])=>{cur=cur.map((row,ri)=>row.map((v,ci)=>ri===r&&ci===c?null:v));});
+        cur=drop(cur);
+        setBoard([...cur.map(r=>[...r])]);
+        setFlashing([]);
+        setTimeout(step,250);
+      },380);
+    };
+    step();
+  },[showMsg]);
+
+  function tap(r:number,c:number){
+    if(busy||moves<=0||screen!=="play")return;
+    if(!sel){setSel([r,c]);playSound.click();return;}
+    const[sr,sc]=sel;
+    if(sr===r&&sc===c){setSel(null);return;}
+    if(Math.abs(sr-r)+Math.abs(sc-c)!==1){setSel([r,c]);playSound.click();return;}
 
     // Swap
-    const nb = board.map(row=>row.map(cell=>cell?{...cell}:null));
-    const tmp = nb[sr][sc]; nb[sr][sc]=nb[r][c]; nb[r][c]=tmp;
-
-    // Check if swap creates match
-    const hits = findMatches(nb);
-    if (hits.length===0) {
-      // No match — swap back
-      const back = nb.map(row=>row.map(cell=>cell?{...cell}:null));
-      const t2 = back[sr][sc]; back[sr][sc]=back[r][c]; back[r][c]=t2;
-      setBoard(back); setSel(null);
-      showMsg("🚫 No match! Try another swap.");
+    const nb=board.map(row=>[...row]);
+    const tmp=nb[sr][sc];nb[sr][sc]=nb[r][c];nb[r][c]=tmp;
+    const hits=findHits(nb);
+    if(hits.length===0){
+      playSound.wrongSwap();setSel(null);
+      showMsg("🚫 No match here! Try another.");
       return;
     }
-
-    setAnimating(true);
-    setMoves(m => m-1);
-    setSel(null);
-    const result = processMatches(nb);
-    setBoard(result);
-    setTimeout(() => {
-      setAnimating(false);
-      if (moves-1 <= 0) setScreen("over");
-    }, 300);
+    setSel(null);setBusy(true);setBoard(nb);setCombo(0);
+    processCascade(nb);
   }
 
-  if (screen === "name") return (
-    <div className="flex flex-col items-center w-full px-3 pb-10 overflow-x-hidden">
-      <div className="w-full max-w-sm mt-8 text-center">
-        <div className="text-6xl mb-3">🪷</div>
-        <h2 className="font-display-hi text-2xl font-black mb-1" style={{color:"#880E4F"}}>कर्म क्रश</h2>
-        <p className="font-sans text-sm mb-2" style={{color:"#C2185B"}}>Match Good Deeds · Clear Bad Karma · Reach Moksha</p>
-        <div className="bg-white rounded-3xl p-6 shadow-xl mt-6" style={{border:"3px solid #E91E63"}}>
-          <label className="block font-sans text-sm font-black text-gray-700 mb-3 text-left">Your Name / आपका नाम</label>
-          <input type="text" placeholder="Enter your name..."
-            value={playerName} onChange={e=>setPlayerName(e.target.value)}
-            onKeyDown={e=>e.key==="Enter"&&playerName.trim()&&setScreen("play")}
-            className="w-full rounded-xl px-4 py-3 font-sans text-base border-2 outline-none focus:border-pink-400 mb-4"
-            style={{borderColor:"#E0E0E0"}} autoFocus/>
-          <button onClick={()=>playerName.trim()&&setScreen("play")}
-            disabled={!playerName.trim()}
-            className="w-full py-4 rounded-2xl font-sans font-black text-sm text-white disabled:opacity-40"
-            style={{background:"linear-gradient(135deg,#E91E63,#9C27B0)"}}>
-            Start Playing! 🪷
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  if (screen === "over") return (
+  if(!isReady)return null;
+  if(!player)return <PlayerModal/>;
+  if(screen==="over")return(
     <div className="flex items-center justify-center min-h-64 px-3 w-full">
       <div className="w-full max-w-sm rounded-3xl p-8 text-center"
-        style={{background:"linear-gradient(135deg,#FCE4EC,#EDE7F6)",border:"4px solid #E91E63",boxShadow:"0 24px 80px rgba(233,30,99,0.4)"}}>
-        <div className="text-6xl mb-3">{score>=target?"🏆":"🙏"}</div>
+        style={{background:"linear-gradient(135deg,#FCE4EC,#EDE7F6)",border:"4px solid #E91E63",animation:"popIn 0.4s ease"}}>
+        <div className="text-6xl mb-3">{score>=TARGET?"🏆":"🙏"}</div>
         <h2 className="font-display-hi text-2xl font-black mb-1" style={{color:"#880E4F"}}>
-          {score>=target?`${playerName}, मोक्ष!`:`${playerName}, प्रयास जारी रखो!`}
+          {score>=TARGET?`${player.avatar} मोक्ष प्राप्त!`:`${player.avatar} प्रयास जारी!`}
         </h2>
         <div className="grid grid-cols-3 gap-3 my-5">
-          {[{l:"Punya Points",v:score,c:"#E91E63"},{l:"Combos",v:combos,c:"#9C27B0"},{l:"Target",v:target,c:"#FF9800"}].map(s=>(
+          {[{l:"🪷 Punya",v:score,c:"#E91E63"},{l:"⚡ Combos",v:combo,c:"#9C27B0"},{l:"🎯 Target",v:TARGET,c:"#FF9800"}].map(s=>(
             <div key={s.l} className="rounded-xl p-3 bg-white shadow-sm">
               <p className="font-display text-2xl font-black" style={{color:s.c}}>{s.v}</p>
               <p className="font-sans text-[10px] text-gray-400">{s.l}</p>
             </div>
           ))}
         </div>
-        <div className="flex gap-3">
-          <button onClick={()=>{setBoard(makeBoard());setScore(0);setMoves(30);setCombos(0);setSel(null);setScreen("play");}}
-            className="flex-1 py-3 rounded-2xl font-sans font-black text-sm text-white"
-            style={{background:"linear-gradient(135deg,#E91E63,#9C27B0)"}}>Play Again! 🪷</button>
-        </div>
+        <button onClick={()=>{setBoard(makeBoard());setScore(0);setMoves(30);setCombo(0);setSel(null);setFlashing([]);setScreen("play");setBusy(false);}}
+          className="w-full py-4 rounded-2xl font-sans font-black text-sm text-white"
+          style={{background:"linear-gradient(135deg,#E91E63,#9C27B0)"}}>
+          🪷 Play Again!
+        </button>
       </div>
     </div>
   );
 
-  return (
+  const pct=Math.min(100,(score/TARGET)*100);
+  return(
     <div className="flex flex-col items-center w-full px-3 pb-10 overflow-x-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between w-full max-w-md mt-2 mb-3">
-        <div className="rounded-xl px-3 py-2 bg-white shadow-sm" style={{border:"2px solid #E91E6330"}}>
+      <div className="flex items-center justify-between w-full max-w-md mt-2 mb-2">
+        <div className="rounded-2xl px-3 py-2 bg-white shadow-sm" style={{border:"2px solid #E91E6330"}}>
           <p className="font-sans text-[10px] text-gray-400">Punya Points</p>
           <p className="font-display text-xl font-black" style={{color:"#E91E63"}}>🪷 {score}</p>
         </div>
         <div className="text-center">
-          <p className="font-display-hi text-base font-black" style={{color:"#880E4F"}}>{playerName}</p>
-          <p className="font-sans text-[10px] text-gray-400">Target: {target} pts</p>
+          <p className="font-sans text-sm font-black" style={{color:"#880E4F"}}>{player.avatar} {player.name}</p>
+          {combo>1&&<p className="font-sans text-xs font-black text-purple-600 animate-bounce">⚡ ×{combo} Combo!</p>}
         </div>
-        <div className="rounded-xl px-3 py-2 bg-white shadow-sm" style={{border:"2px solid #FF980030"}}>
-          <p className="font-sans text-[10px] text-gray-400">Moves Left</p>
+        <div className="rounded-2xl px-3 py-2 bg-white shadow-sm" style={{border:`2px solid ${moves<8?"#F4433630":"#FF980030"}`}}>
+          <p className="font-sans text-[10px] text-gray-400">Moves</p>
           <p className="font-display text-xl font-black" style={{color:moves<8?"#F44336":"#FF9800"}}>{moves}</p>
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="w-full max-w-md mb-3 h-3 rounded-full bg-gray-100 overflow-hidden">
-        <div className="h-full rounded-full transition-all"
-          style={{width:`${Math.min(100,(score/target)*100)}%`,background:"linear-gradient(90deg,#E91E63,#FFD700)"}}/>
+      {/* Progress */}
+      <div className="w-full max-w-md mb-2 flex items-center gap-2">
+        <span className="font-sans text-[10px] text-gray-400 shrink-0">0</span>
+        <div className="flex-1 h-3 rounded-full bg-gray-100 overflow-hidden">
+          <div className="h-full rounded-full transition-all duration-500"
+            style={{width:`${pct}%`,background:"linear-gradient(90deg,#E91E63,#FFD700,#4CAF50)"}}/>
+        </div>
+        <span className="font-sans text-[10px] text-amber-700 font-bold shrink-0">🌟{TARGET}</span>
       </div>
 
       {/* Message */}
-      {msg && (
-        <div className="mb-3 rounded-2xl px-5 py-2.5 font-sans text-sm font-black text-white text-center animate-bounce shadow-lg"
-          style={{background:"linear-gradient(135deg,#E91E63,#9C27B0)"}}>
-          {msg}
-        </div>
-      )}
+      {msg&&<div className="mb-2 rounded-2xl px-5 py-2 font-sans text-sm font-black text-white text-center"
+        style={{background:"linear-gradient(135deg,#E91E63,#9C27B0)",animation:"msgPop 0.3s ease"}}>{msg}</div>}
 
       {/* Board */}
-      <div className="w-full max-w-md rounded-2xl overflow-hidden shadow-xl mb-4" style={{border:"3px solid #E91E63"}}>
-        <div style={{display:"grid",gridTemplateColumns:`repeat(${COLS},1fr)`,gap:2,padding:8,background:"linear-gradient(135deg,#FCE4EC,#F8BBD9)"}}>
-          {board.map((row,r)=>row.map((cell,c)=>{
-            const isSel=sel&&sel[0]===r&&sel[1]===c;
-            const sym=cell?SYMBOLS[cell.sym]:null;
-            return (
+      <div className="w-full max-w-md select-none" style={{perspective:1200}}>
+        <div className="rounded-3xl overflow-hidden"
+          style={{background:"linear-gradient(145deg,#FCE4EC,#F8BBD9,#EDE7F6)",padding:8,gap:5,
+            display:"grid",gridTemplateColumns:`repeat(${COLS},1fr)`,
+            boxShadow:"0 20px 60px rgba(233,30,99,0.3),0 0 0 3px white,0 0 0 6px #E91E63",
+            transform:"rotateX(4deg)",transformStyle:"preserve-3d"}}>
+          {board.map((row,r)=>row.map((sym,c)=>{
+            const isSel=!!sel&&sel[0]===r&&sel[1]===c;
+            const isFlash=flashing.some(([fr,fc])=>fr===r&&fc===c);
+            const s=sym!==null?SYMBOLS[sym]:null;
+            return(
               <button key={`${r}-${c}`} onClick={()=>tap(r,c)}
-                className="flex items-center justify-center rounded-xl transition-all duration-150"
-                style={{
-                  aspectRatio:"1/1",
-                  background:isSel?"rgba(255,215,0,0.6)":"rgba(255,255,255,0.7)",
-                  border:isSel?"2.5px solid #FFD700":"2px solid rgba(255,255,255,0.4)",
-                  transform:isSel?"scale(1.15)":"scale(1)",
-                  boxShadow:isSel?"0 0 12px rgba(255,215,0,0.8)":sym?`0 2px 8px ${sym.color}30`:"none",
-                  fontSize:"clamp(14px,4vw,26px)",
-                }}>
-                {sym?.emoji||""}
+                className="relative flex items-center justify-center rounded-2xl transition-all duration-150"
+                style={{aspectRatio:"1/1",
+                  background:isSel?"rgba(255,215,0,0.5)":isFlash?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.78)",
+                  border:isSel?"3px solid #FFD700":isFlash?`2px solid ${s?.color}`:"2px solid rgba(255,255,255,0.5)",
+                  boxShadow:isSel?`0 0 20px #FFD700,0 6px 16px rgba(0,0,0,0.2),inset 0 2px 4px rgba(255,255,255,0.9)`:
+                    isFlash?`0 0 28px ${s?.glow},0 4px 12px rgba(0,0,0,0.1)`:
+                    s?`0 4px 10px ${s.color}20,inset 0 2px 3px rgba(255,255,255,0.7)`:"none",
+                  transform:isSel?"scale(1.18) translateZ(24px) translateY(-4px)":isFlash?"scale(1.12) translateZ(12px)":"scale(1)",
+                  opacity:isFlash?0.25:1,
+                  animation:isFlash?"matchPop 0.38s ease":"none",
+                  zIndex:isSel?10:1}}>
+                {s&&<div className="relative w-full h-full p-1.5 flex items-center justify-center"
+                  style={{filter:isSel?`drop-shadow(0 0 12px ${s.glow}) brightness(1.15)`:isFlash?`drop-shadow(0 0 24px ${s.glow})brightness(1.3)`:`drop-shadow(0 3px 6px ${s.color}60)`,
+                    transform:isSel?"scale(1.12)":"scale(1)",transition:"transform 0.15s"}}>
+                  <Image src={s.img} alt={s.name} fill className="object-contain p-0.5" unoptimized sizes="60px"/>
+                </div>}
+                {isSel&&<div className="absolute inset-0 rounded-2xl pointer-events-none"
+                  style={{background:"linear-gradient(135deg,rgba(255,255,255,0.55) 0%,transparent 55%)"}}/>}
               </button>
             );
           }))}
         </div>
       </div>
 
-      {/* Symbol legend */}
-      <div className="w-full max-w-md rounded-2xl p-3 bg-white shadow-sm" style={{border:"1px solid #FCE4EC"}}>
-        <p className="font-sans text-[10px] font-black text-pink-600 mb-2">Match 3+ to earn Punya Points:</p>
-        <div className="flex gap-2 flex-wrap">
+      {/* Legend */}
+      <div className="w-full max-w-md mt-4 rounded-2xl p-3 bg-white shadow-sm" style={{border:"2px solid #FCE4EC"}}>
+        <p className="font-sans text-[10px] font-black text-pink-600 mb-2">Match 3+ symbols to earn Punya Points!</p>
+        <div className="grid grid-cols-5 gap-2">
           {SYMBOLS.map(s=>(
-            <div key={s.id} className="flex items-center gap-1.5 rounded-full px-3 py-1"
-              style={{background:`${s.color}15`,border:`1.5px solid ${s.color}40`}}>
-              <span className="text-base">{s.emoji}</span>
-              <span className="font-sans text-[10px] font-bold" style={{color:s.color}}>{s.hi}</span>
+            <div key={s.id} className="flex flex-col items-center gap-1">
+              <div className="relative w-9 h-9" style={{filter:`drop-shadow(0 3px 8px ${s.glow})`}}>
+                <Image src={s.img} alt={s.name} fill className="object-contain" unoptimized sizes="48px"/>
+              </div>
+              <p className="font-sans text-[9px] font-bold text-center leading-tight" style={{color:s.color}}>{s.hi}</p>
             </div>
           ))}
         </div>
       </div>
+      <style>{`
+        @keyframes matchPop{0%{transform:scale(1);opacity:1}50%{transform:scale(1.3);opacity:0.5}100%{transform:scale(0.4);opacity:0}}
+        @keyframes msgPop{0%{transform:scale(0.85);opacity:0}100%{transform:scale(1);opacity:1}}
+        @keyframes popIn{0%{transform:scale(0.6);opacity:0}100%{transform:scale(1);opacity:1}}
+      `}</style>
     </div>
   );
 }
