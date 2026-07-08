@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import GamesAuthBar from "@/components/games/GamesAuthBar";
 import Link from "next/link";
 import { GAMES } from "@/components/games/game-registry";
 
@@ -16,6 +17,7 @@ export default function GamesPage() {
   return (
     <div className="min-h-screen pb-20"
       style={{ background: "linear-gradient(160deg,#FFF9C4 0%,#E1F5FE 35%,#F8BBD9 70%,#DCEDC8 100%)" }}>
+      <GamesAuthBar />
 
       {/* Floating bubbles decoration */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
