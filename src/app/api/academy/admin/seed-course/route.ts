@@ -5,9 +5,20 @@ import mcqRaw from "@/lib/rishabdev-mcq.json";
 
 interface MCQItem { id:number; q:string; opts:string[]; ans:string; }
 
+export const dynamic = "force-dynamic";
 export async function POST() {
   await ensureAcademyDb();
   const mcqs = mcqRaw as MCQItem[];
+
+  // Delete existing course if present (for re-seeding)
+  const existingCourse = await dbGet<{id:number}>("SELECT id FROM academy_courses WHERE slug=?",["bhagwan-rishabdev"]);
+  if (existingCourse) {
+    await dbRun("DELETE FROM academy_quiz_attempts WHERE course_id=?", [existingCourse.id]);
+    await dbRun("DELETE FROM academy_questions WHERE quiz_id IN (SELECT id FROM academy_quizzes WHERE course_id=?)", [existingCourse.id]);
+    await dbRun("DELETE FROM academy_quizzes WHERE course_id=?", [existingCourse.id]);
+    await dbRun("DELETE FROM academy_videos WHERE course_id=?", [existingCourse.id]);
+    await dbRun("DELETE FROM academy_courses WHERE id=?", [existingCourse.id]);
+  }
 
   await dbRun(`INSERT OR IGNORE INTO academy_categories (name,name_hi,slug,description,icon,color,order_index)
     VALUES (?,?,?,?,?,?,?)`,
