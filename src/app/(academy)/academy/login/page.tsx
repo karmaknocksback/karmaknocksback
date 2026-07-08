@@ -1,31 +1,33 @@
 "use client";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
-  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-  const redirectTo = searchParams?.get("redirect") || "/academy/dashboard";
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/academy/dashboard";
   const [form, setForm] = useState({ email:"", password:"" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   async function submit(e: React.FormEvent) {
-    e.preventDefault(); setError(""); setLoading(true);
+    e.preventDefault();
+    setError(""); setLoading(true);
     try {
       const res = await fetch("/api/academy/auth/login", {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify(form)
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify(form),
+        credentials: "include",  // ensure cookie is set
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error); return; }
-      localStorage.setItem("academy_token", data.token);
+      if (!res.ok) { setError(data.error || "Login failed"); return; }
+      // Save token to localStorage for client-side checks
+      if (data.token) localStorage.setItem("academy_token", data.token);
       router.push(redirectTo);
-    } catch { setError("Login failed. Please try again."); }
+    } catch { setError("Network error. Please try again."); }
     finally { setLoading(false); }
   }
 
@@ -36,12 +38,14 @@ export default function LoginPage() {
           <div className="text-5xl mb-3">📿</div>
           <h1 className="font-display-hi text-2xl font-black text-amber-900">Welcome Back</h1>
           <p className="font-hindi text-sm text-amber-600 mt-1">जैन अकादमी में स्वागत!</p>
+          {redirectTo !== "/academy/dashboard" && (
+            <div className="mt-3 rounded-xl p-2 bg-amber-50 border border-amber-200">
+              <p className="font-sans text-xs text-amber-700">Sign in to continue to your course</p>
+            </div>
+          )}
         </div>
 
-        {/* Google Sign In */}
-        <div className="mb-4">
-          <GoogleSignInButton className="w-full justify-center"/>
-        </div>
+        <GoogleSignInButton className="w-full justify-center mb-4"/>
 
         <div className="relative my-4">
           <div className="absolute inset-0 flex items-center">
@@ -53,7 +57,9 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={submit} className="bg-white rounded-3xl p-6 shadow-xl" style={{border:"2px solid rgba(255,215,0,0.3)"}}>
-          {error && <div className="mb-4 rounded-xl p-3 text-sm font-bold text-red-700 bg-red-50 border border-red-200">{error}</div>}
+          {error && (
+            <div className="mb-4 rounded-xl p-3 text-sm font-bold text-red-700 bg-red-50 border border-red-200">{error}</div>
+          )}
           <div className="mb-4">
             <label className="block font-sans text-xs font-black text-gray-600 mb-1">Email</label>
             <input type="email" placeholder="your@email.com" required value={form.email}
@@ -74,10 +80,18 @@ export default function LoginPage() {
             {loading ? "Signing in..." : "🙏 Sign In"}
           </button>
           <p className="text-center mt-4 font-sans text-xs text-gray-500">
-            New here? <Link href="/academy/register" className="font-bold text-amber-700 hover:underline">Join Free</Link>
+            New here? <Link href={`/academy/register?redirect=${encodeURIComponent(redirectTo)}`} className="font-bold text-amber-700 hover:underline">Join Free</Link>
           </p>
         </form>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-[60vh]"><div className="text-4xl animate-bounce">📿</div></div>}>
+      <LoginForm/>
+    </Suspense>
   );
 }

@@ -109,7 +109,7 @@ export default function NavkarMemoryQuest() {
     }
   },[locked,flipped,matched,deck,started,burst]);
 
-  function restart(){setDeck(buildDeck());setFlipped([]);setMatched([]);setMoves(0);setScore(0);setWon(false);setTime(0);setStarted(false);setLastMatch(null);}
+  function restart(){setDeck(buildDeck(pairCount));setFlipped([]);setMatched([]);setMoves(0);setScore(0);setWon(false);setTime(0);setStarted(false);setLastMatch(null);}
   const fmt=(s:number)=>`${Math.floor(s/60)}:${(s%60).toString().padStart(2,"0")}`;
 
   return (
