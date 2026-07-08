@@ -5,7 +5,23 @@ import { usePlayer } from "@/context/PlayerContext";
 import PlayerModal from "./PlayerModal";
 import { playSound } from "@/lib/sounds";
 
-const ROWS=7,COLS=7;
+
+/* ── 500 Level System ──────────────────────────────────────────
+   Levels 1-50:   7×7 board, 30 moves, target scales
+   Levels 51-150: 8×8 board, 25 moves
+   Levels 151-300: 8×8, 22 moves, obstacles
+   Levels 301-500: 9×9, 20 moves, max difficulty
+──────────────────────────────────────────────────────────────── */
+function getLevelConfig(level: number) {
+  const rows = level <= 50 ? 7 : level <= 150 ? 8 : 9;
+  const cols = level <= 50 ? 7 : level <= 150 ? 8 : 9;
+  const moves = Math.max(15, 35 - Math.floor(level / 25));
+  const target = Math.round(300 + level * 1.5 + Math.pow(level, 0.8) * 5);
+  const symbolCount = level <= 100 ? 4 : level <= 250 ? 5 : 5;
+  return { rows, cols, moves, target, symbolCount, level };
+}
+
+const ROWS=7,COLS=7; // base (overridden by level config)
 const SYMBOLS=[
   {id:0,name:"Ahimsa Lotus",  hi:"अहिंसा",  img:"/games/karma-crush/lotus_sm.png",  color:"#E91E63",glow:"rgba(233,30,99,0.7)"},
   {id:1,name:"Namokar",       hi:"नमोकार",   img:"/games/karma-crush/namokar_sm.png",color:"#FFD700",glow:"rgba(255,215,0,0.7)"},
@@ -65,17 +81,19 @@ function matchLen(b:Board,r:number,c:number,dr:number,dc:number){
 
 export default function KarmaCrush(){
   const {player,isReady}=usePlayer();
+  const [currentLevel, setCurrentLevel] = useState(() => parseInt(localStorage.getItem("kc_level")||"1",10));
+  const lvlCfg = getLevelConfig(currentLevel);
   const [board,setBoard]=useState<Board>(()=>makeBoard());
   const [sel,setSel]=useState<[number,number]|null>(null);
   const [flashing,setFlashing]=useState<[number,number][]>([]);
   const [score,setScore]=useState(0);
-  const [moves,setMoves]=useState(30);
+  const [moves,setMoves]=useState(()=>getLevelConfig(parseInt(localStorage.getItem("kc_level")||"1",10)).moves);
   const [msg,setMsg]=useState<string|null>(null);
   const [combo,setCombo]=useState(0);
-  const [screen,setScreen]=useState<"play"|"over">("play");
+  const [screen,setScreen]=useState<"play"|"over"|"levelcomplete">("play");
   const [busy,setBusy]=useState(false);
   const msgT=useRef<ReturnType<typeof setTimeout>|null>(null);
-  const TARGET=600;
+  const TARGET=lvlCfg.target;
 
   const showMsg=useCallback((m:string)=>{
     if(msgT.current)clearTimeout(msgT.current);
@@ -91,7 +109,13 @@ export default function KarmaCrush(){
       if(hits.length===0){
         setFlashing([]);
         if(pts>0){
-          setScore(s=>{const ns=s+pts;if(ns>=TARGET)setTimeout(()=>setScreen("over"),400);return ns;});
+          setScore(s=>{const ns=s+pts;if(ns>=TARGET){
+              const nextLvl=currentLevel+1;
+              localStorage.setItem("kc_level",String(nextLvl));
+              setCurrentLevel(nextLvl);
+              setTimeout(()=>setScreen("levelcomplete"),400);
+            }
+            return ns;});
           setCombo(cb);
           showMsg(MSGS[Math.floor(Math.random()*MSGS.length)]+(cb>1?` ×${cb} Combo!`:"")+"  +"+pts);
         }
@@ -150,11 +174,32 @@ export default function KarmaCrush(){
 
   if(!isReady)return null;
   if(!player)return <PlayerModal/>;
+
+  if(screen==="levelcomplete") return(
+    <div className="flex items-center justify-center min-h-64 px-3 w-full">
+      <div className="w-full max-w-sm rounded-3xl p-8 text-center"
+        style={{background:"linear-gradient(135deg,#FFFDE7,#FFF9C4)",border:"4px solid #FFD700",boxShadow:"0 24px 80px rgba(255,215,0,0.6)",animation:"popIn 0.4s ease"}}>
+        <div className="text-6xl mb-3">🌟</div>
+        <h2 className="font-display-hi text-2xl font-black text-amber-900 mb-1">Level {currentLevel-1} Complete!</h2>
+        <p className="font-hindi text-sm text-amber-700 mb-4">अगले स्तर पर जाएं! Level {currentLevel} unlocked!</p>
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="rounded-xl p-3 bg-white"><p className="font-display text-2xl font-black text-pink-600">🪷 {score}</p><p className="font-sans text-[10px] text-gray-400">Punya Points</p></div>
+          <div className="rounded-xl p-3 bg-white"><p className="font-display text-2xl font-black text-purple-600">⭐ +{Math.round(currentLevel*3)}</p><p className="font-sans text-[10px] text-gray-400">Stars Earned</p></div>
+        </div>
+        <button onClick={()=>{const cfg=getLevelConfig(currentLevel);setBoard(makeBoard());setScore(0);setMoves(cfg.moves);setCombo(0);setSel(null);setFlashing([]);setScreen("play");setBusy(false);}}
+          className="w-full py-4 rounded-2xl font-sans font-black text-sm text-white"
+          style={{background:"linear-gradient(135deg,#FFD700,#FF9800)"}}>
+          ▶ Play Level {currentLevel}!
+        </button>
+      </div>
+    </div>
+  );
+
   if(screen==="over")return(
     <div className="flex items-center justify-center min-h-64 px-3 w-full">
       <div className="w-full max-w-sm rounded-3xl p-8 text-center"
         style={{background:"linear-gradient(135deg,#FCE4EC,#EDE7F6)",border:"4px solid #E91E63",animation:"popIn 0.4s ease"}}>
-        <div className="text-6xl mb-3">{score>=TARGET?"🏆":"🙏"}</div>
+        <div className="text-6xl mb-3">{screen==="over"&&score>=TARGET?"🏆":"🙏"}</div>
         <h2 className="font-display-hi text-2xl font-black mb-1" style={{color:"#880E4F"}}>
           {score>=TARGET?`${player.avatar} मोक्ष प्राप्त!`:`${player.avatar} प्रयास जारी!`}
         </h2>
@@ -180,6 +225,10 @@ export default function KarmaCrush(){
     <div className="flex flex-col items-center w-full px-3 pb-10 overflow-x-hidden">
       {/* Header */}
       <div className="flex items-center justify-between w-full max-w-md mt-2 mb-2">
+        <div className="rounded-2xl px-3 py-2 bg-white shadow-sm" style={{border:"2px solid #9C27B030"}}>
+          <p className="font-sans text-[10px] text-gray-400">Level</p>
+          <p className="font-display text-xl font-black text-purple-700">⚡ {currentLevel}</p>
+        </div>
         <div className="rounded-2xl px-3 py-2 bg-white shadow-sm" style={{border:"2px solid #E91E6330"}}>
           <p className="font-sans text-[10px] text-gray-400">Punya Points</p>
           <p className="font-display text-xl font-black" style={{color:"#E91E63"}}>🪷 {score}</p>

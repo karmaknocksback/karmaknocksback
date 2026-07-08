@@ -1,4 +1,19 @@
 "use client";
+
+/* ── 50 Levels of Navkar Memory Quest ─────────────────────────
+   Levels 1-10:  4 pairs (8 cards)
+   Levels 11-25: 6 pairs (12 cards)
+   Levels 26-40: 8 pairs (16 cards)
+   Levels 41-50: 10 pairs (20 cards) - max challenge
+──────────────────────────────────────────────────────────────── */
+function getMemoryLevel(level: number) {
+  const pairs = level <= 10 ? 4 : level <= 25 ? 6 : level <= 40 ? 8 : 10;
+  const flipBackDelay = Math.max(600, 1500 - level * 18); // faster flip back
+  const timeLimit = level <= 10 ? 0 : level <= 25 ? 90 : level <= 40 ? 75 : 60;
+  const starBonus = level * 8;
+  return { pairs, flipBackDelay, timeLimit, starBonus, level };
+}
+
 import { playSound } from "@/lib/sounds";
 import { useState, useCallback, useEffect, useRef } from "react";
 import Image from "next/image";

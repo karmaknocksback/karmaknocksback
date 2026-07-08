@@ -1,5 +1,6 @@
 "use client";
 import { usePlayer } from "@/context/PlayerContext";
+import KarmaStarsHUD from "@/components/shared/KarmaStarsHUD";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";

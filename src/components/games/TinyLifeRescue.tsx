@@ -15,6 +15,21 @@ import Image from "next/image";
    🎯 Swipe the pichi through the creature's area to save it
 ══════════════════════════════════════════════════════════ */
 
+
+/* ── 15 Levels of Tiny Life Rescue ────────────────────────────
+   Each level: faster insects, more required rescues, bonus stars
+──────────────────────────────────────────────────────────────── */
+function getTinyLevel(level: number) {
+  return {
+    spawnMs:    Math.max(400, 900 - level * 30),    // insects appear faster
+    lifeMs:     Math.max(1200, 2500 - level * 80),  // disappear faster  
+    requiredRescues: 5 + level * 2,                  // must rescue this many
+    gameTime:   60 + level * 5,                      // more time on higher levels
+    starBonus:  level * 5,                           // extra stars per level
+    level,
+  };
+}
+
 const CREATURES = [
   {emoji:"🐜",label:"Ant",     hi:"चींटी",    danger:"💧 Water!", color:"#795548"},
   {emoji:"🦋",label:"Butterfly",hi:"तितली",  danger:"🌧️ Rain!",  color:"#E91E63"},
@@ -36,6 +51,8 @@ interface Creature {
 
 export default function TinyLifeRescue() {
   const { player, isReady } = usePlayer();
+  const [currentLevel, setCurrentLevel] = useState(() => parseInt(typeof window!=="undefined"?localStorage.getItem("tiny_level")||"1":"1",10));
+  const lvl = getTinyLevel(currentLevel);
   const [creatures, setCreatures]   = useState<Creature[]>([]);
   const [rescued, setRescued]       = useState(0);
   const [tapped, setTapped]         = useState(0);
@@ -70,14 +87,14 @@ export default function TinyLifeRescue() {
     setTimeout(() => {
       setCreatures(cs => cs.map(cc => cc.id===id&&cc.alive&&!cc.rescued ? {...cc,alive:false} : cc));
       setTapped(t => t+1); setKarma(k => Math.max(0, k-5)); setTimeout(() => setCreatures(cs => cs.filter(cc => cc.id!==id)), 500);
-    }, 2200);
+    }, lvl.lifeMs);
   }, []);
 
   /* ── Start game ── */
   function start() {
     setShowTut(false); setPlaying(true); setOver(false);
-    setRescued(0); setTapped(0); setKarma(0); setTimeLeft(60); setCreatures([]);
-    spawnRef.current = setInterval(spawn, 650);
+    setRescued(0); setTapped(0); setKarma(0); setTimeLeft(lvl.gameTime); setCreatures([]);
+    spawnRef.current = setInterval(spawn, lvl.spawnMs);
     timerRef.current = setInterval(() => setTimeLeft(t => {
       if (t<=1) { clearInterval(spawnRef.current!); clearInterval(timerRef.current!); setPlaying(false); setOver(true); return 0; }
       return t-1;
@@ -181,6 +198,9 @@ export default function TinyLifeRescue() {
 
   if(!isReady)return null;
   if(!player)return <PlayerModal/>;
+  // Check level complete
+  const levelComplete = rescued >= lvl.requiredRescues;
+  
   const RATING = rescued>=30?"🏆 Ahimsa Master!":rescued>=20?"🌟 Great Rescuer!":rescued>=10?"😊 Kind Helper!":"🌱 Keep Learning!";
 
   return (
@@ -193,6 +213,8 @@ export default function TinyLifeRescue() {
           {l:"❌ Tapped",  v:tapped,  c:"#F44336"},
           {l:"❤️ Karma",   v:karma,   c:"#E91E63"},
           {l:"⏱️ Time",    v:`${timeLeft}s`,c:"#2196F3"},
+        {l:"📊 Level",    v:currentLevel,       c:"#9C27B0"},
+        {l:"🎯 Target",   v:lvl.requiredRescues,c:"#FF9800"},
         ].map(s => (
           <div key={s.l} className="rounded-xl p-2.5 text-center bg-white shadow-sm" style={{border:`2px solid ${s.c}30`}}>
             <p className="font-sans text-[9px] text-gray-400">{s.l}</p>
@@ -394,7 +416,23 @@ export default function TinyLifeRescue() {
                   <span className="font-sans text-[10px] text-gray-500 italic">Protecting every life is the greatest Ahimsa.</span>
                 </p>
               </div>
-              <button onClick={() => { setOver(false); setShowTut(true); }}
+              <div className="mb-3">
+              {levelComplete ? (
+                <div className="rounded-xl p-3 bg-green-50 border border-green-300 mb-2">
+                  <p className="font-sans text-sm font-black text-green-700">🎉 Level {currentLevel} Complete! +{lvl.starBonus} Stars</p>
+                  <button onClick={()=>{const nl=Math.min(15,currentLevel+1);localStorage.setItem("tiny_level",String(nl));setCurrentLevel(nl);setOver(false);setShowTut(true);}}
+                    className="mt-2 w-full py-2 rounded-xl font-sans font-black text-xs text-white"
+                    style={{background:"linear-gradient(135deg,#4CAF50,#66BB6A)"}}>
+                    ▶ Play Level {Math.min(15,currentLevel+1)}!
+                  </button>
+                </div>
+              ) : (
+                <p className="font-sans text-xs text-orange-600 text-center mb-2">
+                  Need {lvl.requiredRescues} rescues to complete level (you got {rescued})
+                </p>
+              )}
+            </div>
+            <button onClick={() => { setOver(false); setShowTut(true); }}
                 className="w-full py-3 rounded-2xl font-sans font-black text-sm text-white"
                 style={{background:"linear-gradient(135deg,#4CAF50,#66BB6A)",boxShadow:"0 6px 20px rgba(76,175,80,0.4)"}}>
                 Play Again! 🦋
