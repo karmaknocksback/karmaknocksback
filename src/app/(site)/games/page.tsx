@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 const DIFFICULTY_LABEL = ["", "⭐ Easy", "⭐⭐ Medium", "⭐⭐⭐ Hard"];
 
 export default function GamesPage() {
-  const available = GAMES.filter(g => g.available);
+  const available = GAMES.filter(g => g.available && !g.hidden);
   const coming    = GAMES.filter(g => !g.available);
 
   return (

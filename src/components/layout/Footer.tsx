@@ -113,6 +113,12 @@ export default function Footer() {
           © {new Date().getFullYear()} {SITE.name}. {lang === "en" ? t("footer_rights", "en") : "सर्वाधिकार सुरक्षित।"}
         </div>
       </div>
-    </footer>
+      <div className="border-t border-gray-200 mt-6 pt-4 pb-2 text-center flex flex-wrap justify-center gap-4">
+    <a href="/terms" className="font-sans text-xs text-gray-400 hover:text-amber-600">Terms & Conditions</a>
+    <a href="/privacy" className="font-sans text-xs text-gray-400 hover:text-amber-600">Privacy Policy</a>
+    <span className="font-sans text-xs text-gray-300">|</span>
+    <span className="font-sans text-xs text-gray-400">© 2026 KarmaKnocksBack</span>
+  </div>
+</footer>
   );
 }

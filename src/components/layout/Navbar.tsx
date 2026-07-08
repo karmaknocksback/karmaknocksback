@@ -1,4 +1,5 @@
 "use client";
+import { usePlayer } from "@/context/PlayerContext";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -12,6 +13,7 @@ import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const { player } = usePlayer();
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
   const { lang } = useLanguage();

@@ -17,19 +17,27 @@ const HINT_PACKAGES = [
   {points:200, gems:8, label:"Big Pack",   emoji:"💎💎💎"},
 ];
 
+const BG_IMAGES = [
+  "/backgrounds/temple_sunset_sm.jpg",
+  "/backgrounds/lotus_garden_sm.jpg",
+  "/backgrounds/samavsharan_sm.jpg",
+  "/backgrounds/temple_sea_sm.jpg",
+  "/backgrounds/lotus_marble_sm.jpg",
+  "/backgrounds/lotus_pond_sm.jpg",
+];
 const LETTER_COLORS = [
-  {bg:"linear-gradient(145deg,#FF6B6B,#C0392B)",shadow:"rgba(192,57,43,0.5)"},
-  {bg:"linear-gradient(145deg,#FFA726,#E65100)",shadow:"rgba(230,81,0,0.5)"},
-  {bg:"linear-gradient(145deg,#FFEE58,#F9A825)",shadow:"rgba(249,168,37,0.5)"},
-  {bg:"linear-gradient(145deg,#66BB6A,#2E7D32)",shadow:"rgba(46,125,50,0.5)"},
-  {bg:"linear-gradient(145deg,#26C6DA,#00838F)",shadow:"rgba(0,131,143,0.5)"},
-  {bg:"linear-gradient(145deg,#42A5F5,#1565C0)",shadow:"rgba(21,101,192,0.5)"},
-  {bg:"linear-gradient(145deg,#AB47BC,#6A1B9A)",shadow:"rgba(106,27,154,0.5)"},
-  {bg:"linear-gradient(145deg,#EC407A,#880E4F)",shadow:"rgba(136,14,79,0.5)"},
-  {bg:"linear-gradient(145deg,#26A69A,#004D40)",shadow:"rgba(0,77,64,0.5)"},
-  {bg:"linear-gradient(145deg,#8D6E63,#4E342E)",shadow:"rgba(78,52,46,0.5)"},
-  {bg:"linear-gradient(145deg,#7E57C2,#311B92)",shadow:"rgba(49,27,146,0.5)"},
-  {bg:"linear-gradient(145deg,#29B6F6,#01579B)",shadow:"rgba(1,87,155,0.5)"},
+  {bg:"rgba(255,100,100,0.85)",shadow:"rgba(220,50,50,0.6)"},
+  {bg:"rgba(255,165,0,0.85)",shadow:"rgba(200,120,0,0.6)"},
+  {bg:"rgba(255,220,50,0.9)",shadow:"rgba(180,150,0,0.6)"},
+  {bg:"rgba(80,190,80,0.85)",shadow:"rgba(30,130,30,0.6)"},
+  {bg:"rgba(0,180,200,0.85)",shadow:"rgba(0,130,150,0.6)"},
+  {bg:"rgba(60,140,240,0.85)",shadow:"rgba(20,80,180,0.6)"},
+  {bg:"rgba(160,60,200,0.85)",shadow:"rgba(100,20,150,0.6)"},
+  {bg:"rgba(230,60,120,0.85)",shadow:"rgba(160,20,80,0.6)"},
+  {bg:"rgba(30,160,150,0.85)",shadow:"rgba(0,100,100,0.6)"},
+  {bg:"rgba(130,90,70,0.9)",shadow:"rgba(80,50,30,0.6)"},
+  {bg:"rgba(120,80,200,0.85)",shadow:"rgba(70,30,140,0.6)"},
+  {bg:"rgba(30,160,230,0.85)",shadow:"rgba(10,100,180,0.6)"},
 ];
 
 function makeLetters(word: string, extra: number): {char:string;colorIdx:number}[] {
@@ -400,22 +408,31 @@ export default function KarmaWordGame() {
           const col=LETTER_COLORS[letter.colorIdx];
           return (
             <button key={i} onClick={() => !isSel && tapLetter(i)}
-              className="absolute flex items-center justify-center font-display-hi font-black transition-all duration-200"
+              className="absolute flex items-center justify-center font-display-hi font-black transition-all duration-200 overflow-hidden"
               style={{
-                width:54, height:54, left:cx-27, top:cy-27, borderRadius:"50%",
-                background:isH?"linear-gradient(145deg,#FFD700,#FF9800)":isSel?"linear-gradient(145deg,#B39DDB,#7C4DFF)":col.bg,
-                color:"white", fontSize:17,
-                boxShadow:isH?"0 0 20px rgba(255,215,0,0.9),0 8px 20px rgba(0,0,0,0.3),inset 0 3px 6px rgba(255,255,255,0.4)":
-                  isSel?"0 0 14px rgba(124,77,255,0.7),0 6px 16px rgba(0,0,0,0.3),inset 0 3px 6px rgba(255,255,255,0.3)":
-                  `0 8px 20px ${col.shadow},0 2px 6px rgba(0,0,0,0.2),inset 0 3px 5px rgba(255,255,255,0.25),inset 0 -3px 5px rgba(0,0,0,0.15)`,
-                border:isH?"3px solid rgba(255,255,255,0.7)":isSel?"3px solid rgba(255,255,255,0.5)":"2.5px solid rgba(255,255,255,0.3)",
-                transform:isSel||isH?"scale(1.18) translateY(-5px)":"scale(1)",
-                zIndex:isSel||isH?20:10, textShadow:"0 2px 6px rgba(0,0,0,0.5)",
+                width:58, height:58, left:cx-29, top:cy-29, borderRadius:"50%",
+                border:isH?"3px solid #FFD700":isSel?"3px solid #7C4DFF":"2.5px solid rgba(255,255,255,0.8)",
+                boxShadow:isH?"0 0 24px rgba(255,215,0,0.9),0 8px 20px rgba(0,0,0,0.4)":
+                  isSel?"0 0 18px rgba(124,77,255,0.8),0 6px 16px rgba(0,0,0,0.3)":
+                  `0 8px 20px ${col.shadow},0 2px 6px rgba(0,0,0,0.25)`,
+                transform:isSel||isH?"scale(1.2) translateY(-6px)":"scale(1)",
+                zIndex:isSel||isH?20:10,
                 cursor:isSel?"default":"pointer",
+                position:"absolute",
               }}>
-              {letter.char}
-              {isH&&<span className="absolute -top-1 -right-1 text-[11px]">💡</span>}
-              {isSel&&!isH&&<span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-white flex items-center justify-center font-sans font-black text-[10px] text-purple-700 shadow-md">{selOrder+1}</span>}
+              {/* Background image */}
+              <img src={BG_IMAGES[(i+letter.colorIdx)%BG_IMAGES.length]}
+                alt="" className="absolute inset-0 w-full h-full object-cover" style={{opacity:0.9}}/>
+              {/* Color tint overlay */}
+              <div className="absolute inset-0 rounded-full" style={{background:isH?"rgba(255,200,0,0.7)":isSel?"rgba(100,50,255,0.6)":col.bg}}/>
+              {/* Shine */}
+              <div className="absolute top-0 left-0 right-0 h-1/2 rounded-t-full" style={{background:"linear-gradient(180deg,rgba(255,255,255,0.35),transparent)"}}/>
+              {/* Letter — white, bold */}
+              <span className="relative z-10 text-white font-black" style={{fontSize:20,textShadow:"0 2px 8px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.7)"}}>
+                {letter.char}
+              </span>
+              {isH&&<span className="absolute -top-1 -right-1 text-[12px] z-20">💡</span>}
+              {isSel&&!isH&&<span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-white flex items-center justify-center font-sans font-black text-[10px] text-purple-700 shadow-md z-20">{selOrder+1}</span>}
             </button>
           );
         })}

@@ -217,7 +217,7 @@ export default function TinyLifeRescue() {
             <div className="p-5 bg-white">
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="rounded-2xl p-4 text-center" style={{background:"#E8F5E9",border:"2px solid #4CAF50"}}>
-                  <div className="text-3xl mb-2">🧹</div>
+                  <div className="relative w-14 h-14 mx-auto mb-2"><Image src="/games/shared/pichi_sm.png" alt="pichi" fill className="object-contain" unoptimized sizes="60px"/></div>
                   <p className="font-sans text-sm font-black text-green-700">SWEEP with pichi</p>
                   <p className="font-sans text-xs text-green-600">Drag slowly over creature</p>
                   <p className="font-sans text-xs font-black text-green-500 mt-1">= +15 Karma ✅</p>
@@ -345,7 +345,7 @@ export default function TinyLifeRescue() {
             <div className="absolute top-2 left-2 right-2 flex justify-center pointer-events-none">
               <div className="rounded-full px-3 py-1 font-sans text-[10px] font-black text-white"
                 style={{background:"rgba(0,0,0,0.5)"}}>
-                🧹 SWEEP pichi over creatures to save them!
+                ↕️ SWEEP pichi over creatures to save them!
               </div>
             </div>
           </div>

@@ -9,6 +9,7 @@ export interface GameMeta {
   age: string;
   players: string;
   available: boolean;
+  hidden?: boolean;
   comingSoon?: string;
   value: string; // Jain value taught
   difficulty: 1 | 2 | 3;
@@ -17,6 +18,8 @@ export interface GameMeta {
 export const GAMES: GameMeta[] = [
   {
     id: "snakes-ladders",
+    available: false,
+    hidden: true,
     title: "Karma Snakes & Ladders",
     titleHi: "कर्म साँप-सीढ़ी",
     desc: "Land on virtue squares to climb — anger and greed bring you down! Every special square triggers a Jain moral story.",
@@ -25,7 +28,7 @@ export const GAMES: GameMeta[] = [
     bg: "linear-gradient(135deg,#1a3a00,#2d5c00)",
     age: "5+",
     players: "1–4",
-    available: true,
+    
     value: "Karma & Virtue",
     difficulty: 1,
   },
@@ -115,6 +118,8 @@ export const GAMES: GameMeta[] = [
   },
   {
     id: "karma-ludo",
+    available: false,
+    hidden: true,
     title: "Karma Ludo",
     titleHi: "कर्म लूडो",
     desc: "Ludo reimagined! Win by both reaching the finish AND earning the most Karma Points through kind choices.",
@@ -123,7 +128,7 @@ export const GAMES: GameMeta[] = [
     bg: "linear-gradient(135deg,#00103d,#001a5c)",
     age: "6+",
     players: "2–4",
-    available: true,
+    
     value: "Multiple Values",
     difficulty: 2,
   },
@@ -157,6 +162,8 @@ export const GAMES: GameMeta[] = [
   },
   {
     id: "temple-builder",
+    available: false,
+    hidden: true,
     title: "Temple Builder",
     titleHi: "मंदिर निर्माण",
     desc: "Use Virtue Points (NOT weapons!) to build stunning temples, lotus gardens, bird shelters and meditation halls.",
@@ -165,7 +172,7 @@ export const GAMES: GameMeta[] = [
     bg: "linear-gradient(135deg,#1a1400,#2d2200)",
     age: "8+",
     players: "1",
-    available: true,
+    
     value: "Virtue Building",
     difficulty: 3,
   },

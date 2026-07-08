@@ -1,3 +1,4 @@
+import { PlayerProvider } from "@/context/PlayerContext";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import SocialFollowWidget from "@/components/shared/SocialFollowWidget";
@@ -9,6 +10,7 @@ export default function SiteLayout({
   children: React.ReactNode;
 }) {
   return (
+    <PlayerProvider>
     <>
       <NavigationProgress />
       <Navbar />
@@ -16,5 +18,6 @@ export default function SiteLayout({
       <Footer />
       <SocialFollowWidget />
     </>
+    </PlayerProvider>
   );
 }
