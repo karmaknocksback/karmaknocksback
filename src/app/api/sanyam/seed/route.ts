@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import calendarVrats from "@/lib/jain-calendar-vrats.json";
 import { dbRun, dbGet } from "@/lib/db";
 import { ensureSanyamDb } from "@/lib/sanyam/schema";
 
@@ -17,5 +18,25 @@ export async function POST() {
       inserted++;
     }
   }
-  return NextResponse.json({ success: true, message: `Seeded ${inserted} vrats/activities` });
+
+  // Seed calendar vrats from Excel
+  const calVrats = calendarVrats as {name:string;date_hi:string;slug:string;category:string;emoji:string}[];
+  for (const v of calVrats) {
+    const existing = await dbGet<{id:number}>("SELECT id FROM sanyam_vrats WHERE slug=?", [v.slug]);
+    if (!existing) {
+      await dbRun(
+        `INSERT INTO sanyam_vrats
+         (name,name_hi,slug,category,description,description_hi,rules,duration_days,
+          difficulty,stars_reward,stars_per_day,jain_month,benefits,emoji,color,is_active)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        [v.name, v.name, v.slug, v.category||"vrat",
+         `${v.name} — ${v.date_hi}`, `${v.name} — ${v.date_hi}`,
+         "Follow traditional Jain rules and guidelines for this vrat|Consult a Jain Guru or Acharya for specific procedures|Maintain purity and devotion",
+         1, "medium", 100, 15, v.date_hi, "Spiritual merit, purity, karmic benefit", v.emoji||"🙏", "#FF9800", 1]
+      );
+      inserted++;
+    }
+  }
+
+  return NextResponse.json({ success: true, message: `Seeded ${inserted} vrats/activities (including ${calVrats.length} from Jain calendar)` });
 }

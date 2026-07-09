@@ -9,6 +9,7 @@ interface Vrat {
 }
 
 const CATS = [
+  {id:"calendar",label:"📅 Calendar",emoji:"📅"},
   {id:"all",  label:"All",      emoji:"🌟"},
   {id:"vrat", label:"Vrat",     emoji:"🙏"},
   {id:"tap",  label:"Tap",      emoji:"🔥"},

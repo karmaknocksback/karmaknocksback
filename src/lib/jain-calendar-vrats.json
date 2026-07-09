@@ -1,0 +1,234 @@
+[
+  {
+    "sr": "१",
+    "name": "भ. महावीर निर्वाणोत्सव",
+    "date_hi": "कार्तिक कृष्ण १५ (अमावस्या)",
+    "slug": "calendar--2",
+    "category": "festival",
+    "emoji": "🦚"
+  },
+  {
+    "sr": "२",
+    "name": "अष्टाह्निका पर्व -१",
+    "date_hi": "कार्तिक शुक्ल ८ से पूर्णिमा तक",
+    "slug": "calendar--3",
+    "category": "festival",
+    "emoji": "⭐"
+  },
+  {
+    "sr": "३",
+    "name": "षोडश कारण व्रत -१",
+    "date_hi": "माघ कृष्ण १ से फागुन कृष्ण १ तक",
+    "slug": "calendar--4",
+    "category": "vrat",
+    "emoji": "💎"
+  },
+  {
+    "sr": "४",
+    "name": "दशलक्षण धर्म (पर्युषण) पर्व -१",
+    "date_hi": "माघ शुक्ल ५ से १४ तक",
+    "slug": "calendar--5",
+    "category": "festival",
+    "emoji": "🌺"
+  },
+  {
+    "sr": "५",
+    "name": "पुष्पांजलि व्रत -१",
+    "date_hi": "माघ शुक्ल ५ से ९ तक",
+    "slug": "calendar--6",
+    "category": "vrat",
+    "emoji": "🙏"
+  },
+  {
+    "sr": "६",
+    "name": "रत्नत्रय व्रत -१",
+    "date_hi": "माघ शुक्ल १३ से पूर्णिमा तक",
+    "slug": "calendar--7",
+    "category": "vrat",
+    "emoji": "🙏"
+  },
+  {
+    "sr": "७",
+    "name": "भ. ऋषभ निर्वाणोत्सव",
+    "date_hi": "माघ कृष्ण १४",
+    "slug": "calendar--8",
+    "category": "festival",
+    "emoji": "🌟"
+  },
+  {
+    "sr": "८",
+    "name": "अष्टाह्निका पर्व -२",
+    "date_hi": "फाल्गुन शुक्ल ८ से पूर्णिमा तक",
+    "slug": "calendar--9",
+    "category": "festival",
+    "emoji": "⭐"
+  },
+  {
+    "sr": "९",
+    "name": "षोडश कारण व्रत -२",
+    "date_hi": "चैत्र कृष्ण १ से बैशाख कृष्ण १ तक",
+    "slug": "calendar--10",
+    "category": "vrat",
+    "emoji": "💎"
+  },
+  {
+    "sr": "१०",
+    "name": "दशलक्षण-धर्म पर्व -२",
+    "date_hi": "चैत्र शुक्ल ५ से १४ तक",
+    "slug": "calendar--11",
+    "category": "festival",
+    "emoji": "🌺"
+  },
+  {
+    "sr": "११",
+    "name": "पुष्पांजलि व्रत -२",
+    "date_hi": "चैत्र शुक्ल ५ से ९ तक",
+    "slug": "calendar--12",
+    "category": "vrat",
+    "emoji": "🙏"
+  },
+  {
+    "sr": "१२",
+    "name": "रत्नत्रय व्रत -२",
+    "date_hi": "चैत्र शुक्ल १३ से पूर्णिमा तक",
+    "slug": "calendar--13",
+    "category": "vrat",
+    "emoji": "🙏"
+  },
+  {
+    "sr": "१३",
+    "name": "भ. महावीर जयंती",
+    "date_hi": "चैत्र शुक्ल १३",
+    "slug": "calendar--14",
+    "category": "festival",
+    "emoji": "🦚"
+  },
+  {
+    "sr": "१४",
+    "name": "अक्षय-तृतीया",
+    "date_hi": "बैशाख शुक्ल ३",
+    "slug": "calendar--15",
+    "category": "vrat",
+    "emoji": "✨"
+  },
+  {
+    "sr": "१५",
+    "name": "श्रुतपंचमी",
+    "date_hi": "ज्येष्ठ शुक्ल ५",
+    "slug": "calendar--16",
+    "category": "vrat",
+    "emoji": "🙏"
+  },
+  {
+    "sr": "१६",
+    "name": "अष्टाह्निका पर्व -३",
+    "date_hi": "आषाढ़ शुक्ल ८ से पूर्णिमा तक",
+    "slug": "calendar--17",
+    "category": "festival",
+    "emoji": "⭐"
+  },
+  {
+    "sr": "१७",
+    "name": "वीर-शासन-जयंती",
+    "date_hi": "श्रावण कृष्ण १",
+    "slug": "calendar--18",
+    "category": "festival",
+    "emoji": "🎉"
+  },
+  {
+    "sr": "१८",
+    "name": "रक्षाबंधन पर्व",
+    "date_hi": "श्रावण शुक्ल पूर्णिमा",
+    "slug": "calendar--19",
+    "category": "festival",
+    "emoji": "🧿"
+  },
+  {
+    "sr": "१९",
+    "name": "षोडश कारण व्रत -३",
+    "date_hi": "भाद्रपद कृष्ण १ से आसौज कृष्ण १ तक",
+    "slug": "calendar--20",
+    "category": "vrat",
+    "emoji": "💎"
+  },
+  {
+    "sr": "२०",
+    "name": "दशलक्षण-धर्म व्रत -३",
+    "date_hi": "भाद्रपद शुक्ल ५ से १४ तक",
+    "slug": "calendar--21",
+    "category": "vrat",
+    "emoji": "🌺"
+  },
+  {
+    "sr": "२१",
+    "name": "पुष्पांजलि व्रत -३",
+    "date_hi": "भाद्रपद शुक्ल ५ से ९ तक",
+    "slug": "calendar--22",
+    "category": "vrat",
+    "emoji": "🙏"
+  },
+  {
+    "sr": "२२",
+    "name": "रत्नत्रय व्रत -३",
+    "date_hi": "भाद्रपद शुक्ल १३ से पूर्णिमा तक",
+    "slug": "calendar--23",
+    "category": "vrat",
+    "emoji": "🙏"
+  },
+  {
+    "sr": "२३",
+    "name": "लब्धिविधान",
+    "date_hi": "भाद्रपद शुक्ल १",
+    "slug": "calendar--24",
+    "category": "vrat",
+    "emoji": "🙏"
+  },
+  {
+    "sr": "२४",
+    "name": "रोट-तीज",
+    "date_hi": "भाद्रपद शुक्ल ३",
+    "slug": "calendar--25",
+    "category": "vrat",
+    "emoji": "🙏"
+  },
+  {
+    "sr": "२५",
+    "name": "शील-सप्तमी",
+    "date_hi": "भाद्रपद शुक्ल ७",
+    "slug": "calendar--26",
+    "category": "vrat",
+    "emoji": "🌿"
+  },
+  {
+    "sr": "२६",
+    "name": "सुगंध-दशमी",
+    "date_hi": "भाद्रपद शुक्ल १०",
+    "slug": "calendar--27",
+    "category": "vrat",
+    "emoji": "🌸"
+  },
+  {
+    "sr": "२७",
+    "name": "अनंत-व्रत",
+    "date_hi": "भाद्रपद शुक्ल ११",
+    "slug": "calendar--28",
+    "category": "vrat",
+    "emoji": "🙏"
+  },
+  {
+    "sr": "२८",
+    "name": "अनंतचौदस",
+    "date_hi": "भाद्रपद शुक्ल १४",
+    "slug": "calendar--29",
+    "category": "vrat",
+    "emoji": "♾️"
+  },
+  {
+    "sr": "२९",
+    "name": "क्षमावणी",
+    "date_hi": "आसौज कृष्ण १",
+    "slug": "calendar--30",
+    "category": "vrat",
+    "emoji": "💝"
+  }
+]

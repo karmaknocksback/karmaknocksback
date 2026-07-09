@@ -88,7 +88,7 @@ export default function VratDetailPage() {
             ) : (
               <span className="font-sans text-xs text-green-600 bg-green-50 rounded-full px-3 py-1.5">Ongoing practice</span>
             )}
-            {vrat.jain_month&&<span className="font-sans text-xs text-blue-600 bg-blue-50 rounded-full px-3 py-1.5">📅 {vrat.jain_month}</span>}
+            {vrat.jain_month&&<span className="font-hindi text-xs text-amber-700 bg-amber-50 rounded-full px-3 py-1.5 border border-amber-200">📅 {vrat.jain_month}</span>}
           </div>
         </div>
       </div>
@@ -117,6 +117,24 @@ export default function VratDetailPage() {
         </div>
       </div>
 
+      {/* Calendar vrat special notice */}
+      {vrat.slug?.startsWith("calendar-")&&(
+        <div className="bg-white rounded-2xl p-5 shadow-sm mb-4"
+          style={{border:"2px solid rgba(255,152,0,0.3)"}}>
+          <h2 className="font-sans font-black text-sm text-amber-800 mb-2">📅 पंचांग तिथि / Hindu Calendar Date</h2>
+          <p className="font-hindi text-sm text-amber-700 font-bold mb-3">{vrat.jain_month}</p>
+          <div className="rounded-xl p-3" style={{background:"rgba(255,152,0,0.06)"}}>
+            <p className="font-hindi text-xs text-gray-600 leading-relaxed">
+              इस व्रत/पर्व की विस्तृत विधि, नियम और आचरण के लिए अपने स्थानीय जैन मंदिर के 
+              आचार्य या पंडित जी से संपर्क करें। हम शीघ्र ही इस व्रत की सम्पूर्ण जानकारी जोड़ेंगे।
+            </p>
+            <p className="font-sans text-[10px] text-amber-600 font-bold mt-2">
+              📌 For detailed procedure, rules & guidance, consult your local Jain Acharya or temple.
+              We will soon add complete vidhi for this vrat.
+            </p>
+          </div>
+        </div>
+      )}
       {/* Benefits */}
       {vrat.benefits&&(
         <div className="bg-white rounded-2xl p-5 shadow-sm mb-6"

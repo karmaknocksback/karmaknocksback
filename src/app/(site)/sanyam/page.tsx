@@ -8,6 +8,7 @@ export const metadata: Metadata = {
 };
 
 const CATEGORIES = [
+  {cat:"calendar", emoji:"📅", label:"Calendar",   hi:"पर्व कैलेंडर", color:"#FF9800", desc:"Jain festival dates"},
   {cat:"vrat",     emoji:"🙏", label:"Vrat",      hi:"व्रत",      color:"#9C27B0", desc:"Sacred vows & observances"},
   {cat:"tap",      emoji:"🔥", label:"Tap",       hi:"तप",         color:"#FF5722", desc:"Austerities & fasting"},
   {cat:"tyag",     emoji:"🌿", label:"Tyag",      hi:"त्याग",     color:"#4CAF50", desc:"Renunciations & givings up"},
@@ -44,6 +45,10 @@ export default function SanyamPage() {
               className="px-8 py-3.5 rounded-full font-sans font-black text-sm text-white border-2 border-white/30 hover:bg-white/10 transition-colors">
               🙏 Activity Feed
             </Link>
+            <Link href="/sanyam/calendar"
+              className="px-8 py-3.5 rounded-full font-sans font-black text-sm text-white border-2 border-white/30 hover:bg-white/10 transition-colors">
+              📅 Jain Calendar
+            </Link>
           </div>
         </div>
       </div>
@@ -56,7 +61,7 @@ export default function SanyamPage() {
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
             {CATEGORIES.map(c=>(
-              <Link key={c.cat} href={`/sanyam/category/${c.cat}`}
+              <Link key={c.cat} href={c.cat==="calendar"?"/sanyam/calendar":`/sanyam/category/${c.cat}`}
                 className="rounded-2xl p-4 text-center hover:-translate-y-1 transition-all"
                 style={{background:"white",border:`2px solid ${c.color}30`,boxShadow:`0 4px 16px ${c.color}20`}}>
                 <div className="text-3xl mb-1.5">{c.emoji}</div>
