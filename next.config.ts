@@ -1,10 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Compress responses
   compress: true,
 
-  // Optimize images from YouTube thumbnails and external sources
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "i.ytimg.com" },
@@ -14,7 +12,6 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // Experimental: faster page transitions
   experimental: {
     optimizePackageImports: ["lucide-react", "framer-motion"],
   },

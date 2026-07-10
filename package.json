@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "seed": "tsx scripts/seed.ts",
@@ -17,7 +17,8 @@
     "seed:jap-collections": "tsx scripts/seed-jap-collections.ts",
     "seed:jap-collections-community": "tsx scripts/seed-jap-collections-community.ts",
     "seed:jap-collections-misc": "tsx scripts/seed-jap-collections-misc.ts",
-    "translate:content": "tsx scripts/translate-content.ts"
+    "translate:content": "tsx scripts/translate-content.ts",
+    "build:turbopack": "next build"
   },
   "dependencies": {
     "@libsql/client": "^0.17.4",
