@@ -3,406 +3,416 @@ import { useState, useEffect, useRef, useCallback } from "react";
 
 /* ══════════════════════════════════════════════════════════════
    JAIN KIDS FLIP BOOK
-   ─ 9:16 portrait full-view image
-   ─ Tap RIGHT → next page (locked until voiceover completes)
-   ─ Tap LEFT  → previous page (always allowed)
-   ─ Page-flip CSS animation
-   ─ Optional text overlay (admin controlled)
-   ─ Voiceover must finish before next is allowed
+   ✓ 9:16 portrait full-view image
+   ✓ Tap RIGHT half → next (locked until voiceover done)
+   ✓ Tap LEFT half  → previous (always)
+   ✓ Swipe left/right on mobile
+   ✓ Page-flip 3D animation
+   ✓ Voiceover must complete before next unlocks
+   ✓ Optional text overlay (admin choice)
+   ✓ Works even if no audio (auto-unlocked)
 ══════════════════════════════════════════════════════════════ */
 
 interface Page {
   pageNumber: number;
   imageUrl:   string | null;
   audioUrl:   string | null;
-  caption:    string | null;   // optional text overlay
+  caption:    string | null;
 }
-
 interface Props {
   bookId:    string;
   bookTitle: string;
   bookEmoji: string;
   bookColor: string;
-  pages:     Page[];           // sorted by pageNumber
+  pages:     Page[];
 }
 
-type FlipDir = "left" | "right" | null;
-
 export default function FlipBook({ bookId, bookTitle, bookEmoji, bookColor, pages }: Props) {
-  const [cur, setCur]             = useState(0);
-  const [flip, setFlip]           = useState<FlipDir>(null);
-  const [audioReady, setAudioReady] = useState(false);   // audio finished?
+  const [cur,          setCur]          = useState(0);
+  const [flipping,     setFlipping]     = useState<"in"|"out"|null>(null);
+  const [nextDir,      setNextDir]      = useState<"fwd"|"bwd">("fwd");
+  const [audioReady,   setAudioReady]   = useState(true);  // true = can go next
   const [audioPlaying, setAudioPlaying] = useState(false);
-  const [audioProgress, setAudioProgress] = useState(0); // 0–100
-  const [imgLoaded, setImgLoaded] = useState(false);
-  const [showHint, setShowHint]   = useState(true);
-  const [completed, setCompleted] = useState<Set<number>>(()=>new Set([0]));
-  const audioRef  = useRef<HTMLAudioElement | null>(null);
-  const hintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [audioPct,     setAudioPct]     = useState(0);
+  const [imgLoaded,    setImgLoaded]    = useState(false);
+  const [shakeNext,    setShakeNext]    = useState(false); // visual feedback when locked
+  const [done,         setDone]         = useState<Set<number>>(new Set([0]));
+  const [finished,     setFinished]     = useState(false);
 
-  const page    = pages[cur] ?? null;
-  const hasNext = cur < pages.length - 1;
+  const audioRef   = useRef<HTMLAudioElement | null>(null);
+  const touchStart = useRef<{x:number;y:number}|null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const page    = pages[cur];
+  const total   = pages.length;
+  const hasNext = cur < total - 1;
   const hasPrev = cur > 0;
   const hasAudio  = !!page?.audioUrl;
   const hasCaption = !!page?.caption;
 
-  // ── Reset state when page changes ─────────────────────────
+  // ── Load & play audio when page changes ───────────────
   useEffect(() => {
     setImgLoaded(false);
-    setAudioReady(!hasAudio);  // if no audio, immediately unlocked
-    setAudioProgress(0);
+    setAudioPct(0);
     setAudioPlaying(false);
 
-    // Stop and unload previous audio
+    // Stop previous
     if (audioRef.current) {
       audioRef.current.pause();
-      audioRef.current.src = "";
+      audioRef.current.onended = null;
+      audioRef.current.ontimeupdate = null;
       audioRef.current = null;
     }
 
     if (page?.audioUrl) {
+      setAudioReady(false);  // lock until audio ends
       const audio = new Audio(page.audioUrl);
       audioRef.current = audio;
 
-      audio.addEventListener("timeupdate", () => {
-        if (audio.duration > 0) {
-          setAudioProgress(Math.round((audio.currentTime / audio.duration) * 100));
-        }
-      });
-      audio.addEventListener("ended", () => {
+      audio.ontimeupdate = () => {
+        if (audio.duration) setAudioPct(Math.round((audio.currentTime / audio.duration) * 100));
+      };
+      audio.onended = () => {
         setAudioReady(true);
         setAudioPlaying(false);
-        setAudioProgress(100);
-      });
-      audio.addEventListener("canplaythrough", () => {
-        audio.play().then(() => setAudioPlaying(true)).catch(() => {});
-      });
-      audio.load();
+        setAudioPct(100);
+      };
+      audio.onerror = () => {
+        // If audio fails to load, unlock next anyway
+        setAudioReady(true);
+        setAudioPlaying(false);
+      };
+      // Try autoplay - browsers may block; user tap on play button as fallback
+      audio.play()
+        .then(() => setAudioPlaying(true))
+        .catch(() => {
+          // Autoplay blocked - user must tap play
+          setAudioPlaying(false);
+        });
+    } else {
+      setAudioReady(true); // no audio = always unlocked
     }
 
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
-        audioRef.current.src = "";
+        audioRef.current.onended = null;
       }
     };
-  }, [cur, page?.audioUrl, hasAudio]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cur]);
 
-  // ── Hide tap hint after 3s ──────────────────────────────
-  useEffect(() => {
-    if (showHint) {
-      hintTimer.current = setTimeout(() => setShowHint(false), 3000);
-      return () => { if(hintTimer.current) clearTimeout(hintTimer.current); };
-    }
-  }, [showHint, cur]);
-
-  // ── Page navigation ─────────────────────────────────────
-  const goNext = useCallback(() => {
-    if (!hasNext || flip) return;
-    if (!audioReady) {
-      // Shake the right side to show "wait!"
-      setShowHint(true);
-      return;
-    }
-    setFlip("right");
+  // ── Navigate to a page ────────────────────────────────
+  const goTo = useCallback((target: number, dir: "fwd"|"bwd") => {
+    if (target < 0 || target >= total || flipping) return;
+    setNextDir(dir);
+    setFlipping("out");
     setTimeout(() => {
-      setCur(c => {
-        const n = c + 1;
-        setCompleted(s => { const ns = new Set(s); ns.add(n); return ns; });
-        return n;
-      });
-      setFlip(null);
-    }, 400);
-  }, [hasNext, flip, audioReady]);
+      setCur(target);
+      setDone(s => { const n = new Set(s); n.add(target); return n; });
+      setFlipping("in");
+      if (target === total - 1) setTimeout(() => setFinished(true), 800);
+      setTimeout(() => setFlipping(null), 350);
+    }, 300);
+  }, [total, flipping]);
+
+  const goNext = useCallback(() => {
+    if (!hasNext) return;
+    if (!audioReady) { setShakeNext(true); setTimeout(() => setShakeNext(false), 500); return; }
+    goTo(cur + 1, "fwd");
+  }, [hasNext, audioReady, cur, goTo]);
 
   const goPrev = useCallback(() => {
-    if (!hasPrev || flip) return;
-    setFlip("left");
-    setTimeout(() => {
-      setCur(c => c - 1);
-      setFlip(null);
-    }, 400);
-  }, [hasPrev, flip]);
+    if (!hasPrev) return;
+    goTo(cur - 1, "bwd");
+  }, [hasPrev, cur, goTo]);
 
-  const replayAudio = useCallback(() => {
-    if (!audioRef.current) return;
-    audioRef.current.currentTime = 0;
-    audioRef.current.play().then(() => {
-      setAudioPlaying(true);
-      setAudioReady(false);
-      setAudioProgress(0);
-    }).catch(() => {});
-  }, []);
+  // ── Touch swipe ───────────────────────────────────────
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStart.current) return;
+    const dx = e.changedTouches[0].clientX - touchStart.current.x;
+    const dy = e.changedTouches[0].clientY - touchStart.current.y;
+    touchStart.current = null;
+    // Must be more horizontal than vertical, and > 40px
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+      dx < 0 ? goNext() : goPrev();
+    }
+  };
 
-  // ── Keyboard support ─────────────────────────────────────
+  // ── Tap zone handler ──────────────────────────────────
+  const onTap = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const half = rect.width / 2;
+    x > half ? goNext() : goPrev();
+  };
+
+  // ── Play/replay audio ─────────────────────────────────
+  const toggleAudio = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audioPlaying) {
+      audio.pause();
+      setAudioPlaying(false);
+    } else {
+      audio.currentTime = audioPct < 99 ? audio.currentTime : 0;
+      audio.play().then(() => {
+        setAudioPlaying(true);
+        if (audioPct >= 99) { setAudioReady(false); setAudioPct(0); }
+      }).catch(() => {});
+    }
+  }, [audioPlaying, audioPct]);
+
+  // ── Keyboard ──────────────────────────────────────────
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
+    const h = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight") goNext();
       if (e.key === "ArrowLeft")  goPrev();
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
   }, [goNext, goPrev]);
 
   if (!page) return (
-    <div className="flex items-center justify-center h-64 text-white font-sans">
-      No pages found. Admin needs to upload images.
+    <div className="flex items-center justify-center h-48 text-white font-sans text-sm">
+      No pages yet — admin needs to upload images.
     </div>
   );
 
-  const isLast = cur === pages.length - 1;
+  // ── Flip animation style ──────────────────────────────
+  const flipStyle: React.CSSProperties = flipping === "out"
+    ? { transform: `perspective(1200px) rotateY(${nextDir==="fwd"?"-90deg":"90deg"})`, transition: "transform 0.3s ease-in", opacity: 0.2 }
+    : flipping === "in"
+    ? { transform: `perspective(1200px) rotateY(${nextDir==="fwd"?"90deg":"-90deg"})`, transition: "none", opacity: 0 }
+    : { transform: "perspective(1200px) rotateY(0deg)", transition: "transform 0.35s ease-out, opacity 0.35s ease-out", opacity: 1 };
 
   return (
-    <div className="flex flex-col items-center select-none"
-      style={{fontFamily:"system-ui,sans-serif",userSelect:"none"}}>
+    <div className="flex flex-col items-center w-full" style={{userSelect:"none",WebkitUserSelect:"none"}}>
 
-      {/* ── Book title bar ── */}
-      <div className="w-full max-w-sm flex items-center justify-between px-4 py-2 mb-2">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">{bookEmoji}</span>
-          <span className="font-black text-sm text-white truncate max-w-[160px]">{bookTitle}</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          {pages.map((_, i) => (
-            <div key={i} className="rounded-full transition-all duration-300"
-              style={{
-                width:  i === cur ? 20 : 7,
-                height: 7,
-                background: completed.has(i)
-                  ? bookColor
-                  : "rgba(255,255,255,0.2)",
-              }}/>
-          ))}
-        </div>
+      {/* ── Progress dots ── */}
+      <div className="flex items-center gap-1.5 mb-3 flex-wrap justify-center max-w-sm px-4">
+        {pages.map((_,i) => (
+          <div key={i}
+            className="rounded-full transition-all duration-300 cursor-pointer"
+            onClick={() => i < cur ? goTo(i,"bwd") : i > cur ? (audioReady ? goTo(i,"fwd") : undefined) : undefined}
+            style={{
+              width:  i === cur ? 22 : 8,
+              height: 8,
+              background: done.has(i) ? bookColor : "rgba(255,255,255,0.15)",
+              boxShadow: i === cur ? `0 0 12px ${bookColor}` : "none",
+            }}/>
+        ))}
       </div>
 
-      {/* ── Main book area ─ 9:16 ── */}
-      <div className="relative w-full max-w-sm"
+      {/* ── Book container 9:16 ── */}
+      <div
+        ref={containerRef}
+        className="relative w-full cursor-pointer"
         style={{
+          maxWidth: 380,
           aspectRatio: "9/16",
-          maxHeight: "calc(100vh - 200px)",
+          maxHeight: "calc(100svh - 220px)",
+          borderRadius: 20,
           overflow: "hidden",
-          borderRadius: 24,
-          boxShadow: `0 24px 80px ${bookColor}50, 0 0 0 2px ${bookColor}40`,
-        }}>
+          boxShadow: `0 32px 96px ${bookColor}45, 0 0 0 2px ${bookColor}35`,
+          ...flipStyle,
+        }}
+        onClick={onTap}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}>
 
-        {/* Loading skeleton */}
-        {!imgLoaded && (
-          <div className="absolute inset-0 flex items-center justify-center"
-            style={{background:"#1a1a2e"}}>
-            <div className="text-5xl animate-bounce">{bookEmoji}</div>
-          </div>
-        )}
-
-        {/* Page image with flip animation */}
-        {page.imageUrl && (
+        {/* Image */}
+        {page.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            key={`img-${cur}`}
+            key={`img-${cur}-${page.imageUrl}`}
             src={page.imageUrl}
-            alt={`Page ${cur + 1}`}
+            alt={`Page ${cur+1}`}
             onLoad={() => setImgLoaded(true)}
-            className="absolute inset-0 w-full h-full object-cover"
+            onError={() => setImgLoaded(true)}
+            draggable={false}
             style={{
+              position:"absolute", inset:0, width:"100%", height:"100%",
+              objectFit:"cover", display:"block",
               opacity: imgLoaded ? 1 : 0,
-              transition: "opacity 0.3s ease",
-              animation: flip
-                ? `${flip === "right" ? "flipPageRight" : "flipPageLeft"} 0.4s ease`
-                : "none",
-            }}
-          />
-        )}
-
-        {/* No image placeholder */}
-        {!page.imageUrl && imgLoaded === false && (
-          <div className="absolute inset-0 flex items-center justify-center"
+              transition: "opacity 0.4s ease",
+            }}/>
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center"
             style={{background:"linear-gradient(135deg,#1a0800,#0d0d1a)"}}>
-            <div className="text-center">
-              <div className="text-7xl mb-3">{bookEmoji}</div>
-              <p className="font-sans text-xs text-gray-400">Page {cur + 1}</p>
-              <p className="font-sans text-[10px] text-gray-600 mt-1">Image coming soon</p>
-            </div>
+            <div style={{fontSize:80}}>{bookEmoji}</div>
+            <p className="font-sans text-white/30 text-sm mt-3">Page {cur+1}</p>
           </div>
         )}
 
-        {/* ── Text overlay (admin optional) ── */}
-        {hasCaption && imgLoaded && (
-          <div className="absolute bottom-0 left-0 right-0 p-5"
+        {/* Loading */}
+        {page.imageUrl && !imgLoaded && (
+          <div className="absolute inset-0 flex items-center justify-center"
+            style={{background:"#1a1a2e"}}>
+            <div className="text-6xl animate-bounce">{bookEmoji}</div>
+          </div>
+        )}
+
+        {/* Text overlay — bottom gradient */}
+        {hasCaption && (
+          <div className="absolute bottom-0 left-0 right-0 pointer-events-none"
             style={{
-              background: "linear-gradient(0deg,rgba(0,0,0,0.85) 0%,rgba(0,0,0,0.4) 80%,transparent 100%)",
+              background:"linear-gradient(0deg,rgba(0,0,0,0.88) 0%,rgba(0,0,0,0.5) 60%,transparent 100%)",
+              padding:"40px 20px 24px",
             }}>
             <p className="font-sans font-black text-white text-center leading-snug"
-              style={{fontSize:"clamp(14px,3.5vw,20px)",textShadow:"0 2px 8px rgba(0,0,0,0.8)"}}>
+              style={{fontSize:"clamp(15px,4vw,22px)",textShadow:"0 2px 10px rgba(0,0,0,0.9)"}}>
               {page.caption}
             </p>
           </div>
         )}
 
-        {/* ── TAP ZONES ── */}
-        {/* Left tap zone — go back */}
-        <button
-          onClick={goPrev}
-          disabled={!hasPrev}
-          aria-label="Previous page"
-          className="absolute left-0 top-0 bottom-0 z-20 flex items-center justify-start pl-3"
-          style={{width:"35%",background:"transparent",border:"none",cursor:hasPrev?"pointer":"default"}}>
-          {hasPrev && (
-            <div className="rounded-full p-2 opacity-0 hover:opacity-100 active:opacity-100 transition-opacity"
-              style={{background:"rgba(0,0,0,0.3)"}}>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="white">
-                <path d="M13 4l-6 6 6 6" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-              </svg>
-            </div>
-          )}
-        </button>
-
-        {/* Right tap zone — go next (locked until audio done) */}
-        <button
-          onClick={goNext}
-          disabled={!hasNext}
-          aria-label="Next page"
-          className="absolute right-0 top-0 bottom-0 z-20 flex items-center justify-end pr-3"
-          style={{width:"35%",background:"transparent",border:"none",cursor:hasNext?"pointer":"default"}}>
-          {hasNext && (
-            <div className="rounded-full p-2 opacity-0 hover:opacity-100 active:opacity-100 transition-opacity"
-              style={{background:audioReady?"rgba(0,0,0,0.3)":"rgba(255,152,0,0.3)"}}>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="white">
-                <path d="M7 4l6 6-6 6" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-              </svg>
-            </div>
-          )}
-        </button>
-
-        {/* Page number badge */}
-        <div className="absolute top-3 right-3 z-30 rounded-full px-2.5 py-1 font-sans font-black text-[10px]"
-          style={{background:"rgba(0,0,0,0.5)",color:"white",backdropFilter:"blur(4px)"}}>
-          {cur + 1} / {pages.length}
+        {/* Page number */}
+        <div className="absolute top-3 left-3 rounded-full px-2.5 py-1 font-sans font-black text-[11px] text-white"
+          style={{background:"rgba(0,0,0,0.55)",backdropFilter:"blur(6px)"}}>
+          {cur+1}/{total}
         </div>
 
-        {/* ── Tap hint overlay (first load, or when locked) ── */}
-        {showHint && (
-          <div className="absolute inset-0 z-40 flex items-end justify-center pb-16 pointer-events-none">
-            <div className="rounded-2xl px-5 py-3 text-center"
-              style={{background:"rgba(0,0,0,0.75)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,0.1)"}}>
-              {!audioReady && hasAudio ? (
-                <>
-                  <p className="font-sans font-black text-sm text-orange-300 mb-1">🔊 Listen first!</p>
-                  <p className="font-sans text-[11px] text-gray-300">Tap ▶ to hear the story, then swipe right</p>
-                </>
+        {/* Book title badge */}
+        <div className="absolute top-3 right-3 rounded-full px-2.5 py-1 font-sans font-black text-[10px]"
+          style={{background:bookColor,color:"#1a0800"}}>
+          {bookEmoji}
+        </div>
+
+        {/* Left tap visual hint */}
+        {hasPrev && (
+          <div className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none"
+            style={{opacity:0.35}}>
+            <div className="rounded-full p-2" style={{background:"rgba(0,0,0,0.4)"}}>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M11 3L5 9l6 6" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          </div>
+        )}
+
+        {/* Right tap visual — shows LOCK or arrow */}
+        {hasNext && (
+          <div
+            className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
+            style={{
+              opacity: 0.45,
+              animation: shakeNext ? "shake 0.4s ease" : "none",
+            }}>
+            <div className="rounded-full p-2"
+              style={{background: audioReady ? "rgba(0,0,0,0.4)" : `${bookColor}50`}}>
+              {audioReady ? (
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path d="M7 3l6 6-6 6" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               ) : (
-                <>
-                  <p className="font-sans font-black text-xs text-white mb-1">
-                    <span className="opacity-50">◀ tap</span> &nbsp; Flip &nbsp; <span className="opacity-50">tap ▶</span>
-                  </p>
-                  <p className="font-sans text-[10px] text-gray-400">Tap right half for next page</p>
-                </>
+                <span style={{fontSize:16}}>🔒</span>
               )}
             </div>
           </div>
         )}
 
-        {/* ── Audio locked overlay (visual feedback when tapping locked) ── */}
-        {!audioReady && hasAudio && !audioPlaying && (
-          <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
-            <div className="rounded-full p-6 animate-pulse"
-              style={{background:`${bookColor}20`,border:`3px solid ${bookColor}60`}}>
-              <span className="text-4xl">🔊</span>
-            </div>
-          </div>
-        )}
-
-        {/* ── Book end screen ── */}
-        {isLast && completed.has(cur) && (
-          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center"
-            style={{background:"linear-gradient(135deg,rgba(0,0,0,0.92),rgba(26,8,0,0.95))"}}>
-            <div className="text-7xl mb-4 animate-bounce">🌟</div>
-            <p className="font-sans font-black text-2xl text-white mb-2">You did it!</p>
-            <p className="font-hindi text-sm text-amber-400 mb-6">बहुत अच्छे! वाह!</p>
-            <button onClick={() => { setCur(0); setCompleted(new Set([0])); }}
-              className="px-8 py-3 rounded-2xl font-sans font-black text-sm text-amber-900"
-              style={{background:"linear-gradient(135deg,#FFD700,#FF9800)"}}>
+        {/* FINISHED overlay */}
+        {finished && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-50"
+            onClick={e=>e.stopPropagation()}
+            style={{background:"rgba(0,0,0,0.88)",backdropFilter:"blur(6px)"}}>
+            <div style={{fontSize:72}} className="animate-bounce mb-3">🌟</div>
+            <p className="font-sans font-black text-2xl text-white mb-1">You did it!</p>
+            <p className="font-hindi text-base mb-6" style={{color:bookColor}}>शाबाश! वाह!</p>
+            <button
+              className="px-8 py-3 rounded-2xl font-sans font-black text-sm"
+              style={{background:`linear-gradient(135deg,${bookColor},${bookColor}cc)`,color:"#1a0800"}}
+              onClick={() => { setFinished(false); setCur(0); setDone(new Set([0])); }}>
               📖 Read Again!
             </button>
           </div>
         )}
       </div>
 
-      {/* ── Audio controls ── */}
-      <div className="w-full max-w-sm mt-4 px-2">
-        {hasAudio && (
+      {/* ── Audio bar ── */}
+      {hasAudio && (
+        <div className="w-full mt-4 px-2" style={{maxWidth:380}}>
           <div className="rounded-2xl px-4 py-3"
-            style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.08)"}}>
+            style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.09)"}}>
             <div className="flex items-center gap-3">
-              <button onClick={replayAudio}
-                className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90"
-                style={{background:bookColor,boxShadow:`0 4px 14px ${bookColor}50`}}>
+              {/* Play/pause */}
+              <button
+                onClick={toggleAudio}
+                className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-lg transition-all active:scale-90"
+                style={{background:bookColor,color:"#1a0800",boxShadow:`0 4px 16px ${bookColor}55`,border:"none"}}>
                 {audioPlaying ? "⏸" : "▶"}
               </button>
               {/* Progress bar */}
-              <div className="flex-1 h-2 rounded-full overflow-hidden"
-                style={{background:"rgba(255,255,255,0.1)"}}>
-                <div className="h-full rounded-full transition-all duration-300"
-                  style={{width:`${audioProgress}%`,background:bookColor}}/>
+              <div className="flex-1">
+                <div className="h-2.5 rounded-full overflow-hidden cursor-pointer"
+                  style={{background:"rgba(255,255,255,0.1)"}}
+                  onClick={e => {
+                    if (!audioRef.current) return;
+                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                    const pct = (e.clientX - rect.left) / rect.width;
+                    audioRef.current.currentTime = audioRef.current.duration * pct;
+                  }}>
+                  <div className="h-full rounded-full transition-all duration-300"
+                    style={{width:`${audioPct}%`,background:`linear-gradient(90deg,${bookColor},${bookColor}bb)`}}/>
+                </div>
               </div>
+              {/* Lock/unlock */}
               {audioReady ? (
-                <span className="shrink-0 text-lg">✅</span>
+                <span className="shrink-0 text-xl" title="Unlocked!">✅</span>
               ) : (
-                <span className="shrink-0 font-sans text-[10px] text-orange-400 font-bold">🔒</span>
+                <span className="shrink-0 text-xl" title="Listen to unlock">🔒</span>
               )}
             </div>
             {!audioReady && (
-              <p className="font-sans text-[10px] text-orange-300/80 text-center mt-2">
-                Listen to unlock next page →
+              <p className="font-sans text-[10px] text-center mt-2"
+                style={{color:`${bookColor}cc`}}>
+                🎧 Listen to unlock the next page →
               </p>
             )}
           </div>
-        )}
-
-        {/* Page caption below if no image (fallback) */}
-        {!page.imageUrl && page.caption && (
-          <div className="rounded-2xl p-4 text-center mt-2"
-            style={{background:"rgba(255,255,255,0.06)"}}>
-            <p className="font-sans text-sm text-white">{page.caption}</p>
-          </div>
-        )}
-      </div>
-
-      {/* ── Navigation arrows (bottom) ── */}
-      <div className="flex items-center gap-4 mt-4 w-full max-w-sm px-4 justify-between">
-        <button onClick={goPrev} disabled={!hasPrev}
-          className="flex items-center gap-2 rounded-2xl px-5 py-2.5 font-sans font-black text-sm transition-all active:scale-95 disabled:opacity-30"
-          style={{background:"rgba(255,255,255,0.08)",color:"white",border:"1px solid rgba(255,255,255,0.1)"}}>
-          ← Prev
-        </button>
-        <div className="font-sans text-xs text-gray-500 text-center">
-          Page {cur + 1} of {pages.length}
         </div>
-        <button onClick={goNext}
+      )}
+
+      {/* ── Bottom nav buttons ── */}
+      <div className="flex items-center gap-3 mt-4 px-2 w-full" style={{maxWidth:380}}>
+        <button
+          onClick={goPrev} disabled={!hasPrev}
+          className="flex items-center gap-2 flex-1 justify-center rounded-2xl py-3 font-sans font-black text-sm transition-all active:scale-95 disabled:opacity-25"
+          style={{background:"rgba(255,255,255,0.07)",color:"white",border:"1px solid rgba(255,255,255,0.1)"}}>
+          ← Back
+        </button>
+        <div className="font-sans text-xs text-gray-500 shrink-0 text-center w-16">
+          {cur+1} / {total}
+        </div>
+        <button
+          onClick={goNext}
           disabled={!hasNext || !audioReady}
-          className="flex items-center gap-2 rounded-2xl px-5 py-2.5 font-sans font-black text-sm transition-all active:scale-95 disabled:opacity-30"
+          className="flex items-center gap-2 flex-1 justify-center rounded-2xl py-3 font-sans font-black text-sm transition-all active:scale-95 disabled:opacity-25"
           style={{
-            background: hasNext && audioReady
-              ? `linear-gradient(135deg,${bookColor},${bookColor}cc)`
-              : "rgba(255,255,255,0.08)",
-            color: hasNext && audioReady ? "white" : "rgba(255,255,255,0.3)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            boxShadow: hasNext && audioReady ? `0 4px 14px ${bookColor}40` : "none",
+            background: hasNext && audioReady ? `linear-gradient(135deg,${bookColor},${bookColor}cc)` : "rgba(255,255,255,0.07)",
+            color: hasNext && audioReady ? "#1a0800" : "rgba(255,255,255,0.25)",
+            border: "none",
+            boxShadow: hasNext && audioReady ? `0 4px 16px ${bookColor}40` : "none",
           }}>
           Next →
         </button>
       </div>
 
-      {/* ── CSS animations ── */}
+      {/* Book title */}
+      <p className="font-sans font-black text-white/50 text-xs mt-3 text-center">{bookEmoji} {bookTitle}</p>
+
       <style>{`
-        @keyframes flipPageRight {
-          0%   { transform: perspective(1000px) rotateY(0deg);   opacity: 1; }
-          50%  { transform: perspective(1000px) rotateY(-90deg); opacity: 0.3; }
-          100% { transform: perspective(1000px) rotateY(0deg);   opacity: 1; }
-        }
-        @keyframes flipPageLeft {
-          0%   { transform: perspective(1000px) rotateY(0deg);  opacity: 1; }
-          50%  { transform: perspective(1000px) rotateY(90deg); opacity: 0.3; }
-          100% { transform: perspective(1000px) rotateY(0deg);  opacity: 1; }
+        @keyframes shake {
+          0%,100%{transform:translateX(0)}
+          20%{transform:translateX(-5px)}
+          40%{transform:translateX(5px)}
+          60%{transform:translateX(-5px)}
+          80%{transform:translateX(5px)}
         }
       `}</style>
     </div>
