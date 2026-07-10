@@ -68,6 +68,7 @@ export default function VratDetailPage() {
   const diffCol = DIFF_COLOR[vrat.difficulty]||"#666";
 
   return (
+    <div className="min-h-screen" style={{background:"linear-gradient(160deg,#0d0d0d 0%,#1a0800 40%,#0d0d1a 100%)"}}>
     <div className="max-w-3xl mx-auto px-4 py-8 pb-20">
       {/* Header card */}
       <div className="rounded-3xl overflow-hidden mb-6 shadow-xl"
@@ -95,15 +96,15 @@ export default function VratDetailPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
         {/* Description */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
-          <h2 className="font-sans font-black text-sm text-gray-800 mb-3">📖 About This Practice</h2>
-          <p className="font-sans text-sm text-gray-600 leading-relaxed mb-3">{vrat.description}</p>
-          {vrat.description_hi&&<p className="font-hindi text-sm text-gray-500 leading-relaxed">{vrat.description_hi}</p>}
+        <div className="rounded-2xl p-5" style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.08)"}}>
+          <h2 className="font-sans font-black text-sm text-white mb-3">📖 About This Practice</h2>
+          <p className="font-sans text-sm text-gray-300 leading-relaxed mb-3">{vrat.description}</p>
+          {vrat.description_hi&&<p className="font-hindi text-sm text-amber-300/70 leading-relaxed">{vrat.description_hi}</p>}
         </div>
 
         {/* Rules */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
-          <h2 className="font-sans font-black text-sm text-gray-800 mb-3">📋 Rules & Guidelines</h2>
+        <div className="rounded-2xl p-5" style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.08)"}}>
+          <h2 className="font-sans font-black text-sm text-white mb-3">📋 Rules & Guidelines</h2>
           {rules.length > 0 ? (
             <ul className="space-y-2">
               {rules.map((r,i)=>(
@@ -146,7 +147,7 @@ export default function VratDetailPage() {
 
       {/* Star rewards */}
       <div className="bg-white rounded-2xl p-5 shadow-sm mb-6">
-        <h2 className="font-sans font-black text-sm text-gray-800 mb-3">⭐ Karma Stars Earned</h2>
+        <h2 className="font-sans font-black text-sm text-white mb-3">⭐ Karma Stars Earned</h2>
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-xl p-3 text-center" style={{background:"rgba(255,152,0,0.1)"}}>
             <p className="font-display text-2xl font-black text-amber-600">{vrat.stars_reward}</p>
@@ -192,5 +193,7 @@ export default function VratDetailPage() {
         )}
       </div>
     </div>
+    </div>
   );
 }
+

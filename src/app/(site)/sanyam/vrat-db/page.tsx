@@ -1,11 +1,21 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import Link from "next/link";
 
 interface Vrat {
   id:number; name:string; name_hi:string; slug:string; category:string;
   emoji:string; color:string; difficulty:string; duration_days:number;
   stars_reward:number; description:string; description_hi:string;
+}
+
+export default function VratDbPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-[60vh]"><div className="text-4xl animate-bounce">📚</div></div>}>
+      <VratDbContent/>
+    </Suspense>
+  );
 }
 
 const CATS = [
@@ -21,10 +31,12 @@ const CATS = [
 ];
 const DIFF_COLOR: Record<string,string> = {easy:"#4CAF50",medium:"#FF9800",hard:"#F44336",extreme:"#9C27B0"};
 
-export default function VratDbPage() {
+function VratDbContent() {
+  const searchParams = useSearchParams();
+  const urlCat = searchParams.get("cat") || "all";
   const [vrats, setVrats] = useState<Vrat[]>([]);
   const [filtered, setFiltered] = useState<Vrat[]>([]);
-  const [cat, setCat] = useState("all");
+  const [cat, setCat] = useState(()=>searchParams?.get("cat")||"all");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 

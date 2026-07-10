@@ -13,11 +13,13 @@ export interface BookMeta {
   available: boolean;
   comingSoon?: string;
   character: string;
+  color?: string;
 }
 
 export const BOOK_SERIES: BookMeta[] = [
   {
     id: "karma",
+    color: "#FF6B6B",
     title: "Know Karma More",
     titleHi: "कर्म को जानो",
     subtitle: "कर्म की अनोखी दुनिया",
@@ -33,6 +35,7 @@ export const BOOK_SERIES: BookMeta[] = [
   },
   {
     id: "navkar",
+    color: "#9C27B0",
     title: "Navkar Mantra Magic",
     titleHi: "नवकार मंत्र की जादू",
     subtitle: "सबसे शक्तिशाली मंत्र",
@@ -48,6 +51,7 @@ export const BOOK_SERIES: BookMeta[] = [
   },
   {
     id: "tirthankar",
+    color: "#FF9800",
     title: "24 Tirthankars",
     titleHi: "24 तीर्थंकर",
     subtitle: "जैन धर्म के 24 देव",
@@ -63,6 +67,7 @@ export const BOOK_SERIES: BookMeta[] = [
   },
   {
     id: "ahimsa",
+    color: "#4CAF50",
     title: "Ahimsa — The Superpower",
     titleHi: "अहिंसा — महाशक्ति",
     subtitle: "प्रेम और करुणा की शक्ति",
@@ -78,6 +83,7 @@ export const BOOK_SERIES: BookMeta[] = [
   },
   {
     id: "paryushana",
+    color: "#E91E63",
     title: "Paryushana Festival",
     titleHi: "पर्युषण पर्व",
     subtitle: "माफी और आत्मशुद्धि का पर्व",

@@ -8,6 +8,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/academy/dashboard";
+  const reason = searchParams.get("reason");
   const [form, setForm] = useState({ email:"", password:"" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -38,6 +39,16 @@ function LoginForm() {
           <div className="text-5xl mb-3">📿</div>
           <h1 className="font-display-hi text-2xl font-black text-amber-900">Welcome Back</h1>
           <p className="font-hindi text-sm text-amber-600 mt-1">जैन अकादमी में स्वागत!</p>
+          {reason==="signin_required"&&(
+            <div className="mt-3 rounded-xl p-3 bg-amber-50 border border-amber-200">
+              <p className="font-sans text-xs font-bold text-amber-700">
+                🔒 Sign in required to access this feature.
+              </p>
+              <p className="font-hindi text-[10px] text-amber-600 mt-0.5">
+                इस सुविधा का उपयोग करने के लिए साइन इन करना जरूरी है।
+              </p>
+            </div>
+          )}
           {redirectTo !== "/academy/dashboard" && (
             <div className="mt-3 rounded-xl p-2 bg-amber-50 border border-amber-200">
               <p className="font-sans text-xs text-amber-700">Sign in to continue to your course</p>

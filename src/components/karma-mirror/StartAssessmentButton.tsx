@@ -12,6 +12,21 @@ export default function StartAssessmentButton() {
   const [checking, setChecking] = useState(true);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showAuthWall, setShowAuthWall] = useState(false);
+
+  useEffect(()=>{
+    const checkAuth = async () => {
+      const tok = localStorage.getItem("academy_token");
+      if (tok) { setIsLoggedIn(true); return; }
+      try {
+        const res = await fetch("/api/academy/auth/token", { credentials:"include" });
+        const d = await res.json();
+        if (d.token) { localStorage.setItem("academy_token", d.token); setIsLoggedIn(true); }
+      } catch {}
+    };
+    checkAuth();
+  }, []);
 
   useEffect(() => {
     async function checkResumable() {

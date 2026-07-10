@@ -3,84 +3,89 @@ import Link from "next/link";
 import SanyamHubClient from "@/components/sanyam/SanyamHubClient";
 
 export const metadata: Metadata = {
-  title: "Jain Sanyam Profile — Live Your Spiritual Journey | KarmaKnocksBack",
-  description: "Track your Vrat, Tap, Tyag, Jaap, Yatra, Swadhyay, and Daan. Earn Karma Stars. Inspire others with Anumodana.",
+  title: "Jain Sanyam Profile — Spiritual Journey Tracker | KarmaKnocksBack",
+  description: "Track your Vrat, Tap, Tyag, Jaap, Yatra, Swadhyay & Daan. Jain calendar, anumodana, and leaderboards.",
 };
 
-const CATEGORIES = [
-  {cat:"calendar", emoji:"📅", label:"Calendar",   hi:"पर्व कैलेंडर", color:"#FF9800", desc:"Jain festival dates"},
-  {cat:"vrat",     emoji:"🙏", label:"Vrat",      hi:"व्रत",      color:"#9C27B0", desc:"Sacred vows & observances"},
-  {cat:"tap",      emoji:"🔥", label:"Tap",       hi:"तप",         color:"#FF5722", desc:"Austerities & fasting"},
-  {cat:"tyag",     emoji:"🌿", label:"Tyag",      hi:"त्याग",     color:"#4CAF50", desc:"Renunciations & givings up"},
-  {cat:"jaap",     emoji:"📿", label:"Jaap",      hi:"जाप",        color:"#7B1FA2", desc:"Mantra recitation"},
-  {cat:"yatra",    emoji:"🏔", label:"Yatra",     hi:"यात्रा",    color:"#FF8F00", desc:"Sacred pilgrimages"},
-  {cat:"swadhyay", emoji:"📖", label:"Swadhyay",  hi:"स्वाध्याय", color:"#1565C0", desc:"Scriptural study"},
-  {cat:"daan",     emoji:"💝", label:"Daan",      hi:"दान",         color:"#00897B", desc:"Charity & service"},
+const MODULES = [
+  {cat:"vrat",     emoji:"🙏", label:"Vrat",     labelHi:"व्रत",      color:"#9C27B0", bg:"rgba(156,39,176,0.1)", desc:"Sacred vows",          href:"/sanyam/vrat-db?cat=vrat"},
+  {cat:"tap",      emoji:"🔥", label:"Tap",      labelHi:"तप",        color:"#FF5722", bg:"rgba(255,87,34,0.1)",  desc:"Austerities",          href:"/sanyam/vrat-db?cat=tap"},
+  {cat:"tyag",     emoji:"🌿", label:"Tyag",     labelHi:"त्याग",     color:"#4CAF50", bg:"rgba(76,175,80,0.1)",  desc:"Renunciations",        href:"/sanyam/vrat-db?cat=tyag"},
+  {cat:"jaap",     emoji:"📿", label:"Jaap",     labelHi:"जाप",       color:"#7B1FA2", bg:"rgba(123,31,162,0.1)", desc:"Mantra recitation",    href:"/sanyam/vrat-db?cat=jaap"},
+  {cat:"yatra",    emoji:"🏔", label:"Yatra",    labelHi:"यात्रा",    color:"#FF8F00", bg:"rgba(255,143,0,0.1)",  desc:"Pilgrimages",          href:"/sanyam/vrat-db?cat=yatra"},
+  {cat:"swadhyay", emoji:"📖", label:"Swadhyay", labelHi:"स्वाध्याय",color:"#1565C0", bg:"rgba(21,101,192,0.1)", desc:"Scriptural study",     href:"/sanyam/vrat-db?cat=swadhyay"},
+  {cat:"daan",     emoji:"💝", label:"Daan",     labelHi:"दान",       color:"#00897B", bg:"rgba(0,137,123,0.1)",  desc:"Charity & service",    href:"/sanyam/vrat-db?cat=daan"},
+  {cat:"calendar", emoji:"📅", label:"Calendar", labelHi:"पर्व कैलेंडर",color:"#FF9800",bg:"rgba(255,152,0,0.1)",desc:"Jain festival dates",  href:"/sanyam/calendar"},
 ];
 
 export default function SanyamPage() {
   return (
-    <div className="min-h-screen" style={{background:"linear-gradient(160deg,#FFFDE7 0%,#F3E5F5 40%,#E8F5E9 100%)"}}>
-      {/* Hero */}
-      <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#1a0800,#3E1F00,#1a1a2e)"}}>
-        <div className="absolute inset-0 opacity-5">
-          <div className="text-9xl text-center mt-8 select-none">🕉️</div>
+    <div className="min-h-screen" style={{background:"linear-gradient(160deg,#0d0d0d 0%,#1a0800 40%,#0d0d1a 100%)"}}>
+
+      {/* ── HERO ── */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 opacity-[0.03]"
+            style={{backgroundImage:"radial-gradient(circle at 20% 50%, #FFD700 0%, transparent 50%), radial-gradient(circle at 80% 20%, #FF9800 0%, transparent 50%)"}}/>
         </div>
-        <div className="max-w-4xl mx-auto px-4 py-16 text-center relative z-10">
-          <p className="font-hindi text-amber-400 text-sm font-bold mb-3 tracking-widest">जैन संयम प्रोफाइल</p>
-          <h1 className="font-sans font-black text-3xl sm:text-4xl text-white mb-3">
-            Live Your Sanyam.<br/>Inspire Others.
+        <div className="max-w-5xl mx-auto px-4 py-20 text-center relative z-10">
+          <div className="text-6xl mb-4">🕉️</div>
+          <h1 className="font-sans font-black text-4xl sm:text-5xl text-white mb-3">
+            Jain Sanyam Profile
           </h1>
-          <p className="font-sans text-amber-200 text-sm sm:text-base max-w-2xl mx-auto mb-8">
-            Track your Vrat, Tap, Tyag, Jaap, Yatra, Swadhyay & Daan. Earn Karma Stars. 
-            Share your journey with 🙏 Anumodana.
+          <p className="font-hindi text-lg text-amber-400 mb-2">जीवनभर की आध्यात्मिक यात्रा</p>
+          <p className="font-sans text-sm text-gray-400 max-w-2xl mx-auto mb-10">
+            A lifelong Jain spiritual journey tracker. Record your Vrat, Tap, Tyag, Jaap, Yatra, Swadhyay & Daan.
+            Inspire others with 🙏 Anumodana. Earn Karma Stars. Build your spiritual legacy.
           </p>
           <div className="flex gap-3 justify-center flex-wrap">
             <Link href="/sanyam/profile"
-              className="px-8 py-3.5 rounded-full font-sans font-black text-sm text-amber-900"
-              style={{background:"linear-gradient(135deg,#FFD700,#FF9800)",boxShadow:"0 6px 24px rgba(255,215,0,0.4)"}}>
+              className="px-8 py-4 rounded-2xl font-sans font-black text-sm text-amber-900"
+              style={{background:"linear-gradient(135deg,#FFD700,#FF9800)",boxShadow:"0 8px 32px rgba(255,215,0,0.4)"}}>
               🧘 My Sanyam Profile
             </Link>
-            <Link href="/sanyam/feed"
-              className="px-8 py-3.5 rounded-full font-sans font-black text-sm text-white border-2 border-white/30 hover:bg-white/10 transition-colors">
-              🙏 Activity Feed
+            <Link href="/sanyam/vrat-db"
+              className="px-8 py-4 rounded-2xl font-sans font-black text-sm text-white border border-white/20 hover:bg-white/10 transition-colors">
+              📚 Browse Practices
             </Link>
             <Link href="/sanyam/calendar"
-              className="px-8 py-3.5 rounded-full font-sans font-black text-sm text-white border-2 border-white/30 hover:bg-white/10 transition-colors">
+              className="px-8 py-4 rounded-2xl font-sans font-black text-sm text-amber-400 border border-amber-700/40 hover:bg-amber-900/20 transition-colors">
               📅 Jain Calendar
             </Link>
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-10 pb-20">
-        {/* Categories */}
-        <div className="mb-10">
-          <h2 className="font-sans font-black text-xl text-gray-800 mb-5 text-center">
-            Start Your Spiritual Journey
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-            {CATEGORIES.map(c=>(
-              <Link key={c.cat} href={c.cat==="calendar"?"/sanyam/calendar":`/sanyam/category/${c.cat}`}
-                className="rounded-2xl p-4 text-center hover:-translate-y-1 transition-all"
-                style={{background:"white",border:`2px solid ${c.color}30`,boxShadow:`0 4px 16px ${c.color}20`}}>
-                <div className="text-3xl mb-1.5">{c.emoji}</div>
-                <p className="font-sans font-black text-xs" style={{color:c.color}}>{c.label}</p>
-                <p className="font-hindi text-[10px] text-gray-400">{c.hi}</p>
-              </Link>
-            ))}
-          </div>
+      {/* ── MODULE GRID ── */}
+      <div className="max-w-5xl mx-auto px-4 pb-6">
+        <p className="font-sans text-xs text-white/30 uppercase tracking-widest text-center mb-4">7 Spiritual Modules</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+          {MODULES.map(m=>(
+            <Link key={m.cat} href={m.href}
+              className="rounded-2xl p-3.5 text-center hover:scale-105 transition-all"
+              style={{background:m.bg,border:`1.5px solid ${m.color}20`}}>
+              <div className="text-3xl mb-1.5">{m.emoji}</div>
+              <p className="font-sans font-black text-[11px]" style={{color:m.color}}>{m.label}</p>
+              <p className="font-hindi text-[9px] text-gray-500">{m.labelHi}</p>
+            </Link>
+          ))}
         </div>
+      </div>
 
-        {/* Quick start + feed preview */}
+      {/* ── COMMUNITY + FEED ── */}
+      <div className="max-w-5xl mx-auto px-4 py-8 pb-20">
         <SanyamHubClient />
 
-        {/* Leaderboard preview */}
-        <div className="mt-10 text-center">
+        {/* Leaderboard CTA */}
+        <div className="mt-10 rounded-3xl p-8 text-center"
+          style={{background:"rgba(255,215,0,0.05)",border:"1.5px solid rgba(255,215,0,0.15)"}}>
+          <div className="text-4xl mb-3">🏆</div>
+          <h3 className="font-sans font-black text-xl text-white mb-1">Sanyam Leaderboards</h3>
+          <p className="font-sans text-sm text-gray-400 mb-4">Separate rankings for Vrat, Tap, Tyag, Jaap, Yatra, Swadhyay & Daan</p>
           <Link href="/sanyam/leaderboard"
-            className="inline-flex items-center gap-2 px-8 py-3 rounded-full font-sans font-black text-sm"
-            style={{background:"linear-gradient(135deg,#7C4DFF,#E91E63)",color:"white"}}>
-            🏆 View Leaderboards →
+            className="inline-block px-8 py-3 rounded-2xl font-sans font-black text-sm text-amber-900"
+            style={{background:"linear-gradient(135deg,#FFD700,#FF9800)"}}>
+            View All Leaderboards →
           </Link>
         </div>
       </div>

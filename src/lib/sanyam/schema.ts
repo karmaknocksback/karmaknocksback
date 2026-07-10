@@ -2,12 +2,11 @@ import { dbRun } from "@/lib/db";
 
 export async function ensureSanyamDb() {
   const tables = [
-    // Master vrat/tap/activity database
     `CREATE TABLE IF NOT EXISTS sanyam_vrats (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL, name_hi TEXT, slug TEXT UNIQUE NOT NULL,
       category TEXT DEFAULT 'vrat',
-      description TEXT, description_hi TEXT,
+      description TEXT, description_hi TEXT, procedure_hi TEXT,
       rules TEXT, duration_days INTEGER DEFAULT 1,
       difficulty TEXT DEFAULT 'medium',
       stars_reward INTEGER DEFAULT 100, stars_per_day INTEGER DEFAULT 15,
@@ -15,25 +14,32 @@ export async function ensureSanyamDb() {
       emoji TEXT DEFAULT '🙏', color TEXT DEFAULT '#FF9800',
       is_active INTEGER DEFAULT 1, order_index INTEGER DEFAULT 0
     )`,
-    // User sanyam profile (links to academy user OR guest)
     `CREATE TABLE IF NOT EXISTS sanyam_profiles (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER UNIQUE, guest_id TEXT UNIQUE,
       display_name TEXT NOT NULL, avatar TEXT DEFAULT '🧘',
       spiritual_score INTEGER DEFAULT 0,
+      vrat_score INTEGER DEFAULT 0,
+      tap_score INTEGER DEFAULT 0,
+      tyag_score INTEGER DEFAULT 0,
+      jaap_score INTEGER DEFAULT 0,
+      yatra_score INTEGER DEFAULT 0,
+      swadhyay_score INTEGER DEFAULT 0,
+      daan_score INTEGER DEFAULT 0,
       total_vrats_completed INTEGER DEFAULT 0,
       total_days_tap INTEGER DEFAULT 0,
       total_anumodanas_received INTEGER DEFAULT 0,
       total_anumodanas_given INTEGER DEFAULT 0,
       is_public INTEGER DEFAULT 1, bio TEXT,
+      badge_ids TEXT DEFAULT '[]',
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
     )`,
-    // Active & past user activities
     `CREATE TABLE IF NOT EXISTS sanyam_activities (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER, guest_id TEXT,
-      vrat_id INTEGER NOT NULL, vrat_name TEXT, vrat_emoji TEXT,
+      vrat_id INTEGER NOT NULL, vrat_name TEXT, vrat_emoji TEXT, vrat_color TEXT,
+      category TEXT DEFAULT 'vrat',
       status TEXT DEFAULT 'active',
       start_date TEXT NOT NULL, planned_end_date TEXT, actual_end_date TEXT,
       current_day INTEGER DEFAULT 1,
@@ -45,19 +51,29 @@ export async function ensureSanyamDb() {
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
     )`,
-    // Public feed items
+    `CREATE TABLE IF NOT EXISTS sanyam_timeline (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER, guest_id TEXT,
+      activity_id INTEGER,
+      event_type TEXT,
+      title TEXT, title_hi TEXT,
+      emoji TEXT, color TEXT,
+      stars_earned INTEGER DEFAULT 0,
+      is_public INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`,
     `CREATE TABLE IF NOT EXISTS sanyam_feed (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER, guest_id TEXT,
       display_name TEXT, avatar TEXT,
       activity_id INTEGER,
       vrat_name TEXT, vrat_emoji TEXT, vrat_color TEXT,
+      category TEXT DEFAULT 'vrat',
       feed_type TEXT DEFAULT 'started',
       message TEXT,
       anumodanas INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now'))
     )`,
-    // Anumodanas (appreciations)
     `CREATE TABLE IF NOT EXISTS sanyam_anumodanas (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       feed_id INTEGER NOT NULL,
@@ -67,7 +83,6 @@ export async function ensureSanyamDb() {
       UNIQUE(feed_id, giver_user_id),
       UNIQUE(feed_id, giver_guest_id)
     )`,
-    // Tyag tracking
     `CREATE TABLE IF NOT EXISTS sanyam_tyags (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER, guest_id TEXT,
@@ -76,6 +91,24 @@ export async function ensureSanyamDb() {
       start_date TEXT NOT NULL,
       is_active INTEGER DEFAULT 1,
       days_count INTEGER DEFAULT 0,
+      stars_per_day INTEGER DEFAULT 3,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`,
+    `CREATE TABLE IF NOT EXISTS sanyam_connections (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id_a INTEGER NOT NULL,
+      user_id_b INTEGER NOT NULL,
+      status TEXT DEFAULT 'pending',
+      created_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(user_id_a, user_id_b)
+    )`,
+    `CREATE TABLE IF NOT EXISTS sanyam_reminders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      vrat_id INTEGER,
+      vrat_name TEXT, vrat_emoji TEXT,
+      remind_type TEXT DEFAULT 'day_before',
+      is_active INTEGER DEFAULT 1,
       created_at TEXT DEFAULT (datetime('now'))
     )`,
   ];
