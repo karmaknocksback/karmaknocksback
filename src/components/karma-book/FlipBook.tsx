@@ -218,6 +218,7 @@ export default function FlipBook({ bookId, bookTitle, bookEmoji, bookColor, page
           maxHeight: "calc(100svh - 220px)",
           borderRadius: 20,
           overflow: "hidden",
+          background: "#000",
           boxShadow: `0 32px 96px ${bookColor}45, 0 0 0 2px ${bookColor}35`,
           ...flipStyle,
         }}
@@ -237,7 +238,7 @@ export default function FlipBook({ bookId, bookTitle, bookEmoji, bookColor, page
             draggable={false}
             style={{
               position:"absolute", inset:0, width:"100%", height:"100%",
-              objectFit:"cover", display:"block",
+              objectFit:"contain", display:"block", background:"#000",
               opacity: imgLoaded ? 1 : 0,
               transition: "opacity 0.4s ease",
             }}/>
