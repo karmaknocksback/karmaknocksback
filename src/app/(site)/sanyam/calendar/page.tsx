@@ -1,227 +1,337 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 
-interface Panchang {
-  date: string; gregorian: string;
-  vaar: { en:string; hi:string };
-  tithi: { number:number; name_en:string; name_hi:string; paksha:string; paksha_hi:string };
-  nakshatra: { name_en:string; name_hi:string };
-  yoga: { name:string };
-  hindu_month: { name_en:string; name_hi:string };
-  jain_significance: string|null;
-  is_purnima:boolean; is_amavasya:boolean; is_ekadashi:boolean; is_chaturdashi:boolean;
+/* ══════════════════════════════════════════════════════════════
+   DIGAMBAR JAIN CALENDAR
+   ✓ Full month grid with navigation (prev/next month + year)
+   ✓ Each day shows tithi + Jain festivals
+   ✓ Color-coded by festival category
+   ✓ Click day for full details
+   ✓ Today's panchang card
+   ✓ Upcoming auspicious days list
+══════════════════════════════════════════════════════════════ */
+
+interface JainFestival {
+  key:string; name:string; nameHi:string; category:string;
+  emoji:string; color:string; description:string;
 }
+interface DayData {
+  day:number; date:string;
+  tithi:{ number:number; name_en:string; name_hi:string; paksha:string; paksha_hi:string };
+  nakshatra:{ name_en:string; name_hi:string };
+  vaar:{ en:string; hi:string };
+  hindu_month:{ name_en:string; name_hi:string };
+  is_purnima:boolean; is_amavasya:boolean; is_ekadashi:boolean; is_chaturdashi:boolean;
+  jain_significance:string|null;
+  jain_festivals: JainFestival[];
+}
+interface Panchang extends DayData { gregorian:string; yoga:{ name:string }; }
 
-interface CalVrat { id:number; name:string; slug:string; emoji:string; color:string; jain_month:string; stars_reward:number; }
+const MONTHS_EN = ["January","February","March","April","May","June",
+                   "July","August","September","October","November","December"];
+const DAYS_EN   = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const DAYS_HI   = ["रवि","सोम","मंगल","बुध","गुरु","शुक्र","शनि"];
 
-const MONTH_ORDER = ["चैत्र","वैशाख","ज्येष्ठ","आषाढ़","श्रावण","भाद्रपद","आसौज","कार्तिक","मार्गशीर्ष","पौष","माघ","फाल्गुन"];
-function getMonth(d:string){ for(const m of MONTH_ORDER){ if(d.includes(m)) return m; } return "अन्य"; }
+const CAT_COLORS: Record<string,string> = {
+  kalyanak: "#FFD700",
+  parva:    "#E91E63",
+  vrat:     "#9C27B0",
+  auspicious:"#4CAF50",
+  samiti:   "#2196F3",
+};
 
 export default function JainCalendarPage() {
-  const [today, setToday]       = useState<Panchang|null>(null);
-  const [upcoming, setUpcoming] = useState<Panchang[]>([]);
-  const [vrats, setVrats]       = useState<CalVrat[]>([]);
-  const [selected, setSelected] = useState<string|null>(null);
-  const [loading, setLoading]   = useState(true);
+  const now   = new Date();
+  const [year,   setYear]   = useState(now.getFullYear());
+  const [month,  setMonth]  = useState(now.getMonth() + 1); // 1-based
+  const [days,   setDays]   = useState<DayData[]>([]);
+  const [today,  setToday]  = useState<Panchang|null>(null);
+  const [selected, setSelected] = useState<DayData|null>(null);
+  const [loading,  setLoading]  = useState(true);
+  const [loadingMonth, setLoadingMonth] = useState(true);
 
+  // Load today's panchang
   useEffect(()=>{
-    Promise.all([
-      fetch("/api/panchang?type=today").then(r=>r.json()).then(d=>setToday(d.panchang)),
-      fetch("/api/panchang?type=upcoming&days=45").then(r=>r.json()).then(d=>setUpcoming(d.highlights||[])),
-      fetch("/api/sanyam/calendar").then(r=>r.json()).then(d=>setVrats(d.vrats||[])),
-    ]).finally(()=>setLoading(false));
+    fetch("/api/panchang?type=today").then(r=>r.json()).then(d=>setToday(d.panchang||null));
   },[]);
 
-  const grouped: Record<string, CalVrat[]> = {};
-  vrats.forEach(v=>{ const m=getMonth(v.jain_month||""); if(!grouped[m]) grouped[m]=[]; grouped[m].push(v); });
-  const months = MONTH_ORDER.filter(m=>grouped[m]);
+  // Load month data
+  const loadMonth = useCallback(async (y:number, m:number)=>{
+    setLoadingMonth(true);
+    const r = await fetch(`/api/panchang?type=month&year=${y}&month=${m}`);
+    const d = await r.json();
+    setDays(d.days||[]);
+    setLoadingMonth(false);
+    setLoading(false);
+  },[]);
 
-  const tithiColor = (p:Panchang) => p.is_purnima?"#FFD700":p.is_amavasya?"#9C27B0":p.is_ekadashi?"#4CAF50":p.is_chaturdashi?"#E91E63":"#FF9800";
+  useEffect(()=>{ loadMonth(year, month); },[year, month, loadMonth]);
+
+  function prevMonth(){ if(month===1){ setYear(y=>y-1); setMonth(12); } else setMonth(m=>m-1); }
+  function nextMonth(){ if(month===12){ setYear(y=>y+1); setMonth(1); } else setMonth(m=>m+1); }
+  function goToToday(){ setYear(now.getFullYear()); setMonth(now.getMonth()+1); }
+
+  // Build calendar grid
+  const firstDay = new Date(year, month-1, 1).getDay();
+  const totalCells = firstDay + days.length;
+  const rows = Math.ceil(totalCells / 7);
+
+  function isDayToday(d:number){ return year===now.getFullYear()&&month===now.getMonth()+1&&d===now.getDate(); }
+
+  function getDayColor(d:DayData|undefined): string {
+    if (!d) return "transparent";
+    if (d.jain_festivals.some(f=>f.category==="kalyanak")) return "#FFD70020";
+    if (d.jain_festivals.some(f=>f.category==="parva"))    return "#E91E6315";
+    if (d.jain_festivals.some(f=>f.category==="vrat"))     return "#9C27B015";
+    if (d.is_purnima||d.is_amavasya)  return "#4CAF5012";
+    if (d.is_ekadashi)                 return "#4CAF5008";
+    if (d.is_chaturdashi)              return "#FF980008";
+    return "transparent";
+  }
+
+  const mainFestival = (d:DayData|undefined) => d?.jain_festivals[0] || null;
 
   return (
     <div className="min-h-screen" style={{background:"linear-gradient(160deg,#0d0d0d 0%,#1a0800 40%,#0d0d1a 100%)"}}>
-      <div className="max-w-5xl mx-auto px-4 py-8 pb-20">
+      <div className="max-w-6xl mx-auto px-4 py-6 pb-20">
 
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="text-5xl mb-3">📅</div>
-          <h1 className="font-sans font-black text-2xl text-white mb-1">Jain Festival Calendar</h1>
-          <p className="font-hindi text-sm text-amber-400 mb-1">जैन व्रत एवं पर्व कैलेंडर</p>
-          <p className="font-sans text-xs text-gray-500">Live Hindu Panchang · Jain festival dates · Start your vrat</p>
+        <div className="text-center mb-6">
+          <div className="text-4xl mb-2">🕉️</div>
+          <h1 className="font-sans font-black text-2xl text-white">Digambar Jain Calendar</h1>
+          <p className="font-hindi text-sm text-amber-400">दिगम्बर जैन पंचांग</p>
         </div>
 
-        {/* TODAY'S PANCHANG CARD */}
-        {loading ? (
-          <div className="rounded-3xl h-44 animate-pulse mb-8" style={{background:"rgba(255,215,0,0.06)"}}/>
-        ) : today && (
-          <div className="rounded-3xl p-6 mb-8 relative overflow-hidden"
-            style={{background:"linear-gradient(135deg,rgba(255,215,0,0.1),rgba(255,152,0,0.06))",border:"1.5px solid rgba(255,215,0,0.2)"}}>
-            {/* Gold decoration */}
-            <div className="absolute top-0 right-0 text-8xl opacity-[0.04] font-sans select-none">🕉️</div>
-            
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="text-2xl animate-pulse">🕉️</div>
-                <p className="font-hindi font-black text-amber-400 text-sm">आज का पंचांग</p>
-                <p className="font-sans text-[10px] text-gray-500 ml-auto">{today.gregorian}</p>
-              </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                {/* Tithi */}
-                <div className="rounded-2xl p-3 text-center"
-                  style={{background:`${tithiColor(today)}15`,border:`1.5px solid ${tithiColor(today)}30`}}>
-                  <p className="font-sans text-[9px] text-gray-500 uppercase tracking-wider mb-1">Tithi</p>
-                  <p className="font-hindi font-black text-sm leading-tight" style={{color:tithiColor(today)}}>{today.tithi.name_hi}</p>
-                  <p className="font-sans text-[9px] text-gray-500">{today.tithi.paksha_hi}</p>
-                </div>
-                {/* Vaar */}
-                <div className="rounded-2xl p-3 text-center" style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.07)"}}>
-                  <p className="font-sans text-[9px] text-gray-500 uppercase tracking-wider mb-1">Vaar</p>
-                  <p className="font-hindi font-black text-sm text-white">{today.vaar.hi}</p>
-                  <p className="font-sans text-[9px] text-gray-500">{today.vaar.en}</p>
-                </div>
-                {/* Nakshatra */}
-                <div className="rounded-2xl p-3 text-center" style={{background:"rgba(156,39,176,0.1)",border:"1px solid rgba(156,39,176,0.2)"}}>
-                  <p className="font-sans text-[9px] text-gray-500 uppercase tracking-wider mb-1">Nakshatra</p>
-                  <p className="font-hindi font-black text-sm text-purple-300">{today.nakshatra.name_hi}</p>
-                  <p className="font-sans text-[9px] text-gray-500">{today.nakshatra.name_en}</p>
-                </div>
-                {/* Yoga */}
-                <div className="rounded-2xl p-3 text-center" style={{background:"rgba(33,150,243,0.08)",border:"1px solid rgba(33,150,243,0.15)"}}>
-                  <p className="font-sans text-[9px] text-gray-500 uppercase tracking-wider mb-1">Yoga</p>
-                  <p className="font-sans font-black text-sm text-blue-300">{today.yoga.name}</p>
-                </div>
-                {/* Month */}
-                <div className="rounded-2xl p-3 text-center" style={{background:"rgba(255,152,0,0.08)",border:"1px solid rgba(255,152,0,0.15)"}}>
-                  <p className="font-sans text-[9px] text-gray-500 uppercase tracking-wider mb-1">Month</p>
-                  <p className="font-hindi font-black text-sm text-amber-300">{today.hindu_month.name_hi}</p>
-                  <p className="font-sans text-[9px] text-gray-500">{today.hindu_month.name_en}</p>
-                </div>
-              </div>
-
-              {/* Jain significance */}
-              {today.jain_significance && (
-                <div className="mt-3 rounded-xl px-4 py-2.5 text-center"
-                  style={{background:"rgba(255,215,0,0.08)",border:"1px solid rgba(255,215,0,0.2)"}}>
-                  <p className="font-hindi text-sm text-amber-300 font-bold">{today.jain_significance}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* UPCOMING JAIN IMPORTANT DAYS */}
-        {!loading && upcoming.length > 0 && (
-          <div className="mb-8">
-            <h2 className="font-sans font-black text-sm text-white/60 uppercase tracking-widest mb-4">
-              ⭐ Upcoming Jain Important Days
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {upcoming.slice(0,10).map(p=>{
-                const c = tithiColor(p);
-                const daysAway = Math.round((new Date(p.date).getTime() - Date.now()) / 86400000);
-                return (
-                  <div key={p.date} className="flex items-center gap-3 rounded-2xl p-3"
-                    style={{background:`${c}08`,border:`1px solid ${c}20`}}>
-                    <div className="shrink-0 w-10 h-10 rounded-xl flex flex-col items-center justify-center"
-                      style={{background:`${c}20`}}>
-                      <p className="font-sans font-black text-[10px]" style={{color:c}}>{new Date(p.date).getDate()}</p>
-                      <p className="font-sans text-[8px] text-gray-500">{new Date(p.date).toLocaleString("en",{month:"short"})}</p>
+          {/* ── LEFT: Today's panchang ── */}
+          <div className="lg:col-span-1 space-y-4">
+            {today && (
+              <div className="rounded-3xl p-5"
+                style={{background:"rgba(255,215,0,0.06)",border:"1.5px solid rgba(255,215,0,0.2)"}}>
+                <p className="font-hindi text-xs text-amber-400 font-bold mb-3">🕉️ आज का पंचांग</p>
+                <div className="space-y-2">
+                  {[
+                    {l:"तिथि",  v:`${today.tithi.name_hi} (${today.tithi.paksha_hi})`, c:"#FFD700"},
+                    {l:"वार",   v:today.vaar.hi,              c:"#FF9800"},
+                    {l:"नक्षत्र",v:today.nakshatra.name_hi,   c:"#AB47BC"},
+                    {l:"माह",   v:today.hindu_month.name_hi,  c:"#4CAF50"},
+                  ].map(s=>(
+                    <div key={s.l} className="flex items-center justify-between rounded-xl px-3 py-2"
+                      style={{background:"rgba(255,255,255,0.04)"}}>
+                      <span className="font-hindi text-[11px] text-gray-500">{s.l}</span>
+                      <span className="font-hindi text-xs font-bold" style={{color:s.c}}>{s.v}</span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-hindi font-black text-xs text-white truncate">{p.tithi.name_hi}</p>
-                      <p className="font-sans text-[9px]" style={{color:c}}>{p.jain_significance}</p>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <p className="font-sans text-[9px] text-gray-500">{daysAway===0?"Today":daysAway===1?"Tomorrow":`${daysAway} days`}</p>
-                      <p className="font-hindi text-[9px] text-gray-600">{p.vaar.hi}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* VRAT DATABASE BY HINDU MONTH */}
-        <div>
-          <h2 className="font-sans font-black text-sm text-white/60 uppercase tracking-widest mb-6">
-            📚 Jain Vrats by Hindu Month
-          </h2>
-
-          {loading ? (
-            <div className="space-y-4">
-              {[1,2,3].map(i=><div key={i} className="h-32 rounded-2xl animate-pulse" style={{background:"rgba(255,255,255,0.04)"}}/>)}
-            </div>
-          ) : months.length === 0 ? (
-            <div className="rounded-2xl p-8 text-center" style={{border:"2px dashed rgba(255,255,255,0.07)"}}>
-              <p className="font-sans text-white/30">No vrats seeded yet.</p>
-              <p className="font-sans text-[11px] text-gray-600 mt-1">Run: POST /api/sanyam/seed</p>
-            </div>
-          ) : (
-            <div className="space-y-8">
-              {months.map(month=>(
-                <div key={month}>
-                  {/* Month header */}
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="h-px flex-1" style={{background:"linear-gradient(90deg,rgba(255,152,0,0.3),transparent)"}}/>
-                    <div className="rounded-full px-5 py-2 font-sans font-black text-sm shrink-0 text-amber-900"
-                      style={{background:"linear-gradient(135deg,#FFD700,#FF9800)"}}>
-                      🌙 {month}
-                    </div>
-                    <div className="h-px flex-1" style={{background:"linear-gradient(90deg,transparent,rgba(255,152,0,0.3))"}}/>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {(grouped[month]||[]).map(v=>(
-                      <div key={v.id}
-                        className="rounded-2xl p-4 cursor-pointer hover:scale-[1.02] transition-all"
-                        style={{
-                          background: selected===v.slug ? `${v.color||"#FF9800"}12` : "rgba(255,255,255,0.04)",
-                          border: `1.5px solid ${selected===v.slug ? v.color||"#FF9800" : "rgba(255,255,255,0.06)"}`,
-                        }}
-                        onClick={()=>setSelected(selected===v.slug?null:v.slug)}>
-                        <div className="flex items-start gap-3">
-                          <span className="text-3xl shrink-0">{v.emoji}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-hindi font-black text-sm text-white leading-tight">{v.name}</p>
-                            <p className="font-hindi text-[10px] text-amber-400/70 mt-1 leading-snug">{v.jain_month}</p>
-                            <p className="font-sans text-[9px] text-amber-500 font-bold mt-1">⭐ {v.stars_reward}</p>
-                          </div>
-                        </div>
-
-                        {selected===v.slug && (
-                          <div className="mt-3 pt-3" style={{borderTop:"1px solid rgba(255,255,255,0.07)"}}>
-                            <Link href={`/sanyam/vrat/${v.slug}`}
-                              className="block w-full text-center py-2.5 rounded-xl font-sans font-black text-xs text-amber-900"
-                              style={{background:"linear-gradient(135deg,#FFD700,#FF9800)"}}
-                              onClick={e=>e.stopPropagation()}>
-                              📖 View Details & Start This Vrat →
-                            </Link>
-                          </div>
-                        )}
+                  ))}
+                </div>
+                {today.jain_festivals.length > 0 && (
+                  <div className="mt-3 space-y-1.5">
+                    {today.jain_festivals.map(f=>(
+                      <div key={f.key} className="rounded-xl px-3 py-2"
+                        style={{background:`${f.color}15`,border:`1px solid ${f.color}30`}}>
+                        <p className="font-sans text-xs font-black" style={{color:f.color}}>{f.emoji} {f.nameHi}</p>
+                        <p className="font-sans text-[10px] text-gray-400 mt-0.5">{f.description.slice(0,80)}...</p>
                       </div>
                     ))}
                   </div>
+                )}
+              </div>
+            )}
+
+            {/* Legend */}
+            <div className="rounded-2xl p-4" style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)"}}>
+              <p className="font-sans text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">Legend</p>
+              {[
+                {c:CAT_COLORS.kalyanak, l:"Tirthankar Kalyanak"},
+                {c:CAT_COLORS.parva,    l:"Jain Parva / Festival"},
+                {c:CAT_COLORS.vrat,     l:"Vrat / Fasting Period"},
+                {c:"#4CAF50",           l:"Purnima / Amavasya"},
+                {c:"#FF9800",           l:"Ekadashi / Chaturdashi"},
+              ].map(({c,l})=>(
+                <div key={l} className="flex items-center gap-2 mb-1.5">
+                  <div className="w-3 h-3 rounded-sm shrink-0" style={{background:c}}/>
+                  <span className="font-sans text-[10px] text-gray-400">{l}</span>
                 </div>
               ))}
             </div>
-          )}
+          </div>
+
+          {/* ── RIGHT: Calendar grid ── */}
+          <div className="lg:col-span-2">
+
+            {/* Month navigation */}
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={prevMonth}
+                className="rounded-xl px-4 py-2 font-sans font-black text-sm text-white hover:bg-white/10 transition-colors">
+                ← Prev
+              </button>
+              <div className="text-center">
+                <div className="flex items-center gap-3 justify-center">
+                  <select value={month} onChange={e=>setMonth(parseInt(e.target.value))}
+                    className="rounded-lg px-2 py-1 font-sans font-black text-sm text-amber-300 bg-transparent border border-white/10 cursor-pointer outline-none">
+                    {MONTHS_EN.map((m,i)=><option key={i} value={i+1} className="bg-gray-900">{m}</option>)}
+                  </select>
+                  <select value={year} onChange={e=>setYear(parseInt(e.target.value))}
+                    className="rounded-lg px-2 py-1 font-sans font-black text-sm text-amber-300 bg-transparent border border-white/10 cursor-pointer outline-none">
+                    {Array.from({length:20},(_,i)=>now.getFullYear()-5+i).map(y=>(
+                      <option key={y} value={y} className="bg-gray-900">{y}</option>
+                    ))}
+                  </select>
+                </div>
+                <button onClick={goToToday}
+                  className="font-sans text-[10px] text-amber-500 hover:text-amber-300 mt-0.5">
+                  Today
+                </button>
+              </div>
+              <button onClick={nextMonth}
+                className="rounded-xl px-4 py-2 font-sans font-black text-sm text-white hover:bg-white/10 transition-colors">
+                Next →
+              </button>
+            </div>
+
+            {/* Day headers */}
+            <div className="grid grid-cols-7 gap-0.5 mb-0.5">
+              {DAYS_HI.map((d,i)=>(
+                <div key={d} className="text-center py-1.5">
+                  <p className="font-hindi text-[10px] font-bold" style={{color:i===0?"#F44336":i===6?"#2196F3":"rgba(255,255,255,0.4)"}}>
+                    {d}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Calendar grid */}
+            {loadingMonth ? (
+              <div className="grid grid-cols-7 gap-0.5">
+                {Array.from({length:35}).map((_,i)=>(
+                  <div key={i} className="aspect-square rounded-lg animate-pulse" style={{background:"rgba(255,255,255,0.04)"}}/>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-7 gap-0.5">
+                {Array.from({length:rows*7}).map((_,cellIdx)=>{
+                  const dayNum = cellIdx - firstDay + 1;
+                  const dayData = days.find(d=>d.day===dayNum);
+                  const isToday = isDayToday(dayNum);
+                  const isValid = dayNum >= 1 && dayNum <= days.length;
+                  const festival = mainFestival(dayData);
+                  const bgColor = isValid ? getDayColor(dayData) : "transparent";
+                  const isSelected = selected?.day === dayNum;
+
+                  return (
+                    <div
+                      key={cellIdx}
+                      onClick={()=>isValid&&dayData?setSelected(isSelected?null:dayData):null}
+                      className={`rounded-lg p-1 cursor-pointer transition-all hover:scale-105 relative ${!isValid?"opacity-0 pointer-events-none":""}`}
+                      style={{
+                        background: isSelected?"rgba(255,215,0,0.2)":bgColor,
+                        border: isToday ? "2px solid #FFD700" : isSelected ? "1.5px solid rgba(255,215,0,0.5)" : "1px solid rgba(255,255,255,0.05)",
+                        minHeight: 60,
+                      }}>
+                      {isValid && (
+                        <>
+                          {/* Date number */}
+                          <p className="font-sans font-black text-xs leading-tight"
+                            style={{color:isToday?"#FFD700":"rgba(255,255,255,0.85)"}}>
+                            {dayNum}
+                          </p>
+                          {/* Tithi */}
+                          {dayData && (
+                            <p className="font-hindi text-[8px] leading-tight mt-0.5 truncate"
+                              style={{color:dayData.is_purnima?"#FFD700":dayData.is_amavasya?"#CE93D8":dayData.is_ekadashi?"#81C784":"rgba(255,255,255,0.3)"}}>
+                              {dayData.tithi.name_hi.slice(0,6)}
+                            </p>
+                          )}
+                          {/* Festival emoji */}
+                          {festival && (
+                            <div className="absolute bottom-0.5 right-0.5">
+                              <span style={{fontSize:10}}>{festival.emoji}</span>
+                            </div>
+                          )}
+                          {/* Today marker */}
+                          {isToday && (
+                            <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full" style={{background:"#FFD700"}}/>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Selected day detail */}
+            {selected && (
+              <div className="mt-4 rounded-2xl p-5"
+                style={{background:"rgba(255,255,255,0.04)",border:"1.5px solid rgba(255,215,0,0.2)"}}>
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <p className="font-sans font-black text-base text-white">
+                      {selected.day} {MONTHS_EN[month-1]} {year}
+                    </p>
+                    <p className="font-hindi text-sm text-amber-400">
+                      {selected.tithi.name_hi} · {selected.tithi.paksha_hi}
+                    </p>
+                  </div>
+                  <button onClick={()=>setSelected(null)} className="text-white/30 hover:text-white text-xl">×</button>
+                </div>
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  <div className="rounded-xl p-2 text-center" style={{background:"rgba(255,255,255,0.04)"}}>
+                    <p className="font-hindi text-[9px] text-gray-500">वार</p>
+                    <p className="font-hindi text-xs font-bold text-amber-300">{selected.vaar.hi}</p>
+                  </div>
+                  <div className="rounded-xl p-2 text-center" style={{background:"rgba(255,255,255,0.04)"}}>
+                    <p className="font-hindi text-[9px] text-gray-500">नक्षत्र</p>
+                    <p className="font-hindi text-xs font-bold text-purple-300">{selected.nakshatra.name_hi}</p>
+                  </div>
+                  <div className="rounded-xl p-2 text-center" style={{background:"rgba(255,255,255,0.04)"}}>
+                    <p className="font-hindi text-[9px] text-gray-500">माह</p>
+                    <p className="font-hindi text-xs font-bold text-green-300">{selected.hindu_month.name_hi}</p>
+                  </div>
+                </div>
+                {selected.jain_festivals.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="font-sans text-[10px] font-black text-white/40 uppercase tracking-wider">Jain Festivals</p>
+                    {selected.jain_festivals.map(f=>(
+                      <div key={f.key} className="rounded-xl p-3"
+                        style={{background:`${f.color}12`,border:`1px solid ${f.color}30`}}>
+                        <p className="font-sans font-black text-sm" style={{color:f.color}}>{f.emoji} {f.name}</p>
+                        <p className="font-hindi text-xs text-amber-300 mt-0.5">{f.nameHi}</p>
+                        <p className="font-sans text-[11px] text-gray-400 mt-1 leading-relaxed">{f.description}</p>
+                        <span className="inline-block mt-1.5 rounded-full px-2 py-0.5 font-sans text-[9px] font-bold"
+                          style={{background:`${CAT_COLORS[f.category]||"#666"}20`,color:CAT_COLORS[f.category]||"#666"}}>
+                          {f.category}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-xl p-3 text-center" style={{background:"rgba(255,255,255,0.03)"}}>
+                    {selected.is_purnima && <p className="font-hindi text-sm text-amber-300">🌕 पूर्णिमा — पोषध व्रत का शुभ दिन</p>}
+                    {selected.is_amavasya && <p className="font-hindi text-sm text-purple-300">🌑 अमावस्या — पोषध व्रत का शुभ दिन</p>}
+                    {selected.is_ekadashi && <p className="font-hindi text-sm text-green-300">⭐ एकादशी — व्रत और साधना का दिन</p>}
+                    {selected.is_chaturdashi && <p className="font-hindi text-sm text-orange-300">🙏 चतुर्दशी — पोषध का दिन</p>}
+                    {!selected.is_purnima && !selected.is_amavasya && !selected.is_ekadashi && !selected.is_chaturdashi && (
+                      <p className="font-sans text-xs text-gray-500">No major festival on this day</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Info note */}
-        <div className="mt-10 rounded-2xl p-5 text-center"
-          style={{background:"rgba(255,215,0,0.03)",border:"1px dashed rgba(255,215,0,0.15)"}}>
-          <p className="font-hindi text-xs text-amber-600 mb-1">📌 पंचांग जानकारी</p>
-          <p className="font-hindi text-xs text-gray-600 mb-1">
-            तिथि और नक्षत्र की गणना खगोलीय सूत्रों से की जाती है। विस्तृत विधि के लिए अपने आचार्य से संपर्क करें।
+        {/* Info footer */}
+        <div className="mt-8 rounded-2xl p-4 text-center"
+          style={{background:"rgba(255,215,0,0.03)",border:"1px dashed rgba(255,215,0,0.12)"}}>
+          <p className="font-hindi text-xs text-amber-600/80">
+            यह कैलेंडर दिगम्बर जैन परंपरा के अनुसार है। तिथि गणना Jean Meeus खगोलीय सूत्रों पर आधारित है।
           </p>
-          <p className="font-sans text-[10px] text-gray-600">
-            Panchang calculated using astronomical algorithms (Jean Meeus method). For official religious guidance, consult your local Jain Acharya.
+          <p className="font-sans text-[10px] text-gray-600 mt-1">
+            Digambar Jain tradition · Astronomical calculation (Jean Meeus) · For exact dates consult local Jain Panchang
           </p>
         </div>
-
       </div>
     </div>
   );
