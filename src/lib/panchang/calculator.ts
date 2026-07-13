@@ -112,22 +112,28 @@ const VAAR_EN = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Sa
 // CHOGHADIYA — Digambar Jain auspicious time periods
 // ══════════════════════════════════════════════════════════
 export const CHOGHADIYA_TYPES = {
-  Amrit:  { hi:"अमृत",   color:"#FFD700", desc:"सर्वश्रेष्ठ — सभी कार्यों के लिए उत्तम",       auspicious: true,  rating: 5 },
-  Shubh:  { hi:"शुभ",    color:"#4CAF50", desc:"शुभ — पूजा, व्रत प्रारंभ के लिए श्रेष्ठ",     auspicious: true,  rating: 4 },
-  Labh:   { hi:"लाभ",    color:"#2196F3", desc:"लाभकारी — धार्मिक कार्य और ध्यान हेतु",        auspicious: true,  rating: 3 },
-  Char:   { hi:"चर",     color:"#00BCD4", desc:"चल — यात्रा और सामायिक के लिए ठीक",            auspicious: true,  rating: 2 },
-  UdYog:  { hi:"उद्योग", color:"#FF9800", desc:"उद्योग — कार्य प्रारंभ हेतु ठीक",              auspicious: true,  rating: 2 },
-  Kaal:   { hi:"काल",    color:"#F44336", desc:"काल — वर्जित, शुभ कार्य न करें",               auspicious: false, rating: 0 },
-  Rog:    { hi:"रोग",    color:"#9C27B0", desc:"रोग — वर्जित, शुभ कार्य न करें",               auspicious: false, rating: 0 },
+  Amrit: { hi:"अमृत",   color:"#FFD700", desc:"सर्वश्रेष्ठ — सभी शुभ कार्यों के लिए उत्तम", auspicious:true,  rating:5 },
+  Shubh: { hi:"शुभ",    color:"#4CAF50", desc:"शुभ — पूजा, विवाह, व्रत प्रारंभ के लिए",     auspicious:true,  rating:4 },
+  Labh:  { hi:"लाभ",    color:"#2196F3", desc:"लाभकारी — शिक्षा, व्यापार, अध्ययन हेतु",      auspicious:true,  rating:3 },
+  Char:  { hi:"चर",     color:"#00BCD4", desc:"चर — यात्रा और सामायिक के लिए उत्तम",         auspicious:true,  rating:2 },
+  Udveg: { hi:"उद्वेग", color:"#FF9800", desc:"उद्वेग — सरकारी कार्य हेतु; अन्य वर्जित",    auspicious:false, rating:1 },
+  Kaal:  { hi:"काल",    color:"#F44336", desc:"काल — वर्जित, शुभ कार्य न करें",              auspicious:false, rating:0 },
+  Rog:   { hi:"रोग",    color:"#9C27B0", desc:"रोग — वर्जित, केवल शत्रु-विजय हेतु",         auspicious:false, rating:0 },
 } as const;
-
-// Day choghadiya start sequence by weekday (0=Sun ... 6=Sat)
-const DAY_START_IDX   = [2, 0, 6, 3, 1, 4, 5]; // index into CHOG_SEQ
-// Night choghadiya start by weekday
-const NIGHT_START_IDX = [1, 4, 5, 2, 0, 6, 3];
-
-const CHOG_SEQ = ["UdYog","Char","Labh","Amrit","Kaal","Shubh","Rog","Kaal"] as const;
 type ChogType = keyof typeof CHOGHADIYA_TYPES;
+
+// ── Verified against Drikpanchang.com (May 27 2026 = Wednesday) ──
+// Day sequence (7 elements, circular): UdYog→Char→Labh→Amrit→Kaal→Shubh→Rog
+const DAY_SEQ:   ChogType[] = ["Udveg","Char","Labh","Amrit","Kaal","Shubh","Rog"];
+// Night sequence (7 elements, circular): Shubh→Amrit→Char→Rog→Kaal→Labh→Udveg
+const NIGHT_SEQ: ChogType[] = ["Shubh","Amrit","Char","Rog","Kaal","Labh","Udveg"];
+
+// Starting index in DAY_SEQ by weekday (0=Sun,1=Mon,...6=Sat)
+// Sun=Udveg(0), Mon=Amrit(3), Tue=Rog(6), Wed=Labh(2), Thu=Shubh(5), Fri=Char(1), Sat=Kaal(4)
+const DAY_START   = [0, 3, 6, 2, 5, 1, 4];
+// Starting index in NIGHT_SEQ by weekday
+// Sun=Shubh(0), Mon=Char(2), Tue=Kaal(4), Wed=Udveg(6), Thu=Amrit(1), Fri=Rog(3), Sat=Labh(5)
+const NIGHT_START = [0, 2, 4, 6, 1, 3, 5];
 
 export interface ChoghadiyaSlot {
   name:       ChogType;
@@ -149,58 +155,56 @@ function formatTime(mins: number): string {
 
 /** Calculate Choghadiya for a given date */
 export function calculateChoghadiya(
-  vaarNum: number, // 0=Sun..6=Sat
-  sunriseMins = 360, // 6:00 AM = 360 min from midnight
-  sunsetMins  = 1080, // 6:00 PM = 1080
+  vaarNum: number,    // 0=Sun…6=Sat
+  sunriseMins = 360,  // minutes from midnight (6:00 AM = 360)
+  sunsetMins  = 1080, // (6:00 PM = 1080)
 ): { day: ChoghadiyaSlot[]; night: ChoghadiyaSlot[] } {
-  const dayLen   = sunsetMins  - sunriseMins;
-  const nightLen = (24 * 60 - sunsetMins) + sunriseMins;
-  const daySlot  = dayLen  / 8;
+  const dayLen   = sunsetMins - sunriseMins;
+  const nightLen = 24*60 - dayLen;
+  const daySlot  = dayLen / 8;
   const nightSlot = nightLen / 8;
 
-  // Day choghadiya
-  const dayStart = DAY_START_IDX[vaarNum];
+  // ── Day Choghadiya (sunrise → sunset, 8 slots) ──────────────
+  const dayStartIdx = DAY_START[vaarNum];
   const day: ChoghadiyaSlot[] = [];
   for (let i = 0; i < 8; i++) {
-    const name = CHOG_SEQ[(dayStart + i) % 8] as ChogType;
+    const name = DAY_SEQ[(dayStartIdx + i) % 7];
     const type = CHOGHADIYA_TYPES[name];
-    const st = sunriseMins + i * daySlot;
-    const en = st + daySlot;
+    const st   = sunriseMins + i * daySlot;
+    const en   = st + daySlot;
     day.push({
-      name, nameHi: type.hi, color: type.color,
+      name, nameHi:type.hi, color:type.color,
       startTime: formatTime(Math.round(st)),
       endTime:   formatTime(Math.round(en)),
       auspicious: type.auspicious, rating: type.rating,
     });
   }
 
-  // Night choghadiya
-  const nightStart = NIGHT_START_IDX[vaarNum];
+  // ── Night Choghadiya (sunset → sunrise, 8 slots) ────────────
+  const nightStartIdx = NIGHT_START[vaarNum];
   const night: ChoghadiyaSlot[] = [];
+  // Brahma Muhurta special slot comes first (96 min before sunrise)
+  const brahmaMins = sunriseMins - 96;
+  night.push({
+    name:"Amrit", nameHi:"ब्रह्म मुहूर्त", color:"#AB47BC",
+    startTime: formatTime(Math.round(brahmaMins < 0 ? brahmaMins + 24*60 : brahmaMins)),
+    endTime:   formatTime(sunriseMins),
+    auspicious:true, rating:5, isBrahmaMuhurta:true,
+  });
   for (let i = 0; i < 8; i++) {
-    const name = CHOG_SEQ[(nightStart + i) % 8] as ChogType;
+    const name = NIGHT_SEQ[(nightStartIdx + i) % 7];
     const type = CHOGHADIYA_TYPES[name];
-    const st = sunsetMins + i * nightSlot;
-    const en = st + nightSlot;
+    const st   = sunsetMins + i * nightSlot;
+    const en   = st + nightSlot;
+    const stM  = Math.round(st) % (24*60);
+    const enM  = Math.round(en) % (24*60);
     night.push({
-      name, nameHi: type.hi, color: type.color,
-      startTime: formatTime(Math.round(st) % (24*60)),
-      endTime:   formatTime(Math.round(en) % (24*60)),
+      name, nameHi:type.hi, color:type.color,
+      startTime: formatTime(stM < 0 ? stM + 24*60 : stM),
+      endTime:   formatTime(enM < 0 ? enM + 24*60 : enM),
       auspicious: type.auspicious, rating: type.rating,
-      // Mark Brahma Muhurta (last night slot = 96-48 min before sunrise)
-      isBrahmaMuhurta: i === 7,
     });
   }
-
-  // Add Brahma Muhurta as first entry in night (before sunrise)
-  const brahmaMins = sunriseMins - 96;
-  night.unshift({
-    name: "Amrit", nameHi: "ब्रह्म मुहूर्त", color: "#9C27B0",
-    startTime: formatTime(Math.round(brahmaMins)),
-    endTime:   formatTime(sunriseMins),
-    auspicious: true, rating: 5,
-    isBrahmaMuhurta: true,
-  });
 
   return { day, night };
 }

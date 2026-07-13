@@ -49,6 +49,26 @@ export default function JainCalendarPage() {
   const [loading,setLoading]  = useState(true);
   const [loadMon,setLoadMon]  = useState(true);
   const [view,   setView]     = useState<"calendar"|"choghadiya">("calendar");
+  const [waModal, setWaModal]   = useState(false);
+  const [waForm,  setWaForm]    = useState({ name:"", phone:"", language:"hi" });
+  const [waDone,  setWaDone]    = useState<string|null>(null);
+  const [waSending, setWaSending] = useState(false);
+
+  async function submitWA(e: React.FormEvent) {
+    e.preventDefault();
+    setWaSending(true);
+    try {
+      const r = await fetch("/api/whatsapp", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ ...waForm, preferences:["all"] }),
+      });
+      const d = await r.json();
+      if (d.success) {
+        setWaDone(d.waLink || null);
+      }
+    } catch {}
+    setWaSending(false);
+  }
 
   useEffect(()=>{
     fetch("/api/panchang?type=today").then(r=>r.json()).then(d=>setToday(d.panchang||null));

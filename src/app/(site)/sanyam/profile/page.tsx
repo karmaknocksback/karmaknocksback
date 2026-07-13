@@ -1,459 +1,634 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 /* ══════════════════════════════════════════════════════════════
-   SANYAM PROFILE — Flagship Feature
-   Premium spiritual journey tracker
+   SANYAM PROFILE — Flagship Spiritual Social Network
+   Instagram + Duolingo + Apple Health × Jain Dharma
 ══════════════════════════════════════════════════════════════ */
 
-interface Activity {
-  id:number; vrat_name:string; vrat_emoji:string; vrat_color:string;
-  category:string; status:string; start_date:string;
-  current_day:number; total_days:number; stars_earned:number;
-  anumodanas_count:number;
-}
+// ── Types ─────────────────────────────────────────────────────
 interface Profile {
-  display_name:string; avatar:string; bio:string;
+  display_name:string; avatar:string; bio:string|null;
   spiritual_score:number; vrat_score:number; tap_score:number;
-  tyag_score:number; jaap_score:number; yatra_score:number;
-  swadhyay_score:number; daan_score:number;
-  total_vrats_completed:number; total_days_tap:number;
-  total_anumodanas_received:number;
+  jaap_score:number; daan_score:number; swadhyay_score:number;
+  total_vrats_completed:number; total_anumodanas_received:number;
 }
+interface DayLog { log_type:string; count:number; duration_min:number; stars_earned:number; }
+interface Enrollment { id:number; vrat_name:string; vrat_emoji:string; vrat_color:string; start_date:string; current_day:number; total_days:number; completion_pct:number; }
+interface Badge { badge_key:string; name:string; name_hi:string; emoji:string; color:string; description:string; earned_at:string; }
+interface AllBadge { key:string; name:string; name_hi:string; emoji:string; color:string; description:string; stars_reward:number; is_rare:number; }
+interface FeedItem { id:number; display_name:string; avatar:string; feed_type:string; message:string; anumodanas:number; created_at:string; }
+interface Streak { current_streak:number; longest_streak:number; samayik_streak:number; }
+interface Data { profile:Profile; todayLogs:DayLog[]; enrollments:Enrollment[]; badges:Badge[]; allBadges:AllBadge[]; streak:Streak; feed:FeedItem[]; todayStars:number; isGuest:boolean; }
 
-const SPIRITUAL_LEVELS = [
-  {min:0,    name:"Seeker",        nameHi:"जिज्ञासु",    emoji:"🌱", color:"#78909C"},
-  {min:200,  name:"Shravak",       nameHi:"श्रावक",       emoji:"🙏", color:"#42A5F5"},
-  {min:500,  name:"Sadhak",        nameHi:"साधक",         emoji:"🧘", color:"#66BB6A"},
-  {min:1000, name:"Tapasvi",       nameHi:"तपस्वी",       emoji:"🔥", color:"#FF9800"},
-  {min:2500, name:"Vrati",         nameHi:"व्रती",        emoji:"💎", color:"#AB47BC"},
-  {min:5000, name:"Dharmatma",     nameHi:"धर्मात्मा",   emoji:"⭐", color:"#FFD700"},
-  {min:10000,name:"Sanpanna",      nameHi:"सम्पन्न",      emoji:"🌟", color:"#FF7043"},
-  {min:25000,name:"Jain Seva",     nameHi:"जैन सेवक",    emoji:"🕉️", color:"#7C4DFF"},
+// ── Spiritual Levels ──────────────────────────────────────────
+const LEVELS = [
+  { name:"Seeker",     nameHi:"साधक",     emoji:"🌱", min:0,     color:"#4CAF50" },
+  { name:"Shravak",    nameHi:"श्रावक",    emoji:"🙏", min:500,   color:"#2196F3" },
+  { name:"Sadhak",     nameHi:"साधक",      emoji:"🧘", min:2000,  color:"#9C27B0" },
+  { name:"Tapasvi",    nameHi:"तपस्वी",   emoji:"🔥", min:5000,  color:"#FF5722" },
+  { name:"Vrati",      nameHi:"व्रती",    emoji:"💎", min:10000, color:"#00BCD4" },
+  { name:"Dharmatma",  nameHi:"धर्मात्मा", emoji:"⭐", min:25000, color:"#FFD700" },
+  { name:"Sanpanna",   nameHi:"संपन्न",    emoji:"🌟", min:50000, color:"#FF9800" },
+  { name:"Jain Seva",  nameHi:"जैन सेवा", emoji:"🕉️", min:100000,color:"#E91E63" },
 ];
 
-const MODULES = [
-  {cat:"vrat",     label:"Vrat",     labelHi:"व्रत",      emoji:"🙏", color:"#9C27B0", desc:"Sacred vows & observances"},
-  {cat:"tap",      label:"Tap",      labelHi:"तप",        emoji:"🔥", color:"#FF5722", desc:"Austerities & fasting"},
-  {cat:"tyag",     label:"Tyag",     labelHi:"त्याग",     emoji:"🌿", color:"#4CAF50", desc:"Daily renunciations"},
-  {cat:"jaap",     label:"Jaap",     labelHi:"जाप",       emoji:"📿", color:"#7B1FA2", desc:"Mantra recitation"},
-  {cat:"yatra",    label:"Yatra",    labelHi:"यात्रा",    emoji:"🏔", color:"#FF8F00", desc:"Sacred pilgrimages"},
-  {cat:"swadhyay", label:"Swadhyay",labelHi:"स्वाध्याय", emoji:"📖", color:"#1565C0", desc:"Scriptural study"},
-  {cat:"daan",     label:"Daan",     labelHi:"दान",       emoji:"💝", color:"#00897B", desc:"Charity & service"},
-];
-
-function getLevel(score: number) {
-  for (let i=SPIRITUAL_LEVELS.length-1; i>=0; i--)
-    if (score >= SPIRITUAL_LEVELS[i].min) return SPIRITUAL_LEVELS[i];
-  return SPIRITUAL_LEVELS[0];
-}
-function getLevelPct(score: number) {
-  const cur=getLevel(score);
-  const curIdx=SPIRITUAL_LEVELS.findIndex(l=>l.name===cur.name);
-  const next=SPIRITUAL_LEVELS[curIdx+1];
-  if(!next) return 100;
-  return Math.round(((score-cur.min)/(next.min-cur.min))*100);
+function getLevel(score:number) {
+  let level = LEVELS[0];
+  for (const l of LEVELS) { if (score >= l.min) level = l; }
+  const idx = LEVELS.indexOf(level);
+  const next = LEVELS[idx+1];
+  const pct = next ? Math.round(((score - level.min)/(next.min - level.min))*100) : 100;
+  return { ...level, pct: Math.min(100, pct), next };
 }
 
-export default function SanyamProfilePage() {
-  const router = useRouter();
-  const [profile, setProfile] = useState<Profile|null>(null);
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [activeModule, setActiveModule] = useState("overview");
-  const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState<string|null>(null);
-
-  useEffect(()=>{
-    const tok = localStorage.getItem("academy_token");
-    setToken(tok);
-    if (!tok) { router.push("/academy/login?redirect=/sanyam/profile&reason=signin_required"); return; }
-    load(tok);
-  },[]);
-
-  async function load(tok: string) {
-    const h = {"Authorization":`Bearer ${tok}`};
-    const [pRes, aRes] = await Promise.all([
-      fetch("/api/sanyam/profile", {headers:h, credentials:"include"}),
-      fetch("/api/sanyam/activity", {headers:h, credentials:"include"}),
-    ]);
-    const pd = await pRes.json();
-    const ad = await aRes.json();
-    setProfile(pd.profile);
-    setActivities(ad.activities||[]);
-    setLoading(false);
-  }
-
-  if (loading || !token) return (
-    <div className="flex items-center justify-center min-h-[70vh]">
-      <div className="text-center space-y-3">
-        <div className="text-6xl animate-pulse">🧘</div>
-        <p className="font-hindi text-sm text-amber-700 font-bold">साधना प्रोफाइल लोड हो रही है...</p>
+// ── Activity Ring SVG ─────────────────────────────────────────
+function Ring({ pct, color, size=80, stroke=8, children }: { pct:number; color:string; size?:number; stroke?:number; children?:React.ReactNode }) {
+  const r = (size-stroke)/2;
+  const circ = 2*Math.PI*r;
+  const dash = (pct/100)*circ;
+  return (
+    <div className="relative flex items-center justify-center" style={{width:size,height:size}}>
+      <svg width={size} height={size} style={{transform:"rotate(-90deg)"}}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={stroke}/>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke}
+          strokeLinecap="round" strokeDasharray={`${dash} ${circ}`}
+          style={{transition:"stroke-dasharray 0.8s ease"}}/>
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center flex-col">
+        {children}
       </div>
     </div>
   );
+}
 
-  const score = profile?.spiritual_score || 0;
-  const level = getLevel(score);
-  const pct   = getLevelPct(score);
-  const curIdx = SPIRITUAL_LEVELS.findIndex(l=>l.name===level.name);
-  const nextLevel = SPIRITUAL_LEVELS[curIdx+1];
+// ── Quick Action Button ────────────────────────────────────────
+function ActionBtn({ emoji, label, labelHi, color, onClick, done }:
+  { emoji:string; label:string; labelHi:string; color:string; onClick:()=>void; done?:boolean }) {
+  return (
+    <button onClick={onClick}
+      className="flex flex-col items-center gap-1.5 rounded-2xl p-3 transition-all active:scale-95 hover:scale-105 relative"
+      style={{
+        background: done ? `${color}25` : "rgba(255,255,255,0.06)",
+        border: done ? `1.5px solid ${color}60` : "1px solid rgba(255,255,255,0.09)",
+        minWidth: 70,
+      }}>
+      {done && <div className="absolute top-1.5 right-1.5 text-[8px]">✅</div>}
+      <span className="text-2xl">{emoji}</span>
+      <span className="font-sans font-black text-[9px] uppercase tracking-wide" style={{color:done?color:"rgba(255,255,255,0.6)"}}>{label}</span>
+      <span className="font-hindi text-[9px]" style={{color:done?color:"rgba(255,255,255,0.3)"}}>{labelHi}</span>
+    </button>
+  );
+}
 
-  const byCategory = (cat: string) => activities.filter(a=>a.category===cat);
-  const active  = activities.filter(a=>a.status==="active");
-  const completed = activities.filter(a=>a.status==="completed");
+// ── Anumodana button ──────────────────────────────────────────
+function AanuButton({ feedId, count, onDone }:{ feedId:number; count:number; onDone:()=>void }) {
+  const [n, setN] = useState(count);
+  const [done, setDone] = useState(false);
+  async function give() {
+    if (done) return;
+    setDone(true); setN(x=>x+1);
+    await fetch("/api/sanyam/anumodana", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({feedId}) });
+    onDone();
+  }
+  return (
+    <button onClick={give}
+      className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-sans font-black text-[10px] transition-all active:scale-95"
+      style={{background:done?"rgba(255,152,0,0.2)":"rgba(255,255,255,0.06)",color:done?"#FF9800":"rgba(255,255,255,0.4)",border:done?"1px solid rgba(255,152,0,0.4)":"1px solid rgba(255,255,255,0.08)"}}>
+      🙏 {n > 0 ? n : ""} Anumodana
+    </button>
+  );
+}
 
-  const modScore = (cat: string): number => {
-    const map: Record<string,keyof Profile> = {
-      vrat:"vrat_score",tap:"tap_score",tyag:"tyag_score",
-      jaap:"jaap_score",yatra:"yatra_score",swadhyay:"swadhyay_score",daan:"daan_score"
-    };
-    const key = map[cat]; return key && profile ? (profile as unknown as Record<string,number>)[key] || 0 : 0;
+// ── Log Modal ─────────────────────────────────────────────────
+function LogModal({ type, onClose, onLog }:{ type:string; onClose:()=>void; onLog:(count:number,dur:number)=>void }) {
+  const [count, setCount] = useState(type==="jaap"?108:1);
+  const [dur,   setDur]   = useState(48);
+
+  const META: Record<string,{emoji:string;label:string;hi:string;color:string;hasCount?:boolean;hasDur?:boolean}> = {
+    samayik:  {emoji:"🧘",label:"Log Samayik",    hi:"सामायिक दर्ज करें",color:"#2196F3",hasDur:true},
+    jaap:     {emoji:"📿",label:"Log Navkar Jaap", hi:"नवकार जाप दर्ज करें",color:"#9C27B0",hasCount:true},
+    temple:   {emoji:"🛕",label:"Temple Visit",    hi:"मंदिर दर्शन",         color:"#FF9800"},
+    swadhyay: {emoji:"📖",label:"Log Swadhyay",   hi:"स्वाध्याय दर्ज करें", color:"#4CAF50",hasDur:true},
+    donation: {emoji:"💝",label:"Log Donation",    hi:"दान दर्ज करें",       color:"#E91E63"},
+    tap:      {emoji:"🔥",label:"Log Tap",         hi:"तप दर्ज करें",        color:"#FF5722"},
   };
+  const m = META[type] || {emoji:"🙏",label:"Log",hi:"दर्ज",color:"#FFD700"};
 
   return (
-    <div className="min-h-screen" style={{background:"linear-gradient(160deg,#0d0d0d 0%,#1a0800 40%,#0d0d1a 100%)"}}>
-
-      {/* ── HERO HEADER ── */}
-      <div className="relative overflow-hidden">
-        {/* Gold particle decoration */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {["10%","30%","55%","75%","90%"].map((l,i)=>(
-            <div key={i} className="absolute top-4 text-2xl opacity-10 animate-pulse"
-              style={{left:l,animationDelay:`${i*0.5}s`}}>🕉️</div>
-          ))}
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-4" style={{background:"rgba(0,0,0,0.75)",backdropFilter:"blur(6px)"}}>
+      <div className="w-full max-w-sm rounded-3xl p-6" style={{background:"linear-gradient(160deg,#0d0d1a,#1a0800)",border:`1.5px solid ${m.color}30`}}>
+        <div className="text-center mb-5">
+          <div className="text-5xl mb-2">{m.emoji}</div>
+          <p className="font-sans font-black text-lg text-white">{m.label}</p>
+          <p className="font-hindi text-sm text-gray-400">{m.hi}</p>
         </div>
 
-        <div className="max-w-5xl mx-auto px-4 pt-10 pb-8 relative z-10">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-
-            {/* Avatar ring */}
-            <div className="relative shrink-0">
-              <div className="w-28 h-28 rounded-full flex items-center justify-center text-6xl"
-                style={{
-                  background:`radial-gradient(circle,${level.color}30,${level.color}10)`,
-                  border:`3px solid ${level.color}`,
-                  boxShadow:`0 0 40px ${level.color}60`
-                }}>
-                {profile?.avatar||"🧘"}
-              </div>
-              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full px-3 py-1 font-sans font-black text-[11px] border-2 border-white/20 whitespace-nowrap"
-                style={{background:level.color,color:"white"}}>
-                {level.emoji} {level.name}
-              </div>
-            </div>
-
-            {/* Info */}
-            <div className="flex-1 text-center sm:text-left">
-              <h1 className="font-sans font-black text-3xl text-white mb-1">
-                {profile?.display_name || "My Sanyam Profile"}
-              </h1>
-              <p className="font-hindi text-base text-amber-400 mb-1">{level.nameHi} · सत्य की यात्रा</p>
-              {profile?.bio && <p className="font-sans text-sm text-gray-400 mb-4 max-w-md">{profile.bio}</p>}
-
-              {/* Level bar */}
-              <div className="max-w-sm mx-auto sm:mx-0 mb-4">
-                <div className="flex justify-between font-sans text-[10px] mb-1.5">
-                  <span className="text-amber-400 font-bold">⭐ {score.toLocaleString()} Spiritual Points</span>
-                  {nextLevel && <span style={{color:nextLevel.color}} className="font-bold">{(nextLevel.min-score).toLocaleString()} → {nextLevel.name}</span>}
-                </div>
-                <div className="h-2.5 rounded-full overflow-hidden" style={{background:"rgba(255,255,255,0.08)"}}>
-                  <div className="h-full rounded-full transition-all duration-700"
-                    style={{width:`${pct}%`,background:`linear-gradient(90deg,${level.color},${nextLevel?.color||"#FFD700"})`}}/>
-                </div>
-              </div>
-
-              {/* Quick stats */}
-              <div className="flex gap-3 justify-center sm:justify-start flex-wrap">
-                {[
-                  {v:active.length,       l:"Active",    c:"#4CAF50"},
-                  {v:completed.length,    l:"Completed", c:"#2196F3"},
-                  {v:profile?.total_anumodanas_received||0, l:"🙏 Anumodana", c:"#FF9800"},
-                  {v:profile?.total_days_tap||0, l:"Tap Days", c:"#FF5722"},
-                ].map(s=>(
-                  <div key={s.l} className="rounded-2xl px-4 py-2 text-center"
-                    style={{background:"rgba(255,255,255,0.05)",border:`1px solid ${s.c}30`}}>
-                    <p className="font-display font-black text-xl" style={{color:s.c}}>{s.v}</p>
-                    <p className="font-sans text-[9px] text-gray-500">{s.l}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex sm:flex-col gap-2">
-              <Link href="/sanyam/vrat-db"
-                className="px-5 py-2.5 rounded-2xl font-sans font-black text-xs text-amber-900 whitespace-nowrap"
-                style={{background:"linear-gradient(135deg,#FFD700,#FF9800)"}}>
-                + Start Practice
-              </Link>
-              <Link href="/sanyam/feed"
-                className="px-5 py-2.5 rounded-2xl font-sans font-black text-xs text-white border border-white/20 hover:bg-white/10 transition-colors whitespace-nowrap">
-                🌟 Feed
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── MODULE TABS ── */}
-      <div className="sticky top-14 z-30 border-b border-white/5"
-        style={{background:"rgba(13,13,13,0.97)",backdropFilter:"blur(20px)"}}>
-        <div className="max-w-5xl mx-auto px-4">
-          <div className="flex gap-0.5 overflow-x-auto scrollbar-none py-1">
-            <button onClick={()=>setActiveModule("overview")}
-              className="shrink-0 rounded-xl px-4 py-2 font-sans font-black text-xs transition-all"
-              style={{
-                background:activeModule==="overview"?"rgba(255,215,0,0.15)":"transparent",
-                color:activeModule==="overview"?"#FFD700":"rgba(255,255,255,0.5)",
-                border:activeModule==="overview"?"1px solid rgba(255,215,0,0.3)":"1px solid transparent",
-              }}>
-              📊 Overview
-            </button>
-            {MODULES.map(m=>(
-              <button key={m.cat} onClick={()=>setActiveModule(m.cat)}
-                className="shrink-0 rounded-xl px-4 py-2 font-sans font-black text-xs transition-all"
-                style={{
-                  background:activeModule===m.cat?`${m.color}20`:"transparent",
-                  color:activeModule===m.cat?m.color:"rgba(255,255,255,0.5)",
-                  border:activeModule===m.cat?`1px solid ${m.color}40`:"1px solid transparent",
-                }}>
-                {m.emoji} {m.label}
-              </button>
-            ))}
-            <button onClick={()=>setActiveModule("timeline")}
-              className="shrink-0 rounded-xl px-4 py-2 font-sans font-black text-xs transition-all"
-              style={{
-                background:activeModule==="timeline"?"rgba(156,39,176,0.2)":"transparent",
-                color:activeModule==="timeline"?"#CE93D8":"rgba(255,255,255,0.5)",
-                border:activeModule==="timeline"?"1px solid rgba(156,39,176,0.3)":"1px solid transparent",
-              }}>
-              🏛️ Timeline
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ── CONTENT ── */}
-      <div className="max-w-5xl mx-auto px-4 py-6 pb-20">
-
-        {/* OVERVIEW */}
-        {activeModule==="overview"&&(
-          <div className="space-y-6">
-            {/* Module score cards */}
-            <div>
-              <h2 className="font-sans font-black text-sm text-white/60 uppercase tracking-widest mb-4">Spiritual Progress by Category</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-                {MODULES.map(m=>{
-                  const s = modScore(m.cat);
-                  const acts = byCategory(m.cat);
-                  return (
-                    <button key={m.cat} onClick={()=>setActiveModule(m.cat)}
-                      className="rounded-2xl p-4 text-center hover:scale-105 transition-all cursor-pointer"
-                      style={{background:`${m.color}10`,border:`1.5px solid ${m.color}25`}}>
-                      <div className="text-3xl mb-2">{m.emoji}</div>
-                      <p className="font-sans font-black text-xs mb-1" style={{color:m.color}}>{m.label}</p>
-                      <p className="font-hindi text-[9px] text-gray-500 mb-2">{m.labelHi}</p>
-                      <p className="font-display font-black text-lg" style={{color:m.color}}>⭐{s}</p>
-                      <p className="font-sans text-[9px] text-gray-500">{acts.length} practices</p>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Active practices */}
-            {active.length > 0 && (
-              <div>
-                <h2 className="font-sans font-black text-sm text-white/60 uppercase tracking-widest mb-4">🔥 Currently Active</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {active.map(a=>{
-                    const pct = a.total_days>0?Math.min(100,Math.round((a.current_day/a.total_days)*100)):0;
-                    return (
-                      <div key={a.id} className="rounded-2xl p-5"
-                        style={{background:`${a.vrat_color||"#FF9800"}10`,border:`1.5px solid ${a.vrat_color||"#FF9800"}25`}}>
-                        <div className="flex items-center gap-3">
-                          <span className="text-4xl">{a.vrat_emoji||"🙏"}</span>
-                          <div className="flex-1">
-                            <p className="font-hindi font-black text-sm text-white">{a.vrat_name}</p>
-                            <div className="flex gap-2 mt-0.5 text-[10px]">
-                              <span className="text-green-400 font-bold">● Active</span>
-                              <span className="text-gray-500">Day {a.current_day}{a.total_days>0?` / ${a.total_days}`:""}</span>
-                            </div>
-                            {a.total_days>0&&(
-                              <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{background:"rgba(255,255,255,0.08)"}}>
-                                <div className="h-full rounded-full" style={{width:`${pct}%`,background:a.vrat_color||"#FF9800"}}/>
-                              </div>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            <p className="font-sans text-xs font-black text-amber-400">⭐{a.stars_earned}</p>
-                            <p className="font-sans text-[10px] text-orange-400">🙏{a.anumodanas_count}</p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Quick links */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {[
-                {href:"/sanyam/vrat-db",    l:"Browse All Practices", e:"📚", c:"#9C27B0"},
-                {href:"/sanyam/calendar",   l:"Jain Calendar",        e:"📅", c:"#FF9800"},
-                {href:"/sanyam/feed",       l:"Activity Feed",        e:"🌟", c:"#4CAF50"},
-                {href:"/sanyam/leaderboard",l:"Leaderboards",         e:"🏆", c:"#FFD700"},
-                {href:"/academy",           l:"Jain Academy",         e:"🎓", c:"#2196F3"},
-                {href:"/dashboard",         l:"My Dashboard",         e:"📊", c:"#607D8B"},
-              ].map(l=>(
-                <Link key={l.href} href={l.href}
-                  className="rounded-2xl p-4 flex items-center gap-3 hover:scale-[1.02] transition-all"
-                  style={{background:`${l.c}10`,border:`1.5px solid ${l.c}20`}}>
-                  <span className="text-2xl">{l.e}</span>
-                  <span className="font-sans font-black text-xs" style={{color:l.c}}>{l.l}</span>
-                </Link>
+        {m.hasCount && (
+          <div className="mb-4">
+            <p className="font-hindi text-xs text-gray-500 mb-2 text-center">जाप संख्या</p>
+            <div className="flex items-center gap-3 justify-center">
+              {[27,54,108,216,1008].map(n=>(
+                <button key={n} onClick={()=>setCount(n)}
+                  className="rounded-xl px-3 py-2 font-sans font-black text-sm transition-all"
+                  style={{background:count===n?`${m.color}25`:"rgba(255,255,255,0.06)",color:count===n?m.color:"rgba(255,255,255,0.4)",border:count===n?`1px solid ${m.color}50`:"1px solid rgba(255,255,255,0.08)"}}>
+                  {n}
+                </button>
               ))}
             </div>
           </div>
         )}
 
-        {/* MODULE VIEWS (Vrat / Tap / Tyag etc.) */}
-        {MODULES.map(m=>activeModule===m.cat&&(
-          <div key={m.cat} className="space-y-5">
-            {/* Module header */}
-            <div className="rounded-3xl p-6" style={{background:`${m.color}10`,border:`2px solid ${m.color}25`}}>
-              <div className="flex items-center gap-4">
-                <span className="text-5xl">{m.emoji}</span>
-                <div className="flex-1">
-                  <h2 className="font-sans font-black text-2xl text-white">{m.label}</h2>
-                  <p className="font-hindi text-sm" style={{color:m.color}}>{m.labelHi} · {m.desc}</p>
-                  <div className="flex gap-4 mt-2">
-                    <span className="font-display font-black text-2xl" style={{color:m.color}}>⭐{modScore(m.cat)}</span>
-                    <span className="font-sans text-sm text-gray-400 self-end">{byCategory(m.cat).length} total practices</span>
-                  </div>
-                </div>
-                <Link href={`/sanyam/vrat-db?cat=${m.cat}`}
-                  className="px-4 py-2.5 rounded-2xl font-sans font-black text-xs text-white"
-                  style={{background:`linear-gradient(135deg,${m.color},${m.color}99)`}}>
-                  + Add {m.label}
-                </Link>
+        {m.hasDur && (
+          <div className="mb-4">
+            <p className="font-hindi text-xs text-gray-500 mb-2 text-center">समय (मिनट)</p>
+            <div className="flex items-center gap-3 justify-center">
+              {[24,48,72,96].map(n=>(
+                <button key={n} onClick={()=>setDur(n)}
+                  className="rounded-xl px-3 py-2 font-sans font-black text-sm transition-all"
+                  style={{background:dur===n?`${m.color}25`:"rgba(255,255,255,0.06)",color:dur===n?m.color:"rgba(255,255,255,0.4)",border:dur===n?`1px solid ${m.color}50`:"1px solid rgba(255,255,255,0.08)"}}>
+                  {n} min
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <button onClick={()=>onLog(count,dur)}
+          className="w-full py-3.5 rounded-2xl font-sans font-black text-sm text-white mb-3"
+          style={{background:`linear-gradient(135deg,${m.color},${m.color}cc)`,boxShadow:`0 8px 24px ${m.color}40`}}>
+          ✓ {m.label}
+        </button>
+        <button onClick={onClose} className="w-full py-2 font-sans text-xs text-gray-500 hover:text-gray-300">
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// MAIN PROFILE PAGE
+// ══════════════════════════════════════════════════════════════
+export default function SanyamProfilePage() {
+  const [data,    setData]    = useState<Data|null>(null);
+  const [loading, setLoading] = useState(true);
+  const [modal,   setModal]   = useState<string|null>(null);
+  const [tab,     setTab]     = useState<"progress"|"vrats"|"badges"|"feed"|"timeline">("progress");
+  const [logging, setLogging] = useState<string|null>(null); // which action is logging
+  const router = useRouter();
+
+  const load = useCallback(async()=>{
+    const r = await fetch("/api/sanyam/profile");
+    if (r.status === 401) { router.push("/academy/login?redirect=/sanyam/profile&reason=signin_required"); return; }
+    const d = await r.json();
+    setData(d);
+    setLoading(false);
+  },[router]);
+
+  useEffect(()=>{ load(); },[load]);
+
+  async function logActivity(type:string, count:number, dur:number) {
+    setLogging(type);
+    setModal(null);
+    await fetch("/api/sanyam/profile",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({action:"log_activity",log_type:type,count,duration_min:dur})
+    });
+    await load();
+    setLogging(null);
+  }
+
+  if (loading) return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4"
+      style={{background:"linear-gradient(160deg,#0d0d0d 0%,#1a0800 40%,#0d0d1a 100%)"}}>
+      <div className="text-5xl animate-spin">🕉️</div>
+      <p className="font-hindi text-amber-400 animate-pulse">साधना पथ लोड हो रहा है...</p>
+    </div>
+  );
+
+  if (!data) return null;
+
+  const { profile, todayLogs, enrollments, badges, allBadges, streak, feed, todayStars } = data;
+  const level   = getLevel(profile.spiritual_score || 0);
+  const todayMap = Object.fromEntries(todayLogs.map(l=>[l.log_type, l]));
+
+  // Today's Dharma progress
+  const samayikDone  = !!todayMap.samayik;
+  const jaapCount    = todayMap.jaap?.count || 0;
+  const jaapPct      = Math.min(100, Math.round((jaapCount/108)*100));
+  const swadhyayDone = !!todayMap.swadhyay;
+  const templeDone   = !!todayMap.temple;
+  const tapDone      = !!todayMap.tap;
+
+  // Streak fire emoji based on length
+  const streakEmoji = streak.current_streak >= 100 ? "🌟" : streak.current_streak >= 30 ? "⚡" : streak.current_streak >= 7 ? "🔥" : "💫";
+
+  return (
+    <div className="min-h-screen pb-24" style={{background:"linear-gradient(160deg,#0d0d0d 0%,#1a0800 40%,#0d0d1a 100%)"}}>
+
+      {/* ════ HERO SECTION ════ */}
+      <div className="relative overflow-hidden" style={{background:"linear-gradient(180deg,rgba(255,152,0,0.08) 0%,transparent 100%)"}}>
+        {/* Background pattern */}
+        <div className="absolute inset-0 opacity-[0.02]"
+          style={{backgroundImage:"radial-gradient(circle at 50% 50%, #FFD700 1px, transparent 1px)",backgroundSize:"30px 30px"}}/>
+
+        <div className="relative z-10 max-w-2xl mx-auto px-5 pt-8 pb-6">
+          {/* Avatar + level ring */}
+          <div className="flex items-start gap-5 mb-5">
+            <div className="relative shrink-0">
+              <Ring pct={level.pct} color={level.color} size={88} stroke={5}>
+                <div className="text-4xl">{profile.avatar || "🧘"}</div>
+              </Ring>
+              {/* Level badge */}
+              <div className="absolute -bottom-1 -right-1 rounded-full px-2 py-0.5 font-sans font-black text-[9px]"
+                style={{background:level.color,color:"#1a0800"}}>
+                {level.emoji} {level.nameHi}
               </div>
             </div>
 
-            {/* Active in this module */}
-            {byCategory(m.cat).filter(a=>a.status==="active").length>0&&(
-              <div>
-                <h3 className="font-sans font-black text-xs text-white/50 uppercase tracking-widest mb-3">Active Practices</h3>
-                <div className="space-y-2">
-                  {byCategory(m.cat).filter(a=>a.status==="active").map(a=>(
-                    <div key={a.id} className="rounded-xl p-4 flex items-center gap-3"
-                      style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)"}}>
-                      <span className="text-3xl">{a.vrat_emoji}</span>
-                      <div className="flex-1">
-                        <p className="font-hindi font-bold text-sm text-white">{a.vrat_name}</p>
-                        <p className="font-sans text-[10px] text-green-400">● Day {a.current_day}{a.total_days>0?` / ${a.total_days}`:""} · Active since {a.start_date}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-sans text-xs font-black text-amber-400">⭐{a.stars_earned}</p>
-                        <p className="font-sans text-[9px] text-orange-400">🙏{a.anumodanas_count} anumodana</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <div className="flex-1 min-w-0 pt-1">
+              <h1 className="font-sans font-black text-xl text-white truncate">{profile.display_name}</h1>
+              {profile.bio && <p className="font-hindi text-[11px] text-gray-400 mt-0.5 leading-relaxed line-clamp-2">{profile.bio}</p>}
 
-            {/* Completed in this module */}
-            {byCategory(m.cat).filter(a=>a.status==="completed").length>0&&(
-              <div>
-                <h3 className="font-sans font-black text-xs text-white/50 uppercase tracking-widest mb-3">Completed ✅</h3>
-                <div className="space-y-2">
-                  {byCategory(m.cat).filter(a=>a.status==="completed").map(a=>(
-                    <div key={a.id} className="rounded-xl p-3 flex items-center gap-3"
-                      style={{background:"rgba(76,175,80,0.06)",border:"1px solid rgba(76,175,80,0.12)"}}>
-                      <span className="text-2xl">{a.vrat_emoji}</span>
-                      <div className="flex-1">
-                        <p className="font-hindi font-bold text-sm text-white/80">{a.vrat_name}</p>
-                        <p className="font-sans text-[10px] text-green-500">✅ Completed · {a.start_date}</p>
-                      </div>
-                      <p className="font-sans text-xs font-black text-amber-400">⭐{a.stars_earned}</p>
-                    </div>
-                  ))}
-                </div>
+              {/* Stats row */}
+              <div className="flex items-center gap-4 mt-3 flex-wrap">
+                {[
+                  {l:"⭐",v:profile.spiritual_score.toLocaleString(),hi:"अंक"},
+                  {l:streakEmoji,v:streak.current_streak,hi:"streak"},
+                  {l:"🙏",v:profile.total_anumodanas_received,hi:"अनुमोदना"},
+                  {l:"💎",v:badges.length,hi:"badges"},
+                ].map(s=>(
+                  <div key={s.hi} className="text-center">
+                    <p className="font-sans font-black text-sm text-white">{s.l} {s.v}</p>
+                    <p className="font-hindi text-[9px] text-gray-500">{s.hi}</p>
+                  </div>
+                ))}
               </div>
-            )}
-
-            {byCategory(m.cat).length===0&&(
-              <div className="rounded-2xl p-10 text-center"
-                style={{background:"rgba(255,255,255,0.03)",border:"2px dashed rgba(255,255,255,0.08)"}}>
-                <div className="text-5xl mb-4">{m.emoji}</div>
-                <p className="font-sans font-bold text-white/60 mb-2">No {m.label} practices yet</p>
-                <p className="font-sans text-xs text-gray-500 mb-6">{m.desc}</p>
-                <Link href={`/sanyam/vrat-db?cat=${m.cat}`}
-                  className="inline-block px-8 py-3 rounded-2xl font-sans font-black text-sm"
-                  style={{background:`linear-gradient(135deg,${m.color},${m.color}99)`,color:"white"}}>
-                  Start Your First {m.label} →
-                </Link>
-              </div>
-            )}
+            </div>
           </div>
-        ))}
 
-        {/* TIMELINE */}
-        {activeModule==="timeline"&&(
+          {/* Level progress bar */}
+          <div className="rounded-2xl p-3 mb-5" style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.07)"}}>
+            <div className="flex justify-between items-center mb-2">
+              <span className="font-sans font-black text-[10px]" style={{color:level.color}}>{level.emoji} {level.name}</span>
+              {level.next && <span className="font-sans text-[9px] text-gray-500">Next: {level.next.emoji} {level.next.name}</span>}
+            </div>
+            <div className="h-2 rounded-full overflow-hidden" style={{background:"rgba(255,255,255,0.08)"}}>
+              <div className="h-full rounded-full transition-all duration-1000" style={{width:`${level.pct}%`,background:`linear-gradient(90deg,${level.color},${level.color}cc)`}}/>
+            </div>
+            <p className="font-sans text-[9px] text-gray-600 mt-1">{level.pct}% to {level.next?.name || "Max Level"}</p>
+          </div>
+
+          {/* Today's stars earned */}
+          {todayStars > 0 && (
+            <div className="rounded-xl px-4 py-2 text-center mb-2"
+              style={{background:"rgba(255,215,0,0.08)",border:"1px dashed rgba(255,215,0,0.2)"}}>
+              <p className="font-hindi text-xs text-amber-300">🌟 आज {todayStars} तारे अर्जित किए!</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ════ TODAY'S DHARMA PROGRESS ════ */}
+      <div className="max-w-2xl mx-auto px-5 mb-6">
+        <div className="rounded-3xl p-5" style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)"}}>
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <p className="font-sans font-black text-sm text-white">Today's Dharma</p>
+              <p className="font-hindi text-[10px] text-amber-400">आज का धर्म आचरण</p>
+            </div>
+            <div className="rounded-full px-3 py-1" style={{background:"rgba(255,152,0,0.12)"}}>
+              <p className="font-sans font-black text-[10px] text-amber-400">{new Date().toLocaleDateString("en-IN",{weekday:"short",day:"numeric",month:"short"})}</p>
+            </div>
+          </div>
+
+          {/* Activity Rings Row */}
+          <div className="flex items-center justify-around mb-5">
+            <div className="text-center">
+              <Ring pct={samayikDone?100:0} color="#2196F3" size={72} stroke={7}>
+                <span className="text-xl">🧘</span>
+              </Ring>
+              <p className="font-hindi text-[9px] mt-1" style={{color:samayikDone?"#2196F3":"rgba(255,255,255,0.3)"}}>सामायिक</p>
+              {samayikDone && <p className="font-sans text-[8px] text-blue-400">✓ Done</p>}
+            </div>
+            <div className="text-center">
+              <Ring pct={jaapPct} color="#9C27B0" size={72} stroke={7}>
+                <span className="text-xl">📿</span>
+              </Ring>
+              <p className="font-hindi text-[9px] mt-1" style={{color:jaapCount>0?"#9C27B0":"rgba(255,255,255,0.3)"}}>जाप</p>
+              <p className="font-sans text-[8px]" style={{color:jaapCount>=108?"#9C27B0":"rgba(255,255,255,0.3)"}}>{jaapCount}/108</p>
+            </div>
+            <div className="text-center">
+              <Ring pct={swadhyayDone?100:0} color="#4CAF50" size={72} stroke={7}>
+                <span className="text-xl">📖</span>
+              </Ring>
+              <p className="font-hindi text-[9px] mt-1" style={{color:swadhyayDone?"#4CAF50":"rgba(255,255,255,0.3)"}}>स्वाध्याय</p>
+              {swadhyayDone && <p className="font-sans text-[8px] text-green-400">✓ Done</p>}
+            </div>
+            <div className="text-center">
+              <Ring pct={templeDone?100:0} color="#FF9800" size={72} stroke={7}>
+                <span className="text-xl">🛕</span>
+              </Ring>
+              <p className="font-hindi text-[9px] mt-1" style={{color:templeDone?"#FF9800":"rgba(255,255,255,0.3)"}}>मंदिर</p>
+              {templeDone && <p className="font-sans text-[8px] text-amber-400">✓ Done</p>}
+            </div>
+            <div className="text-center">
+              <Ring pct={tapDone?100:0} color="#FF5722" size={72} stroke={7}>
+                <span className="text-xl">🔥</span>
+              </Ring>
+              <p className="font-hindi text-[9px] mt-1" style={{color:tapDone?"#FF5722":"rgba(255,255,255,0.3)"}}>तप</p>
+              {tapDone && <p className="font-sans text-[8px] text-orange-400">✓ Done</p>}
+            </div>
+          </div>
+
+          {/* Streak */}
+          <div className="flex items-center gap-3 rounded-2xl p-3"
+            style={{background:`rgba(255,87,34,0.08)`,border:"1px solid rgba(255,87,34,0.15)"}}>
+            <span className="text-2xl">{streakEmoji}</span>
+            <div>
+              <p className="font-sans font-black text-sm text-white">{streak.current_streak} Day Streak</p>
+              <p className="font-hindi text-[10px] text-gray-500">सर्वाधिक: {streak.longest_streak} दिन</p>
+            </div>
+            <div className="ml-auto text-right">
+              <p className="font-sans text-[10px] text-orange-400 font-bold">Keep going!</p>
+              <p className="font-hindi text-[9px] text-gray-600">जारी रखो</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ════ QUICK ACTIONS ════ */}
+      <div className="max-w-2xl mx-auto px-5 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <p className="font-sans font-black text-sm text-white">Quick Log</p>
+          <p className="font-hindi text-[10px] text-amber-400">आज की साधना दर्ज करें</p>
+        </div>
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+          {[
+            {type:"samayik", emoji:"🧘", label:"Samayik",  hi:"सामायिक",  color:"#2196F3"},
+            {type:"jaap",    emoji:"📿", label:"Jaap",     hi:"जाप",       color:"#9C27B0"},
+            {type:"temple",  emoji:"🛕", label:"Temple",   hi:"मंदिर",    color:"#FF9800"},
+            {type:"swadhyay",emoji:"📖", label:"Swadhyay", hi:"स्वाध्याय",color:"#4CAF50"},
+            {type:"donation",emoji:"💝", label:"Donation", hi:"दान",       color:"#E91E63"},
+            {type:"tap",     emoji:"🔥", label:"Tap",      hi:"तप",        color:"#FF5722"},
+          ].map(a=>(
+            <ActionBtn key={a.type} emoji={a.emoji} label={a.label} labelHi={a.hi} color={a.color}
+              done={!!todayMap[a.type]}
+              onClick={()=>setModal(a.type)}/>
+          ))}
+        </div>
+        <p className="font-sans text-[9px] text-gray-600 text-center mt-2">Tap to log today's spiritual activities</p>
+      </div>
+
+      {/* ════ TABS ════ */}
+      <div className="max-w-2xl mx-auto px-5 mb-4">
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
+          {[
+            {id:"progress",label:"Progress",emoji:"📊"},
+            {id:"vrats",   label:"Vrats",   emoji:"🙏"},
+            {id:"badges",  label:"Badges",  emoji:"🏆"},
+            {id:"feed",    label:"Feed",    emoji:"🌿"},
+            {id:"timeline",label:"Journey", emoji:"📅"},
+          ].map(t=>(
+            <button key={t.id} onClick={()=>setTab(t.id as typeof tab)}
+              className="shrink-0 rounded-full px-4 py-2 font-sans font-black text-xs transition-all"
+              style={{
+                background:tab===t.id?"linear-gradient(135deg,#FFD700,#FF9800)":"rgba(255,255,255,0.06)",
+                color:tab===t.id?"#1a0800":"rgba(255,255,255,0.4)",
+                border:tab===t.id?"none":"1px solid rgba(255,255,255,0.08)",
+              }}>
+              {t.emoji} {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ════ TAB CONTENT ════ */}
+      <div className="max-w-2xl mx-auto px-5">
+
+        {/* PROGRESS TAB */}
+        {tab === "progress" && (
           <div className="space-y-4">
-            <h2 className="font-sans font-black text-lg text-white mb-6">🏛️ Spiritual Timeline</h2>
-            {activities.length===0 ? (
-              <div className="rounded-2xl p-12 text-center" style={{border:"2px dashed rgba(255,255,255,0.1)"}}>
-                <div className="text-5xl mb-4">🌸</div>
-                <p className="font-sans text-white/40">Your spiritual journey timeline will appear here</p>
-                <Link href="/sanyam/vrat-db" className="inline-block mt-4 px-6 py-3 rounded-full font-sans font-black text-sm text-white"
-                  style={{background:"linear-gradient(135deg,#9C27B0,#7B1FA2)"}}>
-                  Begin Your Journey →
-                </Link>
-              </div>
-            ) : (
-              <div className="relative">
-                {/* Timeline line */}
-                <div className="absolute left-8 top-0 bottom-0 w-px" style={{background:"linear-gradient(180deg,#FFD700,rgba(255,215,0,0.1))"}}/>
-                <div className="space-y-4">
-                  {activities.map((a,i)=>(
-                    <div key={a.id} className="flex items-start gap-5 pl-4">
-                      {/* Node */}
-                      <div className="relative shrink-0">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-base z-10 relative"
-                          style={{background:a.status==="completed"?"#4CAF50":a.vrat_color||"#FF9800",boxShadow:`0 0 16px ${a.vrat_color||"#FF9800"}60`}}>
-                          {a.status==="completed"?"✅":a.vrat_emoji}
-                        </div>
-                      </div>
-                      {/* Content */}
-                      <div className="flex-1 rounded-2xl p-4"
-                        style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.06)"}}>
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <p className="font-sans text-[9px] text-gray-500 uppercase tracking-widest mb-1">
-                              {a.status==="completed"?"✅ Completed":"🔥 Active"} · {a.start_date}
-                            </p>
-                            <p className="font-hindi font-black text-sm text-white">{a.vrat_name}</p>
-                            <p className="font-sans text-[10px] text-gray-500 mt-0.5 capitalize">{a.category}</p>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <p className="font-sans text-xs font-black text-amber-400">⭐{a.stars_earned}</p>
-                            <p className="font-sans text-[9px] text-orange-400">🙏{a.anumodanas_count}</p>
-                          </div>
-                        </div>
-                      </div>
+            {/* Category scores */}
+            <div className="rounded-3xl p-5" style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.07)"}}>
+              <p className="font-sans font-black text-sm text-white mb-4">Dharma Categories</p>
+              {[
+                {k:"vrat",     hi:"व्रत",      score:profile.vrat_score,     color:"#7C4DFF", emoji:"🙏"},
+                {k:"tap",      hi:"तप",        score:profile.tap_score,      color:"#FF5722", emoji:"🔥"},
+                {k:"jaap",     hi:"जाप",       score:profile.jaap_score,     color:"#9C27B0", emoji:"📿"},
+                {k:"swadhyay", hi:"स्वाध्याय", score:profile.swadhyay_score, color:"#4CAF50", emoji:"📖"},
+                {k:"daan",     hi:"दान",       score:profile.daan_score,     color:"#E91E63", emoji:"💝"},
+              ].map(c=>{
+                const max = Math.max(profile.vrat_score,profile.tap_score,profile.jaap_score,profile.swadhyay_score,profile.daan_score,1);
+                const pct = Math.round((c.score/max)*100);
+                return (
+                  <div key={c.k} className="mb-3">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-hindi text-[11px] text-white">{c.emoji} {c.hi}</span>
+                      <span className="font-sans text-[10px] font-bold" style={{color:c.color}}>⭐ {c.score}</span>
                     </div>
-                  ))}
-                </div>
+                    <div className="h-2 rounded-full overflow-hidden" style={{background:"rgba(255,255,255,0.06)"}}>
+                      <div className="h-full rounded-full transition-all duration-800" style={{width:`${pct}%`,background:c.color}}/>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Active vrats summary */}
+            {enrollments.length > 0 && (
+              <div>
+                <p className="font-sans font-black text-sm text-white mb-3">Active Vrats 🙏</p>
+                {enrollments.slice(0,3).map(e=>(
+                  <div key={e.id} className="rounded-2xl p-4 mb-2" style={{background:`${e.vrat_color||"#FF9800"}10`,border:`1px solid ${e.vrat_color||"#FF9800"}25`}}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-hindi font-black text-sm text-white">{e.vrat_emoji} {e.vrat_name}</span>
+                      <span className="font-sans text-[10px]" style={{color:e.vrat_color||"#FF9800"}}>Day {e.current_day}/{e.total_days}</span>
+                    </div>
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{background:"rgba(255,255,255,0.06)"}}>
+                      <div className="h-full rounded-full" style={{width:`${e.completion_pct||0}%`,background:e.vrat_color||"#FF9800"}}/>
+                    </div>
+                  </div>
+                ))}
+                <button onClick={()=>setTab("vrats")} className="font-sans text-[10px] text-amber-400 hover:text-amber-300 mt-1">
+                  View all vrats →
+                </button>
               </div>
             )}
           </div>
         )}
 
+        {/* VRATS TAB */}
+        {tab === "vrats" && (
+          <div>
+            {enrollments.length === 0 ? (
+              <div className="rounded-3xl p-10 text-center" style={{border:"2px dashed rgba(255,255,255,0.07)"}}>
+                <div className="text-5xl mb-4">🙏</div>
+                <p className="font-sans font-black text-white mb-2">No Active Vrats</p>
+                <p className="font-hindi text-xs text-gray-500 mb-5">कोई व्रत अभी सक्रिय नहीं है</p>
+                <Link href="/sanyam/vrat-db"
+                  className="inline-block px-6 py-2.5 rounded-full font-sans font-black text-sm text-amber-900"
+                  style={{background:"linear-gradient(135deg,#FFD700,#FF9800)"}}>
+                  Browse Vrats →
+                </Link>
+              </div>
+            ) : enrollments.map(e=>(
+              <div key={e.id} className="rounded-2xl p-5 mb-3" style={{background:`${e.vrat_color||"#FF9800"}10`,border:`1.5px solid ${e.vrat_color||"#FF9800"}30`}}>
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <p className="font-hindi font-black text-base text-white">{e.vrat_emoji} {e.vrat_name}</p>
+                    <p className="font-sans text-[10px] text-gray-500 mt-0.5">Started {new Date(e.start_date).toLocaleDateString("en-IN",{day:"numeric",month:"short"})}</p>
+                  </div>
+                  <div className="rounded-xl px-3 py-1.5 text-center" style={{background:`${e.vrat_color||"#FF9800"}20`}}>
+                    <p className="font-sans font-black text-sm" style={{color:e.vrat_color||"#FF9800"}}>Day {e.current_day}</p>
+                    <p className="font-sans text-[9px] text-gray-500">of {e.total_days}</p>
+                  </div>
+                </div>
+                <div className="h-2 rounded-full overflow-hidden mb-2" style={{background:"rgba(255,255,255,0.06)"}}>
+                  <div className="h-full rounded-full transition-all" style={{width:`${e.completion_pct||0}%`,background:e.vrat_color||"#FF9800"}}/>
+                </div>
+                <p className="font-sans text-[10px] text-gray-600">{e.completion_pct||0}% complete</p>
+              </div>
+            ))}
+            <Link href="/sanyam/vrat-db"
+              className="mt-3 flex items-center justify-center gap-2 rounded-2xl py-3.5 font-sans font-black text-sm text-amber-900"
+              style={{background:"linear-gradient(135deg,#FFD700,#FF9800)"}}>
+              + Start a New Vrat
+            </Link>
+          </div>
+        )}
+
+        {/* BADGES TAB */}
+        {tab === "badges" && (
+          <div>
+            {badges.length > 0 && (
+              <div className="mb-5">
+                <p className="font-sans font-black text-sm text-white mb-3">🏆 Earned Badges</p>
+                <div className="grid grid-cols-3 gap-3">
+                  {badges.map(b=>(
+                    <div key={b.badge_key} className="rounded-2xl p-3 text-center"
+                      style={{background:`${b.color}15`,border:`1.5px solid ${b.color}40`}}>
+                      <div className="text-3xl mb-1">{b.emoji}</div>
+                      <p className="font-hindi text-[10px] font-bold" style={{color:b.color}}>{b.name_hi}</p>
+                      <p className="font-sans text-[8px] text-gray-500 mt-0.5">{new Date(b.earned_at).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"2-digit"})}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div>
+              <p className="font-sans font-black text-sm text-white/40 mb-3 uppercase tracking-widest text-[10px]">All Badges</p>
+              <div className="grid grid-cols-3 gap-3">
+                {allBadges.map(b=>{
+                  const earned = badges.some(e=>e.badge_key===b.key);
+                  return (
+                    <div key={b.key} className={`rounded-2xl p-3 text-center transition-all ${earned?"":"opacity-40"}`}
+                      style={{background:earned?`${b.color}15`:"rgba(255,255,255,0.03)",border:earned?`1.5px solid ${b.color}40`:"1px solid rgba(255,255,255,0.06)"}}>
+                      <div className="text-3xl mb-1" style={{filter:earned?"none":"grayscale(100%)"}}>{b.emoji}</div>
+                      <p className="font-hindi text-[10px]" style={{color:earned?b.color:"rgba(255,255,255,0.3)"}}>{b.name_hi}</p>
+                      <p className="font-sans text-[8px] text-gray-600 mt-0.5">⭐{b.stars_reward}</p>
+                      {b.is_rare === 1 && <p className="font-sans text-[7px] text-amber-500">RARE</p>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* FEED TAB */}
+        {tab === "feed" && (
+          <div className="space-y-3">
+            {feed.length === 0 ? (
+              <div className="rounded-3xl p-8 text-center" style={{border:"2px dashed rgba(255,255,255,0.07)"}}>
+                <div className="text-5xl mb-3">🌿</div>
+                <p className="font-sans font-black text-white mb-1">No activities yet</p>
+                <p className="font-hindi text-xs text-gray-500">साधना करें और समुदाय को प्रेरित करें</p>
+              </div>
+            ) : feed.map(f=>(
+              <div key={f.id} className="rounded-2xl p-4" style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.07)"}}>
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl shrink-0">{f.avatar || "🧘"}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-sans text-sm text-white">{f.message}</p>
+                    <p className="font-sans text-[10px] text-gray-500 mt-1">
+                      {new Date(f.created_at).toLocaleDateString("en-IN",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <AanuButton feedId={f.id} count={f.anumodanas||0} onDone={load}/>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* TIMELINE TAB */}
+        {tab === "timeline" && (
+          <div>
+            {todayLogs.length === 0 && (
+              <div className="rounded-2xl p-6 text-center mb-4" style={{background:"rgba(255,215,0,0.05)",border:"1px dashed rgba(255,215,0,0.15)"}}>
+                <p className="font-hindi text-sm text-amber-400">आज कोई साधना दर्ज नहीं</p>
+                <p className="font-sans text-xs text-gray-500 mt-1">Log today's activities to build your timeline</p>
+              </div>
+            )}
+            {/* Show today's logs as timeline entries */}
+            {todayLogs.map((l,i)=>{
+              const ICONS: Record<string,{emoji:string;color:string;hi:string}> = {
+                samayik:{emoji:"🧘",color:"#2196F3",hi:"सामायिक"},jaap:{emoji:"📿",color:"#9C27B0",hi:"नवकार जाप"},
+                temple:{emoji:"🛕",color:"#FF9800",hi:"मंदिर दर्शन"},swadhyay:{emoji:"📖",color:"#4CAF50",hi:"स्वाध्याय"},
+                donation:{emoji:"💝",color:"#E91E63",hi:"दान"},tap:{emoji:"🔥",color:"#FF5722",hi:"तप"},
+              };
+              const ic = ICONS[l.log_type] || {emoji:"🙏",color:"#FFD700",hi:"साधना"};
+              return (
+                <div key={i} className="flex gap-4 mb-4">
+                  <div className="flex flex-col items-center">
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-lg"
+                      style={{background:`${ic.color}20`,border:`2px solid ${ic.color}40`}}>
+                      {ic.emoji}
+                    </div>
+                    {i < todayLogs.length-1 && <div className="flex-1 w-0.5 mt-2" style={{background:"rgba(255,255,255,0.06)"}}/>}
+                  </div>
+                  <div className="pb-4">
+                    <p className="font-hindi font-black text-sm text-white">{ic.hi} पूर्ण</p>
+                    <p className="font-sans text-[10px] text-gray-500 mt-0.5">
+                      आज · ⭐ {l.stars_earned} stars
+                      {l.log_type==="jaap" && ` · ${l.count} जाप`}
+                      {l.duration_min > 0 && ` · ${l.duration_min} min`}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ════ LOG MODAL ════ */}
+      {modal && (
+        <LogModal type={modal} onClose={()=>setModal(null)} onLog={(c,d)=>logActivity(modal,c,d)}/>
+      )}
+
+      {/* Bottom navigation */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 px-4 pb-4 pt-2"
+        style={{background:"linear-gradient(0deg,rgba(13,13,13,0.98) 60%,transparent)"}}>
+        <div className="flex gap-2 max-w-2xl mx-auto">
+          <Link href="/sanyam"
+            className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-3 font-sans font-black text-sm"
+            style={{background:"rgba(255,255,255,0.06)",color:"rgba(255,255,255,0.6)",border:"1px solid rgba(255,255,255,0.1)"}}>
+            🏠 Community
+          </Link>
+          <Link href="/sanyam/vrat-db"
+            className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-3 font-sans font-black text-sm text-amber-900"
+            style={{background:"linear-gradient(135deg,#FFD700,#FF9800)"}}>
+            🙏 Start Vrat
+          </Link>
+        </div>
       </div>
     </div>
   );
