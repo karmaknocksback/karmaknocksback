@@ -36,7 +36,7 @@ const MAIN_LINKS = [
   { label:"Karma Mirror",href:"/karma-mirror",  emoji:"🪞", color:"#607D8B" },
   { label:"Games",       href:"/games",         emoji:"🎮", color:"#2196F3" },
   { label:"Sanyam",      href:"/sanyam",        emoji:"🧘", color:"#4CAF50" },
-  { label:"Calendar",    href:"/sanyam/calendar",emoji:"📅", color:"#FF8F00" },
+  { label:"Calendar",    href:"/calendar",      emoji:"📅", color:"#FF8F00" },
   { label:"Academy",     href:"/academy",       emoji:"🎓", color:"#FF9800" },
 ];
 
