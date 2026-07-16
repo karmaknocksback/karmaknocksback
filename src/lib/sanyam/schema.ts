@@ -12,7 +12,8 @@ export async function ensureSanyamDb() {
       stars_reward INTEGER DEFAULT 100, stars_per_day INTEGER DEFAULT 15,
       jain_month TEXT, jain_date TEXT, benefits TEXT,
       emoji TEXT DEFAULT '🙏', color TEXT DEFAULT '#FF9800',
-      is_active INTEGER DEFAULT 1, order_index INTEGER DEFAULT 0
+      is_active INTEGER DEFAULT 1, order_index INTEGER DEFAULT 0,
+      katha_hi TEXT, katha_en TEXT, source TEXT
     )`,
     `CREATE TABLE IF NOT EXISTS sanyam_profiles (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

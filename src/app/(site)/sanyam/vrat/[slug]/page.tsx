@@ -1,199 +1,300 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 
 interface Vrat {
   id:number; name:string; name_hi:string; slug:string; category:string;
   emoji:string; color:string; difficulty:string; duration_days:number;
-  stars_reward:number; stars_per_day:number; description:string;
-  description_hi:string; rules:string; benefits:string; jain_month:string;
+  jain_month:string; jain_date:string; stars_reward:number;
+  description:string; description_hi:string; procedure_hi:string;
+  rules:string; benefits:string; katha_hi:string; source:string;
+  is_active:number;
 }
 
-const DIFF_COLOR: Record<string,string> = {easy:"#4CAF50",medium:"#FF9800",hard:"#F44336",extreme:"#9C27B0"};
-const DIFF_LABEL: Record<string,string> = {easy:"Beginner",medium:"Moderate",hard:"Advanced",extreme:"Expert Only"};
+const DIFF_LABEL:{[k:string]:{l:string;c:string;bg:string}} = {
+  easy:    {l:"सरल",      c:"#16A34A",bg:"#F0FDF4"},
+  medium:  {l:"मध्यम",    c:"#D97706",bg:"#FFFBEB"},
+  hard:    {l:"कठोर",     c:"#DC2626",bg:"#FEF2F2"},
+  extreme: {l:"अतिकठोर", c:"#7C3AED",bg:"#F5F3FF"},
+};
 
 export default function VratDetailPage() {
-  const { slug } = useParams<{slug:string}>();
-  const router = useRouter();
+  const params = useParams<{slug:string}>();
   const [vrat, setVrat] = useState<Vrat|null>(null);
   const [loading, setLoading] = useState(true);
-  const [starting, setStarting] = useState(false);
-  const [started, setStarted] = useState(false);
-  const [error, setError] = useState("");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [enrolled, setEnrolled] = useState(false);
+  const [enrolling, setEnrolling] = useState(false);
+  const [tab, setTab] = useState<"story"|"vidhi"|"benefits">("story");
 
   useEffect(()=>{
-    setIsLoggedIn(!!localStorage.getItem("academy_token"));
-    fetch("/api/sanyam/vrats").then(r=>r.json()).then(d=>{
-      const found=(d.vrats||[]).find((v:Vrat)=>v.slug===slug);
-      setVrat(found||null); setLoading(false);
-    });
-  },[slug]);
+    if (!params?.slug) return;
+    fetch(`/api/sanyam/vrats?slug=${params.slug}`)
+      .then(r=>r.json())
+      .then(d=>{ setVrat(d.vrat); setLoading(false); });
+  },[params?.slug]);
 
-  async function startVrat() {
+  async function enroll() {
     if (!vrat) return;
-    setStarting(true); setError("");
-    const tok = localStorage.getItem("academy_token");
-    const gid = localStorage.getItem("sanyam_guest") || ("g_"+Math.random().toString(36).slice(2,10));
-    localStorage.setItem("sanyam_guest", gid);
-    
-    try {
-      const res = await fetch("/api/sanyam/activity", {
-        method:"POST", credentials:"include",
-        headers: {
-          ...(tok?{"Authorization":`Bearer ${tok}`}:{}),
-          "Content-Type":"application/json"
-        },
-        body: JSON.stringify({
-          vrat_id:vrat.id, is_public:true, guestId:gid,
-          displayName:localStorage.getItem("academy_token")?"":"A devotee",
-          avatar:"🧘"
-        })
-      });
-      const d = await res.json();
-      if (d.success || d.activityId) {
-        setStarted(true);
-        setTimeout(()=>router.push("/sanyam/profile"), 2000);
-      } else {
-        setError(d.error||"Could not start. Try again.");
-      }
-    } catch { setError("Network error. Please try again."); }
-    setStarting(false);
+    setEnrolling(true);
+    const r = await fetch("/api/sanyam/enroll",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        vrat_id:vrat.id, vrat_name:vrat.name_hi||vrat.name,
+        vrat_emoji:vrat.emoji, vrat_color:vrat.color,
+        total_days:vrat.duration_days,
+      })
+    });
+    const d = await r.json();
+    if (d.success) setEnrolled(true);
+    setEnrolling(false);
   }
 
-  if (loading) return <div className="flex items-center justify-center min-h-[50vh]"><div className="text-5xl animate-bounce">🙏</div></div>;
-  if (!vrat) return <div className="text-center py-20 font-sans text-gray-500">Vrat not found. <a href="/sanyam/vrat-db" className="text-purple-600">Browse all →</a></div>;
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="text-center"><div className="text-5xl animate-bounce mb-3">🙏</div>
+        <p className="font-hindi text-amber-600">लोड हो रहा है...</p>
+      </div>
+    </div>
+  );
 
-  const rules = (vrat.rules||"").split("|").filter(Boolean);
-  const diffCol = DIFF_COLOR[vrat.difficulty]||"#666";
+  if (!vrat) return (
+    <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="text-center">
+        <div className="text-4xl mb-3">😔</div>
+        <p className="font-hindi text-gray-500">व्रत नहीं मिला</p>
+        <Link href="/sanyam/vrat-db" className="mt-4 inline-block text-amber-600 font-bold">← वापस जाएं</Link>
+      </div>
+    </div>
+  );
+
+  const diff = DIFF_LABEL[vrat.difficulty] || DIFF_LABEL.easy;
+
+  // Parse katha into paragraphs
+  const kathaParas = (vrat.katha_hi||"").split("\n\n").filter(Boolean);
 
   return (
-    <div className="min-h-screen" style={{background:"linear-gradient(160deg,#0d0d0d 0%,#1a0800 40%,#0d0d1a 100%)"}}>
-    <div className="max-w-3xl mx-auto px-4 py-8 pb-20">
-      {/* Header card */}
-      <div className="rounded-3xl overflow-hidden mb-6 shadow-xl"
-        style={{border:`3px solid ${vrat.color}40`}}>
-        <div className="px-8 py-10 text-center"
-          style={{background:`linear-gradient(135deg,${vrat.color}18,${vrat.color}08)`}}>
-          <div className="text-7xl mb-4">{vrat.emoji}</div>
-          <h1 className="font-sans font-black text-2xl text-gray-800 mb-1">{vrat.name}</h1>
-          <p className="font-hindi text-base text-gray-500 mb-4">{vrat.name_hi}</p>
-          <div className="flex items-center justify-center gap-3 flex-wrap">
-            <span className="rounded-full px-3 py-1.5 font-sans font-black text-xs"
-              style={{background:`${diffCol}18`,color:diffCol,border:`1.5px solid ${diffCol}40`}}>
-              {DIFF_LABEL[vrat.difficulty]||vrat.difficulty}
-            </span>
-            <span className="font-sans text-xs text-amber-700 font-bold bg-amber-50 rounded-full px-3 py-1.5">⭐ {vrat.stars_reward} stars</span>
-            {vrat.duration_days>0 ? (
-              <span className="font-sans text-xs text-gray-500 bg-gray-100 rounded-full px-3 py-1.5">{vrat.duration_days} day{vrat.duration_days!==1?"s":""}</span>
-            ) : (
-              <span className="font-sans text-xs text-green-600 bg-green-50 rounded-full px-3 py-1.5">Ongoing practice</span>
-            )}
-            {vrat.jain_month&&<span className="font-hindi text-xs text-amber-700 bg-amber-50 rounded-full px-3 py-1.5 border border-amber-200">📅 {vrat.jain_month}</span>}
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen" style={{background:"#F8FAFC"}}>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
-        {/* Description */}
-        <div className="rounded-2xl p-5" style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.08)"}}>
-          <h2 className="font-sans font-black text-sm text-white mb-3">📖 About This Practice</h2>
-          <p className="font-sans text-sm text-gray-300 leading-relaxed mb-3">{vrat.description}</p>
-          {vrat.description_hi&&<p className="font-hindi text-sm text-amber-300/70 leading-relaxed">{vrat.description_hi}</p>}
-        </div>
+      {/* ── HERO ── */}
+      <div className="relative overflow-hidden" style={{background:`linear-gradient(160deg,${vrat.color}20,${vrat.color}08,#F0F9FF)`}}>
+        {/* Pattern */}
+        <div className="absolute inset-0 opacity-5" style={{backgroundImage:`radial-gradient(circle,${vrat.color} 1px,transparent 1px)`,backgroundSize:"24px 24px"}}/>
 
-        {/* Rules */}
-        <div className="rounded-2xl p-5" style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.08)"}}>
-          <h2 className="font-sans font-black text-sm text-white mb-3">📋 Rules & Guidelines</h2>
-          {rules.length > 0 ? (
-            <ul className="space-y-2">
-              {rules.map((r,i)=>(
-                <li key={i} className="flex items-start gap-2">
-                  <span className="text-green-500 font-bold shrink-0 mt-0.5">✓</span>
-                  <span className="font-sans text-xs text-gray-600 leading-relaxed">{r}</span>
-                </li>
-              ))}
-            </ul>
-          ) : <p className="font-sans text-xs text-gray-400">Follow traditional guidelines</p>}
-        </div>
-      </div>
+        <div className="max-w-3xl mx-auto px-4 pt-8 pb-8 relative z-10">
+          {/* Back */}
+          <Link href="/sanyam/vrat-db" className="inline-flex items-center gap-1.5 text-gray-500 font-sans text-sm mb-5 hover:text-gray-700">
+            ← व्रत सूची
+          </Link>
 
-      {/* Calendar vrat special notice */}
-      {vrat.slug?.startsWith("calendar-")&&(
-        <div className="bg-white rounded-2xl p-5 shadow-sm mb-4"
-          style={{border:"2px solid rgba(255,152,0,0.3)"}}>
-          <h2 className="font-sans font-black text-sm text-amber-800 mb-2">📅 पंचांग तिथि / Hindu Calendar Date</h2>
-          <p className="font-hindi text-sm text-amber-700 font-bold mb-3">{vrat.jain_month}</p>
-          <div className="rounded-xl p-3" style={{background:"rgba(255,152,0,0.06)"}}>
-            <p className="font-hindi text-xs text-gray-600 leading-relaxed">
-              इस व्रत/पर्व की विस्तृत विधि, नियम और आचरण के लिए अपने स्थानीय जैन मंदिर के 
-              आचार्य या पंडित जी से संपर्क करें। हम शीघ्र ही इस व्रत की सम्पूर्ण जानकारी जोड़ेंगे।
-            </p>
-            <p className="font-sans text-[10px] text-amber-600 font-bold mt-2">
-              📌 For detailed procedure, rules & guidance, consult your local Jain Acharya or temple.
-              We will soon add complete vidhi for this vrat.
-            </p>
-          </div>
-        </div>
-      )}
-      {/* Benefits */}
-      {vrat.benefits&&(
-        <div className="bg-white rounded-2xl p-5 shadow-sm mb-6"
-          style={{border:`2px solid ${vrat.color}20`}}>
-          <h2 className="font-sans font-black text-sm mb-2" style={{color:vrat.color}}>✨ Spiritual Benefits</h2>
-          <p className="font-sans text-sm text-gray-600">{vrat.benefits}</p>
-        </div>
-      )}
-
-      {/* Star rewards */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm mb-6">
-        <h2 className="font-sans font-black text-sm text-white mb-3">⭐ Karma Stars Earned</h2>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-xl p-3 text-center" style={{background:"rgba(255,152,0,0.1)"}}>
-            <p className="font-display text-2xl font-black text-amber-600">{vrat.stars_reward}</p>
-            <p className="font-sans text-[10px] text-gray-400">On Completion</p>
-          </div>
-          {vrat.stars_per_day>0&&(
-            <div className="rounded-xl p-3 text-center" style={{background:"rgba(76,175,80,0.1)"}}>
-              <p className="font-display text-2xl font-black text-green-600">{vrat.stars_per_day}</p>
-              <p className="font-sans text-[10px] text-gray-400">Per Day</p>
+          <div className="flex items-start gap-4">
+            {/* Big emoji */}
+            <div className="w-20 h-20 rounded-3xl flex items-center justify-center text-5xl shadow-lg shrink-0"
+              style={{background:"white",border:`3px solid ${vrat.color}30`}}>
+              {vrat.emoji}
             </div>
+
+            <div className="flex-1 min-w-0">
+              <h1 className="font-hindi font-black text-2xl text-gray-900 leading-tight mb-1">{vrat.name_hi}</h1>
+              <p className="font-sans text-sm text-gray-500 mb-3">{vrat.name}</p>
+
+              <div className="flex flex-wrap gap-2">
+                {/* Tithi */}
+                <span className="rounded-full px-3 py-1 font-hindi text-xs font-bold bg-white shadow-sm" style={{color:vrat.color,border:`1px solid ${vrat.color}20`}}>
+                  📅 {vrat.jain_month} {vrat.jain_date}
+                </span>
+                {/* Difficulty */}
+                <span className="rounded-full px-3 py-1 font-hindi text-xs font-bold" style={{background:diff.bg,color:diff.c,border:`1px solid ${diff.c}20`}}>
+                  {diff.l}
+                </span>
+                {/* Duration */}
+                <span className="rounded-full px-3 py-1 font-sans text-xs font-bold bg-white shadow-sm text-gray-500" style={{border:"1px solid #E5E7EB"}}>
+                  {vrat.duration_days === 1 ? "1 दिन" : `${vrat.duration_days} दिन`}
+                </span>
+                {/* Stars */}
+                <span className="rounded-full px-3 py-1 font-sans text-xs font-bold bg-amber-50 text-amber-700" style={{border:"1px solid #FDE68A"}}>
+                  ⭐ {vrat.stars_reward} pts
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="mt-5 bg-white rounded-2xl p-4 shadow-sm" style={{border:"1px solid #E5E7EB"}}>
+            <p className="font-hindi text-sm text-gray-700 leading-relaxed">{vrat.description_hi}</p>
+          </div>
+
+          {/* Enroll button */}
+          <div className="mt-4">
+            {enrolled ? (
+              <div className="flex items-center gap-3 rounded-2xl px-5 py-3 bg-green-50" style={{border:"1.5px solid #86EFAC"}}>
+                <span className="text-2xl">✅</span>
+                <div>
+                  <p className="font-sans font-black text-sm text-green-700">व्रत शुरू! जय जिनेन्द्र!</p>
+                  <p className="font-hindi text-xs text-green-600">आपका व्रत सफलतापूर्वक शुरू हो गया।</p>
+                </div>
+              </div>
+            ) : (
+              <button onClick={enroll} disabled={enrolling}
+                className="w-full py-4 rounded-2xl font-sans font-black text-base text-white shadow-lg transition-all active:scale-95 disabled:opacity-60"
+                style={{background:`linear-gradient(135deg,${vrat.color},${vrat.color}cc)`,boxShadow:`0 8px 24px ${vrat.color}40`}}>
+                {enrolling ? "शुरू हो रहा है..." : `🙏 ${vrat.name_hi} शुरू करें`}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── TABS ── */}
+      <div className="max-w-3xl mx-auto px-4 py-4">
+        <div className="flex gap-1 bg-white rounded-2xl p-1 shadow-sm mb-4" style={{border:"1px solid #E5E7EB"}}>
+          {[
+            {id:"story",    l:"📖 कथा",        hi:"Katha / Story"},
+            {id:"vidhi",    l:"📋 विधि",       hi:"Vidhi / Procedure"},
+            {id:"benefits", l:"🌟 फल",         hi:"Benefits"},
+          ].map(t=>(
+            <button key={t.id} onClick={()=>setTab(t.id as typeof tab)}
+              className="flex-1 py-2.5 rounded-xl font-sans font-black text-xs transition-all"
+              style={{
+                background:tab===t.id?vrat.color:"transparent",
+                color:tab===t.id?"white":"#6B7280",
+              }}>
+              {t.l}
+            </button>
+          ))}
+        </div>
+
+        {/* KATHA */}
+        {tab==="story" && (
+          <div className="bg-white rounded-3xl overflow-hidden shadow-sm" style={{border:"1px solid #E5E7EB"}}>
+            {/* Katha header */}
+            <div className="px-5 py-4" style={{background:`linear-gradient(135deg,${vrat.color}10,${vrat.color}05)`,borderBottom:"1px solid #F1F5F9"}}>
+              <p className="font-sans font-black text-base text-gray-900">{vrat.emoji} व्रत कथा</p>
+              <p className="font-hindi text-xs text-gray-500">Vrat Katha / Story</p>
+            </div>
+
+            <div className="px-5 py-5">
+              {kathaParas.length === 0 ? (
+                <p className="font-hindi text-sm text-gray-400 text-center py-8">कथा जल्द उपलब्ध होगी...</p>
+              ) : (
+                <div className="space-y-4">
+                  {kathaParas.map((para, i) => {
+                    // Check if it's a bold heading (starts with ** or is a number list)
+                    const isBold = para.startsWith("**") || /^\d+\./.test(para.trim());
+                    const cleaned = para.replace(/\*\*/g, "");
+                    
+                    return (
+                      <div key={i}>
+                        {isBold ? (
+                          <p className="font-hindi font-black text-sm text-gray-900 leading-relaxed"
+                            style={{color:vrat.color}}>
+                            {cleaned}
+                          </p>
+                        ) : (
+                          <p className="font-hindi text-sm text-gray-700 leading-relaxed">
+                            {cleaned}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Source */}
+              {vrat.source && (
+                <div className="mt-5 pt-4" style={{borderTop:"1px solid #F1F5F9"}}>
+                  <p className="font-sans text-[10px] text-gray-400">📚 स्रोत: {vrat.source}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* VIDHI */}
+        {tab==="vidhi" && (
+          <div className="space-y-4">
+            {vrat.procedure_hi && (
+              <div className="bg-white rounded-3xl p-5 shadow-sm" style={{border:"1px solid #E5E7EB"}}>
+                <p className="font-sans font-black text-base text-gray-900 mb-4">📋 व्रत विधि</p>
+                <div className="space-y-3">
+                  {vrat.procedure_hi.split("।").filter(Boolean).map((step,i)=>(
+                    step.trim() && (
+                      <div key={i} className="flex gap-3 items-start">
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center font-sans font-black text-[10px] shrink-0 text-white" style={{background:vrat.color}}>
+                          {i+1}
+                        </div>
+                        <p className="font-hindi text-sm text-gray-700 leading-relaxed flex-1">{step.trim()}।</p>
+                      </div>
+                    )
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {vrat.rules && (
+              <div className="bg-white rounded-3xl p-5 shadow-sm" style={{border:"1px solid #E5E7EB"}}>
+                <p className="font-sans font-black text-base text-gray-900 mb-4">⚠️ नियम</p>
+                <div className="space-y-2">
+                  {vrat.rules.split("।").filter(Boolean).map((rule,i)=>(
+                    rule.trim() && (
+                      <div key={i} className="flex gap-2 items-start">
+                        <span className="text-amber-500 shrink-0">•</span>
+                        <p className="font-hindi text-sm text-gray-700 leading-relaxed">{rule.trim()}।</p>
+                      </div>
+                    )
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* BENEFITS */}
+        {tab==="benefits" && (
+          <div className="bg-white rounded-3xl p-5 shadow-sm" style={{border:"1px solid #E5E7EB"}}>
+            <p className="font-sans font-black text-base text-gray-900 mb-4">🌟 व्रत के फल (Benefits)</p>
+            {vrat.benefits ? (
+              <div className="space-y-3">
+                {vrat.benefits.split("।").filter(Boolean).map((b,i)=>(
+                  b.trim() && (
+                    <div key={i} className="flex gap-3 items-start rounded-2xl p-3" style={{background:`${vrat.color}08`,border:`1px solid ${vrat.color}15`}}>
+                      <span className="text-lg shrink-0">✨</span>
+                      <p className="font-hindi text-sm text-gray-700 leading-relaxed">{b.trim()}।</p>
+                    </div>
+                  )
+                ))}
+              </div>
+            ) : (
+              <p className="font-hindi text-sm text-gray-400 text-center py-4">जल्द उपलब्ध...</p>
+            )}
+
+            {/* Stars reward */}
+            <div className="mt-5 rounded-2xl p-4 text-center" style={{background:"#FFFBEB",border:"1px solid #FDE68A"}}>
+              <p className="font-sans font-black text-2xl text-amber-700">⭐ {vrat.stars_reward}</p>
+              <p className="font-hindi text-xs text-amber-600 mt-1">इस व्रत को पूरा करने पर मिलेंगे {vrat.stars_reward} Dharma Points</p>
+            </div>
+          </div>
+        )}
+
+        {/* Bottom CTA */}
+        <div className="mt-4 pb-8">
+          {!enrolled && (
+            <button onClick={enroll} disabled={enrolling}
+              className="w-full py-4 rounded-2xl font-sans font-black text-base text-white shadow-lg"
+              style={{background:`linear-gradient(135deg,${vrat.color},${vrat.color}cc)`}}>
+              {enrolling ? "..." : `🙏 ${vrat.name_hi} शुरू करें → My Profile`}
+            </button>
+          )}
+          {enrolled && (
+            <Link href="/sanyam/profile"
+              className="block w-full py-4 rounded-2xl font-sans font-black text-base text-white text-center shadow-lg"
+              style={{background:"linear-gradient(135deg,#16A34A,#15803D)"}}>
+              ✅ Profile पर देखें →
+            </Link>
           )}
         </div>
       </div>
-
-      {/* START BUTTON */}
-      <div className="rounded-3xl p-6 text-center"
-        style={{background:`linear-gradient(135deg,${vrat.color}12,${vrat.color}06)`,border:`3px solid ${vrat.color}30`}}>
-        {started ? (
-          <div>
-            <div className="text-5xl mb-3">🎉</div>
-            <p className="font-sans font-black text-lg text-gray-800 mb-1">Started! Redirecting to profile...</p>
-            <p className="font-hindi text-sm text-gray-500">जय जिनेन्द्र! आपकी साधना शुरू हो गई।</p>
-          </div>
-        ) : (
-          <>
-            <p className="font-sans text-sm text-gray-600 mb-5">
-              Ready to begin <strong>{vrat.name}</strong>?<br/>
-              This will be added to your Sanyam Profile and shared on the activity feed.
-            </p>
-            {error&&<p className="font-sans text-xs text-red-500 font-bold mb-3 bg-red-50 rounded-xl p-2">{error}</p>}
-            <button onClick={startVrat} disabled={starting}
-              className="w-full py-4 rounded-2xl font-sans font-black text-base disabled:opacity-60 mb-3"
-              style={{background:`linear-gradient(135deg,${vrat.color},${vrat.color}99)`,color:"white",
-                boxShadow:`0 8px 24px ${vrat.color}50`}}>
-              {starting?"Starting...": `${vrat.emoji} Start ${vrat.name}`}
-            </button>
-            {!isLoggedIn&&(
-              <p className="font-sans text-xs text-gray-400">
-                <a href="/academy/login" className="text-purple-600 font-bold hover:underline">Sign in</a> to save progress permanently & earn stars to your account
-              </p>
-            )}
-          </>
-        )}
-      </div>
-    </div>
     </div>
   );
 }
-
