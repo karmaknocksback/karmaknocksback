@@ -45,7 +45,7 @@ export default function SanyamLeaderboardPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="text-5xl mb-3">🏆</div>
-          <h1 className="font-sans font-black text-2xl text-white mb-1">Sanyam Leaderboards</h1>
+          <h1 className="font-sans font-black text-2xl text-gray-900 mb-1">Sanyam Leaderboards</h1>
           <p className="font-hindi text-sm text-amber-400 mb-1">आध्यात्मिक साधना का सम्मान</p>
           <p className="font-sans text-xs text-gray-500">Ranked by spiritual practice, not wealth or popularity</p>
         </div>
@@ -79,7 +79,7 @@ export default function SanyamLeaderboardPage() {
         {loading ? (
           <div className="space-y-3">
             {[1,2,3,4,5].map(i=>(
-              <div key={i} className="h-16 rounded-xl animate-pulse" style={{background:"rgba(255,255,255,0.04)"}}/>
+              <div key={i} className="h-16 rounded-xl animate-pulse" style={{background:"white"}}/>
             ))}
           </div>
         ) : leaders.length===0 ? (
@@ -109,7 +109,7 @@ export default function SanyamLeaderboardPage() {
                   </div>
                 ) : (
                   <div className="w-9 h-9 rounded-full flex items-center justify-center font-sans font-black text-sm text-white/30 shrink-0"
-                    style={{background:"rgba(255,255,255,0.04)"}}>
+                    style={{background:"white"}}>
                     {i+1}
                   </div>
                 )}
@@ -154,10 +154,10 @@ export default function SanyamLeaderboardPage() {
         {/* Honor note */}
         <div className="mt-8 rounded-2xl p-5 text-center"
           style={{background:"rgba(255,215,0,0.03)",border:"1px dashed rgba(255,215,0,0.15)"}}>
-          <p className="font-hindi text-xs text-amber-600 mb-1">
+          <p className="font-hindi text-xs text-amber-700 mb-1 font-bold">
             यह लीडरबोर्ड स्व-घोषित साधना पर आधारित है।
           </p>
-          <p className="font-sans text-[10px] text-gray-600">
+          <p className="font-sans text-[10px] text-gray-500">
             Honor-based system — the goal is self-improvement and inspiration, not competition.
           </p>
         </div>
