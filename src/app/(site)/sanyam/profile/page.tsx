@@ -180,7 +180,7 @@ function SectionTitle({ emoji, title, hi, action, onAction }: { emoji:string; ti
 export default function SanyamProfilePage() {
   const [data,    setData]    = useState<Data|null>(null);
   const [loading, setLoading] = useState(true);
-  const [tab,     setTab]     = useState<"overview"|"vrats"|"timeline"|"badges"|"activity">("overview");
+  const [tab,     setTab]     = useState<"overview"|"vrats"|"timeline"|"badges"|"activity"|"social">("overview");
   const [modal,   setModal]   = useState<string|null>(null);
   const [editMode,setEditMode]= useState(false);
   const [editAvatar, setEditAvatar] = useState("");
@@ -375,6 +375,7 @@ export default function SanyamProfilePage() {
             {id:"timeline",  label:"Timeline"},
             {id:"badges",    label:"Badges"},
             {id:"activity",  label:"Activity"},
+            {id:"social",    label:"Feed"},
           ].map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id as typeof tab)}
               className="shrink-0 rounded-xl px-4 py-2 font-sans font-black text-xs transition-all flex-1"
@@ -623,6 +624,31 @@ export default function SanyamProfilePage() {
           </Card>
         )}
       </div>
+
+      {/* SOCIAL TAB */}
+      {tab === "social" && (
+        <div className="space-y-4">
+          <div className="bg-white rounded-2xl p-4 shadow-sm text-center" style={{border:"1px solid #F3F4F6"}}>
+            <div className="text-4xl mb-3">🌿</div>
+            <p className="font-sans font-black text-gray-800 mb-2">Community Feed</p>
+            <p className="font-hindi text-sm text-gray-400 mb-4">साथियों की साधना देखें, प्रेरणा लें</p>
+            <Link href="/sanyam/feed"
+              className="inline-block rounded-2xl px-6 py-3 font-sans font-black text-sm text-white"
+              style={{background:"linear-gradient(135deg,#F59E0B,#D97706)"}}>
+              🌿 Open Community Feed →
+            </Link>
+          </div>
+          <div className="bg-white rounded-2xl p-4 shadow-sm" style={{border:"1px solid #F3F4F6"}}>
+            <p className="font-sans font-black text-sm text-gray-700 mb-3">Share your activity</p>
+            <button onClick={()=>setModal("samayik")}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left hover:bg-gray-50 transition-colors"
+              style={{border:"1px solid #F3F4F6"}}>
+              <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">🧘</div>
+              <span className="font-hindi text-sm text-gray-400">आज की साधना शेयर करें...</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── LOG MODAL ── */}
       {modal && (

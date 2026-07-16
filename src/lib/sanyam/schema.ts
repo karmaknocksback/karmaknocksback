@@ -169,6 +169,53 @@ export async function ensureSanyamDb() {
       jaap_streak INTEGER DEFAULT 0,
       updated_at TEXT DEFAULT (datetime('now'))
     )`,
+    // ── SOCIAL NETWORK TABLES ──────────────────────────────
+    `CREATE TABLE IF NOT EXISTS sanyam_posts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER, guest_id TEXT,
+      display_name TEXT NOT NULL,
+      avatar TEXT DEFAULT '🧘',
+      post_type TEXT DEFAULT 'activity', -- activity|vrat|milestone|photo|thought
+      title TEXT,
+      title_hi TEXT,
+      content TEXT,
+      emoji TEXT DEFAULT '🙏',
+      color TEXT DEFAULT '#FF9800',
+      category TEXT DEFAULT 'vrat',
+      stars_earned INTEGER DEFAULT 0,
+      image_url TEXT,
+      is_public INTEGER DEFAULT 1,
+      likes_count INTEGER DEFAULT 0,
+      comments_count INTEGER DEFAULT 0,
+      anumodana_count INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`,
+    `CREATE TABLE IF NOT EXISTS sanyam_post_reactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      post_id INTEGER NOT NULL,
+      user_id INTEGER, guest_id TEXT,
+      reaction_type TEXT DEFAULT 'anumodana', -- anumodana|bless|inspire
+      created_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(post_id, user_id),
+      UNIQUE(post_id, guest_id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS sanyam_post_comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      post_id INTEGER NOT NULL,
+      user_id INTEGER, guest_id TEXT,
+      display_name TEXT NOT NULL,
+      avatar TEXT DEFAULT '🧘',
+      content TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`,
+    `CREATE TABLE IF NOT EXISTS sanyam_follows (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      follower_user_id INTEGER NOT NULL,
+      following_user_id INTEGER NOT NULL,
+      status TEXT DEFAULT 'following',
+      created_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(follower_user_id, following_user_id)
+    )`,
   ];
   for (const sql of tables) {
     try { await dbRun(sql, []); } catch (e) { console.error("[sanyam] table error:", e); }
