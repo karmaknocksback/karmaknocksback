@@ -125,13 +125,29 @@ export default function ArticleForm({ initial }: { initial?: Partial<ArticleForm
         </Field>
       </div>
 
-      <Field label="Thumbnail URL">
+      <Field label="🖼️ Cover Image URL (Thumbnail)">
         <input
-          required
           value={form.thumbnail}
           onChange={(e) => update("thumbnail", e.target.value)}
+          placeholder="https://... (paste image URL — 16:9 or 16:10 recommended)"
           className="kkb-input"
         />
+        {form.thumbnail && (
+          <div className="mt-2">
+            <div className="relative rounded-xl overflow-hidden bg-gray-100" style={{aspectRatio:"16/10",maxWidth:360}}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={form.thumbnail} alt="Preview" className="w-full h-full object-cover"
+                onError={(e)=>{(e.target as HTMLImageElement).parentElement!.style.display="none"}}/>
+              <div className="absolute top-2 right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">✓ Cover Preview</div>
+            </div>
+            <p className="text-xs text-charcoal/50 mt-1">This image appears as the article cover in Knowledge Hub</p>
+          </div>
+        )}
+        {!form.thumbnail && (
+          <div className="mt-2 rounded-xl border-2 border-dashed border-charcoal/15 p-4 text-center">
+            <p className="text-xs text-charcoal/40">📸 No cover set — a category gradient will be shown</p>
+          </div>
+        )}
       </Field>
 
       <Field label="संक्षेप (Excerpt)">
