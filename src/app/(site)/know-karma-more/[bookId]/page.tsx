@@ -59,7 +59,7 @@ export default async function BookPage({ params }: Props) {
       {/* Breadcrumb */}
       <div className="max-w-5xl mx-auto px-5 pt-6 mb-4">
         <div className="flex items-center gap-2 font-sans text-xs text-white/40">
-          <Link href="/know-karma-more" className="hover:text-white/70 transition-colors">Know Karma</Link>
+          <Link href="/know-karma-more" className="hover:text-white/70 transition-colors">Kids Library</Link>
           <span>/</span>
           <span className="text-white/70">{book.title}</span>
           {hasFlipPages && (

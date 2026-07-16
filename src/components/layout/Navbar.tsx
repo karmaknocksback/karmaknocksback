@@ -24,7 +24,7 @@ const PUBLIC_LINKS = [
   { label:"Jap Library",     labelHi:"जाप लाइब्रेरी",  href:"/jap-library",         emoji:"📿" },
   { label:"Jaap Directory",  labelHi:"जाप निर्देशिका", href:"/jain-jaap-directory",  emoji:"🗂️" },
   { label:"Knowledge Hub",   labelHi:"ज्ञान केंद्र",   href:"/knowledge-hub",        emoji:"📚" },
-  { label:"Know Karma",      labelHi:"कर्म जानो",       href:"/know-karma-more",      emoji:"⚖️" },
+  { label:"Kids Library",      labelHi:"कर्म जानो",       href:"/know-karma-more",      emoji:"⚖️" },
   { label:"Services",        labelHi:"सेवाएँ",          href:"/services",             emoji:"🙏" },
   { label:"Community",       labelHi:"समुदाय",          href:"/community",            emoji:"👥" },
   { label:"About",           labelHi:"परिचय",           href:"/about",                emoji:"ℹ️" },

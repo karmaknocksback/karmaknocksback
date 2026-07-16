@@ -123,7 +123,7 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <span className="inline-block rounded-full px-4 py-1.5 font-sans font-bold text-xs text-amber-700 mb-4" style={{background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.2)"}}>📚 Know Karma More</span>
+              <span className="inline-block rounded-full px-4 py-1.5 font-sans font-bold text-xs text-amber-700 mb-4" style={{background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.2)"}}>📚 Kids Library</span>
               <h2 className="font-display font-black text-4xl text-charcoal mb-4">Interactive<br/>Jain Books</h2>
               <p className="font-hindi text-charcoal/60 text-base mb-4">जैन शास्त्रों की अनोखी दुनिया में प्रवेश करें</p>
               <p className="font-sans text-charcoal/50 text-sm mb-6 leading-relaxed">
