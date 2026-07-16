@@ -220,7 +220,7 @@ export default function SanyamProfilePage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center" style={{background:"#FAFAF5"}}>
+    <div className="min-h-screen flex items-center justify-center bg-pg-sanyam transition-theme">
       <div className="text-center">
         <div className="text-5xl animate-bounce mb-3">🕉️</div>
         <p className="font-hindi text-amber-600 animate-pulse">साधना पथ लोड हो रहा है...</p>
@@ -239,10 +239,10 @@ export default function SanyamProfilePage() {
   const AVATARS = ["🧘","🌸","🦚","🕉️","🙏","💎","⭐","🌺","🪷","🔱","🌟","🎋"];
 
   return (
-    <div className="min-h-screen pb-8" style={{background:"#FAFAF5"}}>
+    <div className="min-h-screen pb-8 bg-pg-sanyam transition-theme">
 
       {/* ── TOP BAR ── */}
-      <div className="sticky top-0 z-30 px-4 py-3 flex items-center justify-between" style={{background:"rgba(250,250,245,0.95)",backdropFilter:"blur(12px)",borderBottom:"1px solid rgba(0,0,0,0.06)"}}>
+      <div className="sticky top-0 z-30 px-4 py-3 flex items-center justify-between" style={{background:"var(--card-bg)",backdropFilter:"blur(12px)",borderBottom:"1px solid rgba(0,0,0,0.06)"}}>
         <Link href="/sanyam" className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200">
           ←
         </Link>

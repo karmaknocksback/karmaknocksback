@@ -48,6 +48,61 @@
   --glass-border: 200, 155, 60;
 }
 
+
+/* ═══════════════════════════════════════════════════════════
+   THEMED PAGE BACKGROUNDS
+   Light = warm luminous gradient, Dark = deep dark gradient
+   Pages use var() so they respond to theme toggle automatically
+══════════════════════════════════════════════════════════════ */
+:root {
+  /* Main site pages */
+  --pg-jain:     linear-gradient(160deg,#faf8f2 0%,#fff8ed 50%,#f4f0ff 100%);
+  --pg-sanyam:   linear-gradient(160deg,#fdf9f0 0%,#fff5e0 40%,#f0f4ff 100%);
+  --pg-mirror:   linear-gradient(135deg,#f0f0ff 0%,#fdf0ff 50%,#fff0f5 100%);
+  --pg-academy:  linear-gradient(160deg,#f0f8ff 0%,#f5f0ff 60%,#fff0f8 100%);
+  --pg-games:    linear-gradient(160deg,#f0fff8 0%,#f5f0ff 50%,#fff8f0 100%);
+  --pg-calendar: linear-gradient(160deg,#faf8f2 0%,#fff8ed 50%,#f4f0ff 100%);
+  /* Card / section backgrounds */
+  --card-bg:     rgba(255,255,255,0.9);
+  --card-border: rgba(0,0,0,0.07);
+  --section-alt: rgba(0,0,0,0.025);
+  /* Text on themed pages */
+  --pg-text:         #1a1a1a;
+  --pg-text-muted:   #6b7280;
+  --pg-text-soft:    #9ca3af;
+}
+.dark {
+  --pg-jain:     linear-gradient(160deg,#0d0d0d 0%,#1a0800 40%,#0d0d1a 100%);
+  --pg-sanyam:   linear-gradient(160deg,#0d0d0d 0%,#1a0800 40%,#0d0d1a 100%);
+  --pg-mirror:   linear-gradient(135deg,#0a0a1a 0%,#1a0020 50%,#0d0010 100%);
+  --pg-academy:  linear-gradient(160deg,#09090b 0%,#0f0a1e 60%,#1a0010 100%);
+  --pg-games:    linear-gradient(160deg,#050510 0%,#0d0820 50%,#1a0808 100%);
+  --pg-calendar: linear-gradient(160deg,#0d0d0d 0%,#1a0800 40%,#0d0d1a 100%);
+  --card-bg:     rgba(255,255,255,0.05);
+  --card-border: rgba(255,255,255,0.08);
+  --section-alt: rgba(255,255,255,0.03);
+  --pg-text:         #f9fafb;
+  --pg-text-muted:   #9ca3af;
+  --pg-text-soft:    #6b7280;
+}
+
+/* ── CSS utility classes pages can use ─────────────────────── */
+.bg-pg-jain     { background: var(--pg-jain); }
+.bg-pg-sanyam   { background: var(--pg-sanyam); }
+.bg-pg-mirror   { background: var(--pg-mirror); }
+.bg-pg-academy  { background: var(--pg-academy); }
+.bg-pg-games    { background: var(--pg-games); }
+.bg-pg-calendar { background: var(--pg-calendar); }
+.bg-themed-card { background: var(--card-bg); border: 1px solid var(--card-border); }
+.bg-section-alt { background: var(--section-alt); }
+.text-pg        { color: var(--pg-text); }
+.text-pg-muted  { color: var(--pg-text-muted); }
+
+/* ── Transition for smooth theme switch ──────────────────────  */
+.transition-theme {
+  transition: background 0.35s ease, color 0.35s ease, border-color 0.35s ease;
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;

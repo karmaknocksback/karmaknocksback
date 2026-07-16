@@ -110,7 +110,7 @@ export default function JainCalendarPage() {
   const selDay = sel || today;
 
   return (
-    <div className="min-h-screen" style={{background:"linear-gradient(160deg,#0d0d0d 0%,#1a0800 40%,#0d0d1a 100%)"}}>
+    <div className="min-h-screen bg-pg-sanyam transition-theme">
       <div className="max-w-7xl mx-auto px-4 py-6 pb-20">
 
         {/* Title */}

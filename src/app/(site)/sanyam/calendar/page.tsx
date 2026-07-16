@@ -93,7 +93,7 @@ export default function JainCalendarPage() {
   const mainFestival = (d:DayData|undefined) => d?.jain_festivals[0] || null;
 
   return (
-    <div className="min-h-screen" style={{background:"linear-gradient(160deg,#0d0d0d 0%,#1a0800 40%,#0d0d1a 100%)"}}>
+    <div className="min-h-screen bg-pg-sanyam transition-theme">
       <div className="max-w-6xl mx-auto px-4 py-6 pb-20">
 
         {/* Header */}

@@ -39,7 +39,7 @@ export default function SanyamLeaderboardPage() {
   },[type]);
 
   return (
-    <div className="min-h-screen" style={{background:"linear-gradient(160deg,#0d0d0d 0%,#1a0800 40%,#0d0d1a 100%)"}}>
+    <div className="min-h-screen bg-pg-sanyam transition-theme">
       <div className="max-w-3xl mx-auto px-4 py-10 pb-20">
 
         {/* Header */}
