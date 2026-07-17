@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { dbGet, dbRun, dbAll } from "@/lib/db";
 import { ensureSanyamDb, seedBadges } from "@/lib/sanyam/schema";
 
+// Module-level cache — only seed once per server process
+let _dbReady = false;
+async function ensureReady() {
+  if (_dbReady) return;
+  await ensureSanyamDb();
+  await seedBadges();
+  _dbReady = true;
+}
+
 async function getUser(req: NextRequest): Promise<{userId:number|null;guestId:string|null;name:string}> {
   const tok = req.cookies.get("academy_token")?.value || req.headers.get("authorization")?.replace("Bearer ","");
   if (tok) {
@@ -27,8 +36,7 @@ function todayIST(): string {
 }
 
 export async function GET(req: NextRequest) {
-  await ensureSanyamDb();
-  await seedBadges();
+  await ensureReady();
   const { userId, guestId, name } = await getUser(req);
   const idField = userId ? "user_id" : "guest_id";
   const idVal   = userId ?? guestId;
@@ -47,55 +55,44 @@ export async function GET(req: NextRequest) {
 
   const today = todayIST();
 
-  // Today's logs
-  const todayLogs = await dbAll<{log_type:string;count:number;duration_min:number;stars_earned:number}>(
-    `SELECT log_type, SUM(count) as count, SUM(duration_min) as duration_min, SUM(stars_earned) as stars_earned
-     FROM sanyam_daily_logs WHERE ${idField}=? AND log_date=? GROUP BY log_type`,
-    [idVal, today]
-  );
-
-  // Active enrollments
-  const enrollments = await dbAll<Record<string,unknown>>(
-    `SELECT * FROM sanyam_enrollments WHERE ${idField}=? AND status='active' ORDER BY start_date DESC LIMIT 10`,
-    [idVal]
-  );
-
-  // Earned badges
-  const badges = await dbAll<{badge_key:string;earned_at:string}>(
-    `SELECT be.badge_key, be.earned_at, b.name, b.name_hi, b.emoji, b.color, b.description
-     FROM sanyam_badges_earned be JOIN sanyam_badges b ON be.badge_key=b.key
-     WHERE be.${idField.replace("user_id","user_id").replace("guest_id","guest_id")}=? ORDER BY be.earned_at DESC`,
-    [idVal]
-  );
-
-  // All available badges
-  const allBadges = await dbAll<Record<string,unknown>>("SELECT * FROM sanyam_badges ORDER BY stars_reward", []);
-
-  // Streak
-  let streak = await dbGet<{current_streak:number;longest_streak:number;samayik_streak:number}>(
-    `SELECT * FROM sanyam_streaks WHERE ${idField}=?`, [idVal]
-  );
-  if (!streak) streak = { current_streak:0, longest_streak:0, samayik_streak:0 };
-
-  // Recent feed (community)
-  const feed = await dbAll<Record<string,unknown>>(
-    "SELECT * FROM sanyam_feed ORDER BY created_at DESC LIMIT 20", []
-  );
-
-  // Timeline
-  const timeline = await dbAll<Record<string,unknown>>(
-    `SELECT * FROM sanyam_timeline WHERE ${idField}=? ORDER BY created_at DESC LIMIT 20`,
-    [idVal]
-  );
+  // Run all DB queries in PARALLEL for speed
+  const [todayLogs, enrollments, badges, allBadges, streakRaw, feed] = await Promise.all([
+    dbAll<{log_type:string;count:number;duration_min:number;stars_earned:number}>(
+      `SELECT log_type, SUM(count) as count, SUM(duration_min) as duration_min, SUM(stars_earned) as stars_earned
+       FROM sanyam_daily_logs WHERE ${idField}=? AND log_date=? GROUP BY log_type`,
+      [idVal, today]
+    ),
+    dbAll<Record<string,unknown>>(
+      `SELECT * FROM sanyam_enrollments WHERE ${idField}=? AND status='active' ORDER BY start_date DESC LIMIT 10`,
+      [idVal]
+    ),
+    dbAll<{badge_key:string;earned_at:string;name:string;name_hi:string;emoji:string;color:string}>(
+      `SELECT be.badge_key, be.earned_at, b.name, b.name_hi, b.emoji, b.color
+       FROM sanyam_badges_earned be JOIN sanyam_badges b ON be.badge_key=b.key
+       WHERE be.${idField}=? ORDER BY be.earned_at DESC`,
+      [idVal]
+    ),
+    dbAll<Record<string,unknown>>("SELECT key,name,name_hi,emoji,color,stars_reward,is_rare FROM sanyam_badges ORDER BY stars_reward", []),
+    dbGet<{current_streak:number;longest_streak:number;samayik_streak:number}>(
+      `SELECT current_streak,longest_streak,samayik_streak FROM sanyam_streaks WHERE ${idField}=?`, [idVal]
+    ),
+    dbAll<Record<string,unknown>>(
+      "SELECT id,display_name,avatar,feed_type,message,anumodanas,created_at FROM sanyam_feed ORDER BY created_at DESC LIMIT 15", []
+    ),
+  ]);
+  const streak = streakRaw || { current_streak:0, longest_streak:0, samayik_streak:0 };
+  const timeline: Record<string,unknown>[] = [];
 
   // Total dharma points today
   const todayStars = todayLogs.reduce((s,l) => s + (l.stars_earned||0), 0);
 
-  return NextResponse.json({
+  const res = NextResponse.json({
     profile, todayLogs, enrollments, badges, allBadges,
     streak, feed, timeline, todayStars,
     isGuest: !userId, guestId,
   });
+  res.headers.set("Cache-Control", "private, max-age=30"); // 30s client-side cache
+  return res;
 }
 
 export async function POST(req: NextRequest) {

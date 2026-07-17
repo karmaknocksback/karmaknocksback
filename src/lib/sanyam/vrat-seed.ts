@@ -562,6 +562,10 @@ export async function seedVrats() {
     await dbRun("ALTER TABLE sanyam_vrats ADD COLUMN source TEXT", []);
   } catch { /* columns may already exist */ }
 
+  // Quick check: skip if already seeded with full kathas
+  const existing = await dbGet<{c:number}>("SELECT COUNT(*) as c FROM sanyam_vrats WHERE katha_hi IS NOT NULL AND katha_hi != ''", []).catch(()=>null);
+  if (existing && existing.c >= JAIN_VRATS.length) return;
+
   for (const v of JAIN_VRATS) {
     const existing = await dbGet("SELECT id FROM sanyam_vrats WHERE slug=?", [v.slug]);
     if (existing) {

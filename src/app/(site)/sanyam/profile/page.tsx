@@ -156,10 +156,46 @@ export default function SanyamProfilePage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-white">
-      <div className="text-center">
-        <div className="text-6xl animate-bounce mb-4">🕉️</div>
-        <p className="font-hindi text-amber-600 text-lg font-bold animate-pulse">साधना पथ लोड हो रहा है...</p>
+    <div className="min-h-screen bg-white" style={{background:"#F8FAFC"}}>
+      {/* Skeleton loader */}
+      <div className="sticky top-0 z-40 px-4 py-3 bg-white shadow-sm" style={{borderBottom:"2px solid #F1F5F9"}}>
+        <div className="flex items-center justify-between">
+          <div className="w-9 h-9 rounded-full bg-gray-200 animate-pulse"/>
+          <div className="h-4 w-32 rounded bg-gray-200 animate-pulse"/>
+          <div className="w-9 h-9 rounded-full bg-gray-200 animate-pulse"/>
+        </div>
+      </div>
+      <div className="max-w-xl mx-auto px-4 pt-6 space-y-4">
+        {/* Hero skeleton */}
+        <div className="bg-white rounded-3xl overflow-hidden shadow-md" style={{border:"1px solid #E2E8F0"}}>
+          <div className="h-24 animate-pulse bg-gradient-to-r from-gray-100 to-gray-200"/>
+          <div className="px-5 pb-5 pt-2">
+            <div className="w-20 h-20 rounded-2xl bg-gray-200 animate-pulse -mt-10 mb-3"/>
+            <div className="h-6 w-1/2 rounded bg-gray-200 animate-pulse mb-2"/>
+            <div className="h-4 w-1/3 rounded bg-gray-100 animate-pulse mb-3"/>
+            <div className="grid grid-cols-4 gap-2">
+              {[1,2,3,4].map(i=><div key={i} className="h-10 rounded-xl bg-gray-100 animate-pulse"/>)}
+            </div>
+          </div>
+        </div>
+        {/* Progress skeleton */}
+        <div className="bg-white rounded-3xl p-5 shadow-md" style={{border:"1px solid #E2E8F0"}}>
+          <div className="h-5 w-40 rounded bg-gray-200 animate-pulse mb-4"/>
+          <div className="flex items-center gap-4">
+            <div className="w-40 h-40 rounded-full bg-gray-100 animate-pulse"/>
+            <div className="flex-1 space-y-2">
+              {[1,2,3].map(i=><div key={i} className="h-4 rounded bg-gray-100 animate-pulse"/>)}
+            </div>
+          </div>
+        </div>
+        {/* Actions skeleton */}
+        <div className="bg-white rounded-3xl p-5 shadow-md" style={{border:"1px solid #E2E8F0"}}>
+          <div className="h-5 w-32 rounded bg-gray-200 animate-pulse mb-4"/>
+          <div className="grid grid-cols-3 gap-3">
+            {[1,2,3,4,5,6].map(i=><div key={i} className="h-20 rounded-2xl bg-gray-100 animate-pulse"/>)}
+          </div>
+        </div>
+        <p className="text-center font-hindi text-amber-500 text-sm animate-pulse">साधना पथ लोड हो रहा है... 🕉️</p>
       </div>
     </div>
   );

@@ -42,9 +42,11 @@ function getDayBg(d:DayData, isSel:boolean, isToday:boolean): { bg:string; borde
   if (hasMajorFest) return { bg:"#FFF1F2", border:"1.5px solid #FDA4AF", textColor:"#9F1239" };
   if (hasParva)     return { bg:"#FDF4FF", border:"1.5px solid #E9D5FF", textColor:"#7E22CE" };
   if (d.is_purnima) return { bg:"#FFFBEB", border:"1.5px solid #FDE68A", textColor:"#92400E" };
-  if (d.is_amavasya)return { bg:"#F5F3FF", border:"1.5px solid #DDD6FE", textColor:"#5B21B6" };
-  if (d.is_ekadashi)return { bg:"#F0FDF4", border:"1.5px solid #BBF7D0", textColor:"#14532D" };
-  if (d.is_ashtami) return { bg:"#EFF6FF", border:"1px solid #BFDBFE",  textColor:"#1E3A8A" };
+  if (d.is_amavasya)    return { bg:"#F5F3FF", border:"1.5px solid #DDD6FE", textColor:"#5B21B6" };
+  if (d.is_chaturdashi) return { bg:"#FFF1F2", border:"1.5px solid #FECDD3", textColor:"#9F1239" };
+  if (d.is_ekadashi)    return { bg:"#F0FDF4", border:"1.5px solid #BBF7D0", textColor:"#14532D" };
+  if (d.is_ashtami)     return { bg:"#EFF6FF", border:"1px solid #BFDBFE",  textColor:"#1E3A8A" };
+  if (d.is_chaturdashi) return { bg:"#FEF9C3", border:"2px solid #FDE047", textColor:"#713F12" };
   if (d.vaar.num===0)return{ bg:"#FFF7ED", border:"1px solid #FDE8CC",  textColor:"#7C2D12" };
   if (d.vaar.num===6)return{ bg:"#F0F9FF", border:"1px solid #BAE6FD",  textColor:"#0C4A6E" };
   return { bg:"white",   border:"1px solid #E5E7EB",  textColor:"#111827" };
@@ -191,7 +193,9 @@ export default function JainCalendarPage() {
                   {bg:"#FFFBEB",bd:"#FDE68A",l:"Purnima 🌕"},
                   {bg:"#F5F3FF",bd:"#DDD6FE",l:"Amavasya 🌑"},
                   {bg:"#F0FDF4",bd:"#BBF7D0",l:"Ekadashi ⭐"},
+                  {bg:"#FFF1F2",bd:"#FECDD3",l:"Chaturdashi 🙏"},
                   {bg:"#EFF6FF",bd:"#BFDBFE",l:"Ashtami 🌟"},
+                  {bg:"#FEF9C3",bd:"#FDE047",l:"Chaturdashi 🙏"},
                 ].map(({bg,bd,l})=>(
                   <div key={l} className="flex items-center gap-2 mb-1.5">
                     <div className="w-4 h-4 rounded-sm shrink-0" style={{background:bg,border:`1.5px solid ${bd}`}}/>
@@ -285,6 +289,10 @@ export default function JainCalendarPage() {
                         {/* Today dot */}
                         {today2 && <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-0.5 mx-auto"/>}
 
+                        {/* Chaturdashi marker */}
+                        {d.is_chaturdashi && (
+                          <p style={{fontSize:"7px",color:"#713F12",fontWeight:900}}>🙏</p>
+                        )}
                         {/* Brahma muhurta change warning */}
                         {d.brahma_muhurta_tithi_note && (
                           <div className="w-1.5 h-1.5 rounded-full bg-purple-400 mt-0.5"/>

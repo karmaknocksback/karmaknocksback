@@ -242,11 +242,15 @@ export const DEFAULT_BADGES = [
 ];
 
 export async function seedBadges() {
-  const { dbRun } = await import("@/lib/db");
-  for (const b of DEFAULT_BADGES) {
-    await dbRun(
-      `INSERT OR IGNORE INTO sanyam_badges (key,name,name_hi,emoji,color,description,condition_type,condition_value,stars_reward,is_rare) VALUES (?,?,?,?,?,?,?,?,?,?)`,
-      [b.key,b.name,b.name_hi||b.name,b.emoji,b.color,b.description,b.condition_type,b.condition_value,b.stars_reward,b.is_rare||0]
-    );
-  }
+  const { dbRun, dbGet } = await import("@/lib/db");
+  // Skip if already seeded — ONE fast query instead of 16 inserts
+  const existing = await dbGet<{c:number}>("SELECT COUNT(*) as c FROM sanyam_badges", []).catch(()=>null);
+  if (existing && existing.c >= DEFAULT_BADGES.length) return;
+  // Seed all at once with multi-value INSERT
+  const placeholders = DEFAULT_BADGES.map(()=>"(?,?,?,?,?,?,?,?,?,?)").join(",");
+  const values = DEFAULT_BADGES.flatMap(b=>[b.key,b.name,b.name_hi||b.name,b.emoji,b.color,b.description,b.condition_type,b.condition_value,b.stars_reward,b.is_rare||0]);
+  await dbRun(
+    `INSERT OR IGNORE INTO sanyam_badges (key,name,name_hi,emoji,color,description,condition_type,condition_value,stars_reward,is_rare) VALUES ${placeholders}`,
+    values
+  );
 }

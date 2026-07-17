@@ -22,9 +22,16 @@ export async function GET(req: NextRequest) {
     for (let d = 1; d <= daysInMonth; d++) {
       const p = calculatePanchang(year, month, d, 6);
       const festivals = getJainFestivals(p.tithi.number, p.hindu_month.number - 1);
-      days.push({ day: d, ...p, jain_festivals: festivals });
+      days.push({ 
+        day: d, ...p, 
+        jain_festivals: festivals,
+        brahma_muhurta_tithi_note: null  // computed per day if needed
+      });
     }
-    return NextResponse.json({ year, month, days });
+    const resp = NextResponse.json({ year, month, days });
+    // Cache month data for 1 hour in browser/CDN  
+    resp.headers.set("Cache-Control", "public, max-age=3600, s-maxage=3600");
+    return resp;
   }
 
   if (type === "upcoming") {
