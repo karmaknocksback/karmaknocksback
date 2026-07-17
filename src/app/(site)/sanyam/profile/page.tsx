@@ -138,9 +138,25 @@ export default function SanyamProfilePage() {
   const [modal,   setModal]   = useState<string|null>(null);
 
   const load = useCallback(async()=>{
-    const r = await fetch("/api/sanyam/profile");
-    const d = await r.json();
-    setData(d); setLoading(false);
+    // Show cached data INSTANTLY
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("sanyam_prof");
+        if (cached) {
+          const d = JSON.parse(cached);
+          setData(d); setLoading(false);
+        }
+      } catch {}
+    }
+    // Fetch fresh in background
+    try {
+      const r = await fetch("/api/sanyam/profile");
+      const d = await r.json();
+      setData(d); setLoading(false);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("sanyam_prof", JSON.stringify(d));
+      }
+    } catch (e) { setLoading(false); }
   },[]);
   useEffect(()=>{ load(); },[load]);
 
