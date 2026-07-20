@@ -1,10 +1,14 @@
 "use client";
 
 export function GoogleSignInButton({
-  className, label = "Sign in with Google"
-}: { className?: string; label?: string }) {
+  className, label = "Sign in with Google", redirect
+}: { className?: string; label?: string; redirect?: string }) {
   function signIn() {
-    window.location.href = "/api/auth/google";
+    // Pass the redirect URL so user returns to original page after login
+    const redirectParam = redirect || (typeof window !== "undefined" ? 
+      new URLSearchParams(window.location.search).get("redirect") || window.location.pathname 
+      : "/");
+    window.location.href = `/api/auth/google?redirect=${encodeURIComponent(redirectParam)}`;
   }
 
   return (

@@ -171,9 +171,18 @@ export default function TinyLifeRescue() {
   function handlePointerUp(e: React.PointerEvent) {
     if (!playing) return;
     const trail = sweepTrail.current;
-    const moved = trail.length >= 3;
+    
+    // Use DISTANCE-based detection (not trail count)
+    // A gentle, careful swipe still moves the pointer → distance > 20px = swipe
+    let totalDist = 0;
+    if (trail.length >= 2) {
+      const first = trail[0];
+      const last = trail[trail.length-1];
+      totalDist = Math.sqrt((last.x-first.x)**2 + (last.y-first.y)**2);
+    }
+    const isTap = totalDist < 20; // less than 20px movement = it's a tap
 
-    if (!moved) {
+    if (isTap) {
       // It was a TAP — check if creature was tapped
       const rect = gameAreaRef.current?.getBoundingClientRect();
       if (rect) {
@@ -192,6 +201,8 @@ export default function TinyLifeRescue() {
         }));
       }
     }
+    // If it was a swipe (totalDist >= 20px), the rescue was already handled
+    // in handlePointerMove → checkSweep, so no penalty here
     setPichiDown(false);
     sweepTrail.current = [];
   }

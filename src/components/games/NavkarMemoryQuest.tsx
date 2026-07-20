@@ -174,7 +174,7 @@ export default function NavkarMemoryQuest() {
       )}
 
       {/* Card grid */}
-      <div className={`grid ${pairCount<=4?"grid-cols-4":pairCount<=6?"grid-cols-6":"grid-cols-5"} gap-1.5 w-full max-w-lg`}>
+      <div className={`grid ${pairCount<=8?"grid-cols-4":"grid-cols-5"} gap-1.5 w-full max-w-lg`}>
         {deck.map(card=>{
           const isFlipped=flipped.includes(card.key);
           const isMatched=matched.includes(card.pairId);

@@ -76,9 +76,23 @@ export async function GET(req: NextRequest) {
 
     const jwt = await createJWT(user.id);
 
-    const res = NextResponse.redirect(`${siteUrl}/academy/dashboard`);
+    // Read redirect from OAuth state param, default to original page or dashboard
+    const state = req.nextUrl.searchParams.get("state");
+    const returnTo = state ? decodeURIComponent(state) : "/academy/dashboard";
+    // Only allow safe internal redirects
+    const safeRedirect = returnTo.startsWith("/") ? returnTo : "/academy/dashboard";
+    
+    const res = NextResponse.redirect(`${siteUrl}${safeRedirect}`);
     res.cookies.set("academy_token", jwt, {
       httpOnly: true,
+      secure:   process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge:   7 * 24 * 3600,
+      path:     "/",
+    });
+    // Also set a readable player info cookie (not httpOnly) for PlayerContext
+    res.cookies.set("kkb_user", JSON.stringify({ name: user.name, avatar: "🧑" }), {
+      httpOnly: false,
       secure:   process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge:   7 * 24 * 3600,

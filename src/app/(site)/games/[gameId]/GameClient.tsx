@@ -51,7 +51,7 @@ function PlayerGate({ children, gameId }: { children: React.ReactNode; gameId: s
             Create a free account to play all games, earn Karma Stars, and save your progress!
           </p>
           <div className="space-y-2.5">
-            <a href={`/academy/login?redirect=/games/${gameId}&reason=signin_required`}
+            <a href={`/api/auth/google?redirect=${encodeURIComponent(`/games/${gameId}`)}`}
               className="block w-full text-center py-3.5 rounded-2xl font-sans font-black text-sm text-amber-900"
               style={{ background: "linear-gradient(135deg,#FFD700,#FF9800)", boxShadow: "0 4px 16px rgba(255,215,0,0.4)" }}>
               🔑 Sign In

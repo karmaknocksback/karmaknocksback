@@ -112,8 +112,10 @@ export default function KarmaCrush(){
           setScore(s=>{const ns=s+pts;if(ns>=TARGET){
               const nextLvl=currentLevel+1;
               localStorage.setItem("kc_level",String(nextLvl));
-              setCurrentLevel(nextLvl);
-              setTimeout(()=>setScreen("levelcomplete"),400);
+              setTimeout(()=>{
+                setCurrentLevel(nextLvl);  // update level BEFORE showing screen
+                setScreen("levelcomplete");
+              },400);
             }
             return ns;});
           setCombo(cb);
@@ -186,7 +188,7 @@ export default function KarmaCrush(){
           <div className="rounded-xl p-3 bg-white"><p className="font-display text-2xl font-black text-pink-600">🪷 {score}</p><p className="font-sans text-[10px] text-gray-400">Punya Points</p></div>
           <div className="rounded-xl p-3 bg-white"><p className="font-display text-2xl font-black text-purple-600">⭐ +{Math.round(currentLevel*3)}</p><p className="font-sans text-[10px] text-gray-400">Stars Earned</p></div>
         </div>
-        <button onClick={()=>{const cfg=getLevelConfig(currentLevel);setBoard(makeBoard());setScore(0);setMoves(cfg.moves);setCombo(0);setSel(null);setFlashing([]);setScreen("play");setBusy(false);}}
+        <button onClick={()=>{const cfg=getLevelConfig(currentLevel);setBoard(makeBoard());setScore(0);setMoves(cfg.moves);setCombo(0);setSel(null);setFlashing([]);setBusy(false);setScreen("play");}}
           className="w-full py-4 rounded-2xl font-sans font-black text-sm text-white"
           style={{background:"linear-gradient(135deg,#FFD700,#FF9800)"}}>
           ▶ Play Level {currentLevel}!
