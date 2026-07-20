@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import Image from "next/image";
 import { usePlayer } from "@/context/PlayerContext";
 import PlayerModal from "./PlayerModal";
@@ -94,6 +94,12 @@ export default function KarmaCrush(){
   const [busy,setBusy]=useState(false);
   const msgT=useRef<ReturnType<typeof setTimeout>|null>(null);
   const TARGET=lvlCfg.target;
+  
+  // Refs to avoid stale closure in processCascade useCallback
+  const levelRef  = useRef(currentLevel);
+  const targetRef = useRef(TARGET);
+  useEffect(() => { levelRef.current  = currentLevel; }, [currentLevel]);
+  useEffect(() => { targetRef.current = TARGET; },       [TARGET]);
 
   const showMsg=useCallback((m:string)=>{
     if(msgT.current)clearTimeout(msgT.current);
@@ -109,15 +115,20 @@ export default function KarmaCrush(){
       if(hits.length===0){
         setFlashing([]);
         if(pts>0){
-          setScore(s=>{const ns=s+pts;if(ns>=TARGET){
-              const nextLvl=currentLevel+1;
+          setScore(s=>{
+            const ns=s+pts;
+            // Use refs so we ALWAYS get current level & target (no stale closure!)
+            if(ns>=targetRef.current){
+              const curLvl=levelRef.current;
+              const nextLvl=curLvl+1;
               localStorage.setItem("kc_level",String(nextLvl));
               setTimeout(()=>{
-                setCurrentLevel(nextLvl);  // update level BEFORE showing screen
+                setCurrentLevel(nextLvl);
                 setScreen("levelcomplete");
               },400);
             }
-            return ns;});
+            return ns;
+          });
           setCombo(cb);
           showMsg(MSGS[Math.floor(Math.random()*MSGS.length)]+(cb>1?` ×${cb} Combo!`:"")+"  +"+pts);
         }
@@ -179,20 +190,53 @@ export default function KarmaCrush(){
 
   if(screen==="levelcomplete") return(
     <div className="flex items-center justify-center min-h-64 px-3 w-full">
-      <div className="w-full max-w-sm rounded-3xl p-8 text-center"
-        style={{background:"linear-gradient(135deg,#FFFDE7,#FFF9C4)",border:"4px solid #FFD700",boxShadow:"0 24px 80px rgba(255,215,0,0.6)",animation:"popIn 0.4s ease"}}>
-        <div className="text-6xl mb-3">🌟</div>
-        <h2 className="font-display-hi text-2xl font-black text-amber-900 mb-1">Level {currentLevel-1} Complete!</h2>
-        <p className="font-hindi text-sm text-amber-700 mb-4">अगले स्तर पर जाएं! Level {currentLevel} unlocked!</p>
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <div className="rounded-xl p-3 bg-white"><p className="font-display text-2xl font-black text-pink-600">🪷 {score}</p><p className="font-sans text-[10px] text-gray-400">Punya Points</p></div>
-          <div className="rounded-xl p-3 bg-white"><p className="font-display text-2xl font-black text-purple-600">⭐ +{Math.round(currentLevel*3)}</p><p className="font-sans text-[10px] text-gray-400">Stars Earned</p></div>
+      <div className="w-full max-w-sm text-center" style={{animation:"popIn 0.4s ease"}}>
+        
+        {/* Level Complete image — displayed FULL, no cropping */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/level-complete-kids.png"
+          alt="Level Complete!"
+          style={{width:"100%",display:"block",objectFit:"contain",borderRadius:16,marginBottom:12}}
+        />
+        
+        {/* Stats + Next Level card */}
+        <div className="rounded-2xl overflow-hidden shadow-2xl"
+          style={{background:"linear-gradient(135deg,#FFFDE7,#FFF9C4)",border:"3px solid #FFD700",boxShadow:"0 8px 40px rgba(255,215,0,0.5)"}}>
+          <div className="px-4 pt-4 pb-2">
+            <p className="font-sans font-black text-base text-amber-900">Level {currentLevel-1} Complete! 🌟</p>
+            <p className="font-hindi text-xs text-amber-700">Level {currentLevel} unlocked!</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 px-4 pb-3">
+            <div className="rounded-xl p-3 bg-white">
+              <p className="font-display text-2xl font-black text-pink-600">🪷 {score}</p>
+              <p className="font-sans text-[10px] text-gray-400">Punya Points</p>
+            </div>
+            <div className="rounded-xl p-3 bg-white">
+              <p className="font-display text-2xl font-black text-purple-600">⭐ +{Math.round(currentLevel*3)}</p>
+              <p className="font-sans text-[10px] text-gray-400">Stars Earned</p>
+            </div>
+          </div>
+          <div className="px-4 pb-4">
+            <button
+              onClick={()=>{
+                const nextLvl = levelRef.current;  // use ref — always current!
+                const cfg = getLevelConfig(nextLvl);
+                setBoard(makeBoard());
+                setScore(0);
+                setMoves(cfg.moves);
+                setCombo(0);
+                setSel(null);
+                setFlashing([]);
+                setBusy(false);
+                setScreen("play");
+              }}
+              className="w-full py-4 rounded-2xl font-sans font-black text-sm text-white"
+              style={{background:"linear-gradient(135deg,#FFD700,#FF9800)",boxShadow:"0 4px 16px rgba(245,158,11,0.4)"}}>
+              ▶ Play Level {currentLevel}!
+            </button>
+          </div>
         </div>
-        <button onClick={()=>{const cfg=getLevelConfig(currentLevel);setBoard(makeBoard());setScore(0);setMoves(cfg.moves);setCombo(0);setSel(null);setFlashing([]);setBusy(false);setScreen("play");}}
-          className="w-full py-4 rounded-2xl font-sans font-black text-sm text-white"
-          style={{background:"linear-gradient(135deg,#FFD700,#FF9800)"}}>
-          ▶ Play Level {currentLevel}!
-        </button>
       </div>
     </div>
   );
