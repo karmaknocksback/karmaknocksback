@@ -8,7 +8,7 @@ export async function GET(
   const { slug } = await params;
   const jap = await getJapBySlug(slug);
   if (!jap) {
-    return NextResponse.json({ error: "Jap not found" }, { status: 404 });
+    (()=>{const __r=NextResponse.json({ error: "Jap not found" }, { status: 404 });__r.headers.set("Cache-Control","public, s-maxage=3600, max-age=300, stale-while-revalidate=86400");return __r;})();
   }
   return NextResponse.json({ jap });
 }

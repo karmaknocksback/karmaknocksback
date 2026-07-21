@@ -122,7 +122,7 @@ export default function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/logo.png" alt="KKB" width={30} height={45} className="h-8 w-auto object-contain"/>
+            <img src="/images/logo.webp" alt="KKB" width={30} height={45} className="h-8 w-auto object-contain"/>
             <div className="hidden sm:flex flex-col leading-none">
               <span className="font-display-hi text-lg text-amber-900 leading-tight">कर्म</span>
               <span className="font-display text-[11px] tracking-widest text-amber-700/70 uppercase">KnocksBack</span>

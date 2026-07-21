@@ -1,3 +1,4 @@
+export const runtime = "edge";
 import { NextRequest, NextResponse } from "next/server";
 import { todayPanchang, calculatePanchang, upcomingHighlights } from "@/lib/panchang/calculator";
 import { getJainFestivals } from "@/lib/panchang/jain-festivals";
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
     }
     const resp = NextResponse.json({ year, month, days });
     // Cache month data for 1 hour in browser/CDN  
-    resp.headers.set("Cache-Control", "public, max-age=3600, s-maxage=3600");
+    resp.headers.set("Cache-Control", "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800");
     return resp;
   }
 

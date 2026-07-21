@@ -43,5 +43,5 @@ export async function GET(req: NextRequest) {
     );
   }
   
-  return NextResponse.json({ leaders, type });
+  (()=>{const __r=NextResponse.json({ leaders, type });__r.headers.set("Cache-Control","public, s-maxage=3600, max-age=300, stale-while-revalidate=86400");return __r;})();
 }

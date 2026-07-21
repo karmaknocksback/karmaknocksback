@@ -1,3 +1,6 @@
+// ISR: regenerate at most every hour
+export const revalidate = 3600;
+
 import type { Metadata } from "next";
 import KnowledgeFilterBar from "@/components/knowledge-hub/KnowledgeFilterBar";
 import ArticleCard from "@/components/shared/ArticleCard";

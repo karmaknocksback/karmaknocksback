@@ -7,5 +7,5 @@ export async function GET(req: NextRequest) {
     q: searchParams.get("q") || undefined,
     category: searchParams.get("category") || undefined,
   });
-  return NextResponse.json({ articles });
+  (()=>{const __r=NextResponse.json({ articles });__r.headers.set("Cache-Control","public, s-maxage=3600, max-age=300, stale-while-revalidate=86400");return __r;})();
 }

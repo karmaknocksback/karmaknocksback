@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
       "SELECT * FROM sanyam_vrats WHERE slug=? AND is_active=1",
       [slug]
     );
-    if (!vrat) return NextResponse.json({ error:"Not found" }, { status:404 });
+    if (!vrat) (()=>{const __r=NextResponse.json({ error:"Not found" }, { status:404 });__r.headers.set("Cache-Control","public, s-maxage=3600, max-age=300, stale-while-revalidate=86400");return __r;})();
     return NextResponse.json({ vrat });
   }
 

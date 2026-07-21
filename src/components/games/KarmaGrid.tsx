@@ -212,7 +212,7 @@ export default function KarmaGrid() {
       {/* Board */}
       <div className="relative w-full max-w-sm rounded-3xl overflow-hidden mb-4"
         style={{aspectRatio:"1/1",boxShadow:"0 0 0 4px white,0 0 0 8px #FFD700,0 16px 40px rgba(0,0,0,0.2)"}}>
-        <Image src="/games/shared/tictactoe_board.png" alt="Karma Grid" fill className="object-cover" unoptimized priority sizes="400px"/>
+        <Image src="/games/shared/tictactoe_board.webp" alt="Karma Grid" fill className="object-cover" unoptimized priority sizes="400px"/>
 
         {/* 3×3 grid overlay */}
         <div className="absolute inset-0 grid grid-cols-3 gap-2 p-4">
@@ -341,7 +341,7 @@ export default function KarmaGrid() {
           <div className="rounded-3xl overflow-hidden w-full max-w-sm"
             style={{border:"4px solid #FFD700",boxShadow:"0 24px 80px rgba(255,215,0,0.6)",animation:"popIn 0.4s ease"}}>
             <div className="relative" style={{aspectRatio:"4/3"}}>
-              <Image src="/games/shared/karma_icons.png" alt="result" fill className="object-cover" unoptimized sizes="400px"/>
+              <Image src="/games/shared/karma_icons.webp" alt="result" fill className="object-cover" unoptimized sizes="400px"/>
               <div className="absolute inset-0 flex items-center justify-center" style={{background:"rgba(0,0,0,0.5)"}}>
                 <div className="text-center">
                   <div className="text-6xl mb-2">{winner!==null?"🏆":"🤝"}</div>

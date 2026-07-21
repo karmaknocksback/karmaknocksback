@@ -5,234 +5,562 @@ import { usePlayer } from "@/context/PlayerContext";
 import PlayerModal from "./PlayerModal";
 import { playSound } from "@/lib/sounds";
 
+/* ══════════════════════════════════════════════════════════════════
+   KARMA CRUSH — Candy Crush inspired with Jain spiritual theme
+   
+   LEVEL TYPES (like Candy Crush):
+   "score"   — reach target Punya Points (moves-limited)
+   "collect" — collect N of specific symbol (drops appear)
+   "clear"   — clear all Klesha blocks from board
+   "mixed"   — score + clear kleshas
+   
+   SPECIAL TILES (like Candy Crush):
+   "row"  — 4 in a row horizontal → Navkar Shakti: clears full row
+   "col"  — 4 in a row vertical   → Navkar Shakti: clears full column
+   "bomb" — 5 in a row            → Moksha Gem: clears all of same symbol
+   "wave" — L or T shape          → Ahimsa Wave: 3×3 explosion
+   
+   OBSTACLES:
+   "klesha1" — 1-layer Klesha block (match adjacent to damage)
+   "klesha2" — 2-layer Klesha block
+   "klesha3" — 3-layer Klesha block (Moha/Lobha deep obstacle)
+══════════════════════════════════════════════════════════════════ */
 
-/* ── 500 Level System ──────────────────────────────────────────
-   Levels 1-50:   7×7 board, 30 moves, target scales
-   Levels 51-150: 8×8 board, 25 moves
-   Levels 151-300: 8×8, 22 moves, obstacles
-   Levels 301-500: 9×9, 20 moves, max difficulty
-──────────────────────────────────────────────────────────────── */
-function getLevelConfig(level: number) {
-  const rows = level <= 50 ? 7 : level <= 150 ? 8 : 9;
-  const cols = level <= 50 ? 7 : level <= 150 ? 8 : 9;
-  const moves = Math.max(15, 35 - Math.floor(level / 25));
-  const target = Math.round(300 + level * 1.5 + Math.pow(level, 0.8) * 5);
-  const symbolCount = level <= 100 ? 4 : level <= 250 ? 5 : 5;
-  return { rows, cols, moves, target, symbolCount, level };
+// ── Board types ───────────────────────────────────────────────────
+interface Cell {
+  sym: number | null;   // symbol id (0-4)
+  special: null | "row" | "col" | "bomb" | "wave";  // special tile type
+  klesha: 0 | 1 | 2 | 3;  // obstacle layer (0=none)
+}
+type Board = Cell[][];
+
+// ── Symbols ───────────────────────────────────────────────────────
+const SYMBOLS = [
+  {id:0, name:"Ahimsa",    hi:"अहिंसा",    emoji:"🪷", color:"#E91E63", bg:"#FCE4EC"},
+  {id:1, name:"Satya",     hi:"सत्य",      emoji:"🌟", color:"#FF9800", bg:"#FFF3E0"},
+  {id:2, name:"Navkar",    hi:"नवकार",     emoji:"📿", color:"#9C27B0", bg:"#F3E5F5"},
+  {id:3, name:"Tirthankar",hi:"तीर्थंकर", emoji:"🕉️", color:"#2196F3", bg:"#E3F2FD"},
+  {id:4, name:"Moksha",    hi:"मोक्ष",     emoji:"✨", color:"#4CAF50", bg:"#E8F5E9"},
+];
+
+const KLESHA_COLORS = ["transparent","#8B4513","#5C2D00","#1A0A00"];
+const KLESHA_NAMES  = ["","क्लेश","मोह","लोभ"];
+
+// ── Level Config ──────────────────────────────────────────────────
+interface LevelConfig {
+  rows: number; cols: number; moves: number;
+  symCount: number;
+  type: "score" | "collect" | "clear" | "mixed";
+  target: number;          // score target OR collect count
+  collectSym?: number;     // which symbol to collect (for "collect" type)
+  kleshaCount: number;     // how many klesha obstacles on board
+  kleshaLayers: 1|2|3;    // obstacle layer depth
+  label: string;           // fun level description
+  labelHi: string;
+  tip: string;             // gameplay tip
 }
 
-const ROWS=7,COLS=7; // base (overridden by level config)
-const SYMBOLS=[
-  {id:0,name:"Ahimsa Lotus",  hi:"अहिंसा",  img:"/games/karma-crush/lotus_sm.png",  color:"#E91E63",glow:"rgba(233,30,99,0.7)"},
-  {id:1,name:"Namokar",       hi:"नमोकार",   img:"/games/karma-crush/namokar_sm.png",color:"#FFD700",glow:"rgba(255,215,0,0.7)"},
-  {id:2,name:"Karma Crystal", hi:"क्रिस्टल", img:"/games/karma-crush/crystal_sm.png",color:"#9C27B0",glow:"rgba(156,39,176,0.7)"},
-  {id:3,name:"Compassion Leaf",hi:"करुणा",   img:"/games/karma-crush/leaf_sm.png",   color:"#4CAF50",glow:"rgba(76,175,80,0.7)"},
-  {id:4,name:"Tap Symbol",    hi:"तप",       img:"/games/karma-crush/tap_sm.png",    color:"#FF9800",glow:"rgba(255,152,0,0.7)"},
-];
-const MSGS=["✨ अहिंसा!","🌟 पुण्य अर्जित!","🪷 क्षमावाणी!","💫 कर्म क्षीण!","☀️ मोक्ष के निकट!","🙏 नमो अरिहंताणं!"];
+function getLevelConfig(level: number): LevelConfig {
+  const baseRows = level <= 50 ? 7 : level <= 150 ? 8 : 9;
+  const baseCols = level <= 50 ? 7 : level <= 150 ? 8 : 9;
+  const baseMoves = Math.max(15, 38 - Math.floor(level / 20));
+  const baseSyms  = level <= 80 ? 4 : 5;
+  
+  // Determine level type by position in cycle
+  const cyclePos = ((level - 1) % 10) + 1;  // 1-10
+  const decade = Math.floor((level - 1) / 10);  // 0, 1, 2...
+  
+  // Early levels: all score
+  if (level <= 15) {
+    return {
+      rows:7, cols:7, moves: 30-level, symCount:3+Math.floor(level/6),
+      type:"score", target: 300 + level * 20, kleshaCount:0, kleshaLayers:1,
+      label: level<=5?"Welcome to Dharma Path!":level<=10?"Growing Your Karma":"Spiritual Awakening",
+      labelHi: level<=5?"धर्म पथ पर स्वागत!":level<=10?"कर्म बढ़ाओ":"आत्म जागृति",
+      tip: level<=5?"Match 3 symbols to earn Punya!":level<=10?"4 in a row creates Navkar Shakti!":"Combine special tiles for big power!",
+    };
+  }
 
-type Board=(number|null)[][];
+  // Levels 16-30: introduce Klesha obstacles (1 layer)
+  if (level <= 30) {
+    const type = cyclePos <= 6 ? "score" : cyclePos <= 8 ? "clear" : "mixed";
+    return {
+      rows:7, cols:7, moves: baseMoves, symCount:4,
+      type, target: type==="score" ? 400+level*25 : type==="clear" ? 0 : 300+level*15,
+      kleshaCount: Math.floor((level-15) * 0.8), kleshaLayers:1,
+      label: type==="clear"?"Clear the Kleshas!":type==="mixed"?"Score & Purify!":"Obstacles Arise",
+      labelHi: type==="clear"?"क्लेश दूर करो!":type==="mixed"?"स्कोर और शुद्धि!":"बाधाएं आईं",
+      tip:"Match tiles NEXT to Klesha blocks to weaken them!",
+    };
+  }
+  
+  // Levels 31-60: collect objectives
+  if (level <= 60) {
+    const type = cyclePos <= 4 ? "collect" : cyclePos <= 7 ? "score" : "clear";
+    const collectSym = (decade % SYMBOLS.length);
+    return {
+      rows:7, cols:7, moves: baseMoves, symCount:4+Math.floor((level-30)/20),
+      type, target: type==="collect"?10+Math.floor((level-30)/3):500+level*20,
+      collectSym, kleshaCount: Math.floor((level-30)*0.5), kleshaLayers:1,
+      label: type==="collect"?`Collect ${SYMBOLS[collectSym].name}s!`:"Balance the Karma",
+      labelHi: type==="collect"?`${SYMBOLS[collectSym].hi} इकट्ठा करो!`:"कर्म संतुलन",
+      tip: type==="collect"?`Collect ${10+Math.floor((level-30)/3)} ${SYMBOLS[collectSym].emoji} symbols!`:"Create special tiles for bonus points!",
+    };
+  }
+  
+  // Levels 61-100: 2-layer obstacles introduced
+  if (level <= 100) {
+    const types:Array<"score"|"collect"|"clear"|"mixed"> = ["score","collect","clear","mixed","score","clear","mixed","collect","score","mixed"];
+    const type = types[(level-61)%10];
+    const collectSym = (decade % SYMBOLS.length);
+    return {
+      rows: level<=80?7:8, cols: level<=80?7:8, moves: baseMoves, symCount:4,
+      type, target: type==="collect"?12+Math.floor((level-60)/4):600+level*22,
+      collectSym, kleshaCount: 4+Math.floor((level-60)*0.4), kleshaLayers: level<=80?1:2,
+      label: type==="mixed"?"Soul Purification Challenge!":type==="clear"?"Break the Moha!":"Dharma Quest",
+      labelHi: type==="mixed"?"आत्मशुद्धि चुनौती!":type==="clear"?"मोह तोड़ो!":"धर्म यात्रा",
+      tip: level>80?"2-layer Klesha needs 2 adjacent matches!":"Collect dropped symbols by clearing path!",
+    };
+  }
+  
+  // Levels 101-150: 3-layer obstacles (Moha/Lobha)
+  if (level <= 150) {
+    const types:Array<"score"|"collect"|"clear"|"mixed"> = ["mixed","clear","score","collect","mixed","clear","mixed","score","collect","clear"];
+    const type = types[(level-101)%10];
+    const collectSym = (decade % SYMBOLS.length);
+    return {
+      rows:8, cols:8, moves: baseMoves-2, symCount:5,
+      type, target: type==="collect"?15+Math.floor((level-100)/5):800+level*25,
+      collectSym, kleshaCount: 6+Math.floor((level-100)*0.6), kleshaLayers: level<=125?2:3,
+      label: type==="clear"?"Destroy the Lobha!":"Karma Master Level",
+      labelHi: type==="clear"?"लोभ नष्ट करो!":"कर्म मास्टर",
+      tip: level>125?"3-layer Klesha is very tough — use Moksha Gem (5 match)!":"Create combos to clear deep obstacles!",
+    };
+  }
+  
+  // Levels 151-500: Expert levels
+  const types:Array<"score"|"collect"|"clear"|"mixed"> = ["mixed","clear","mixed","score","collect","mixed","clear","mixed","collect","mixed"];
+  const type = types[(level-151)%10];
+  const collectSym = (decade % SYMBOLS.length);
+  return {
+    rows:9, cols:9, moves: Math.max(15, baseMoves-3), symCount:5,
+    type, target: type==="collect"?20+Math.floor((level-150)/6):1000+level*30,
+    collectSym, kleshaCount: Math.min(20, 8+Math.floor((level-150)*0.15)),
+    kleshaLayers: level<=250?2:level<=350?3:3,
+    label: level<=200?"Enlightenment Path":level<=300?"Soul Liberation":"Moksha Seeker",
+    labelHi: level<=200?"प्रबोधन मार्ग":level<=300?"आत्म मुक्ति":"मोक्ष साधक",
+    tip: "Use Bomb+Wave combos to clear multiple kleshas at once!",
+  };
+}
 
-function rnd(){return Math.floor(Math.random()*SYMBOLS.length);}
-function makeBoard():Board{
-  const b:Board=Array.from({length:ROWS},()=>Array.from({length:COLS},rnd));
+// ── Board helpers ─────────────────────────────────────────────────
+function rndSym(symCount: number): number {
+  return Math.floor(Math.random() * symCount);
+}
+
+function makeBoard(cfg: LevelConfig): Board {
+  const {rows, cols, symCount, kleshaCount, kleshaLayers} = cfg;
+  // Create empty board
+  const b: Board = Array.from({length:rows}, () =>
+    Array.from({length:cols}, () => ({
+      sym: rndSym(symCount),
+      special: null,
+      klesha: 0 as 0|1|2|3,
+    }))
+  );
   // Remove initial matches
-  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
-    let s=b[r][c];
-    while(
-      (c>=2&&b[r][c-1]===s&&b[r][c-2]===s)||
-      (r>=2&&b[r-1][c]===s&&b[r-2][c]===s)
-    ){b[r][c]=rnd();s=b[r][c];}
+  for (let r=0; r<rows; r++) for (let c=0; c<cols; c++) {
+    let s = b[r][c].sym;
+    let tries = 0;
+    while (tries<10 && (
+      (c>=2 && !b[r][c-1].klesha && !b[r][c-2].klesha && b[r][c-1].sym===s && b[r][c-2].sym===s) ||
+      (r>=2 && !b[r-1][c].klesha && !b[r-2][c].klesha && b[r-1][c].sym===s && b[r-2][c].sym===s)
+    )) {
+      s = rndSym(symCount);
+      b[r][c] = {...b[r][c], sym:s};
+      tries++;
+    }
+  }
+  // Place klesha obstacles randomly
+  const placed = new Set<string>();
+  let placedCount = 0;
+  const attempts = kleshaCount * 10;
+  for (let i=0; i<attempts && placedCount<kleshaCount; i++) {
+    const r = 1 + Math.floor(Math.random()*(rows-2));
+    const c = 1 + Math.floor(Math.random()*(cols-2));
+    if (!placed.has(`${r},${c}`)) {
+      placed.add(`${r},${c}`);
+      b[r][c] = {...b[r][c], klesha: Math.min(kleshaLayers, 3) as 1|2|3};
+      placedCount++;
+    }
   }
   return b;
 }
 
-function findHits(b:Board):[number,number][]{
-  const set=new Set<string>();
-  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS-2;c++){
-    const [a,bb,cc]=[b[r][c],b[r][c+1],b[r][c+2]];
-    if(a!==null&&a===bb&&bb===cc){[[r,c],[r,c+1],[r,c+2]].forEach(([rr,cc2])=>set.add(`${rr},${cc2}`));}
+function findMatches(b: Board): [number,number][][] {
+  const ROWS=b.length; const COLS=b[0].length;
+  const inMatch = Array.from({length:ROWS},()=>Array(COLS).fill(false));
+  const groups: [number,number][][] = [];
+  
+  // Horizontal runs
+  for (let r=0; r<ROWS; r++) {
+    let c=0;
+    while (c<COLS) {
+      const cell = b[r][c];
+      if (cell.klesha || cell.sym===null || cell.special==="bomb") {c++;continue;}
+      let end=c+1;
+      while (end<COLS && !b[r][end].klesha && b[r][end].sym===cell.sym && !b[r][end].special) end++;
+      if (end-c>=3) {
+        const grp:[number,number][] = [];
+        for (let k=c;k<end;k++){inMatch[r][k]=true;grp.push([r,k]);}
+        groups.push(grp);
+      }
+      c=end;
+    }
   }
-  for(let c=0;c<COLS;c++)for(let r=0;r<ROWS-2;r++){
-    const [a,bb,cc]=[b[r][c],b[r+1][c],b[r+2][c]];
-    if(a!==null&&a===bb&&bb===cc){[[r,c],[r+1,c],[r+2,c]].forEach(([rr,cc2])=>set.add(`${rr},${cc2}`));}
+  // Vertical runs
+  for (let c=0; c<COLS; c++) {
+    let r=0;
+    while (r<ROWS) {
+      const cell = b[r][c];
+      if (cell.klesha || cell.sym===null || cell.special==="bomb") {r++;continue;}
+      let end=r+1;
+      while (end<ROWS && !b[end][c].klesha && b[end][c].sym===cell.sym && !b[end][c].special) end++;
+      if (end-r>=3) {
+        const grp:[number,number][] = [];
+        for (let k=r;k<end;k++){inMatch[k][c]=true;grp.push([k,c]);}
+        groups.push(grp);
+      }
+      r=end;
+    }
   }
-  return [...set].map(s=>{const[r,c]=s.split(",");return[+r,+c] as [number,number];});
+  return groups;
 }
 
-function drop(b:Board):Board{
-  const nb=b.map(r=>[...r]);
-  for(let c=0;c<COLS;c++){
-    let empty=ROWS-1;
-    for(let r=ROWS-1;r>=0;r--){
-      if(nb[r][c]!==null){nb[empty][c]=nb[r][c];if(empty!==r)nb[r][c]=null;empty--;}
+function createSpecial(b:Board, group:[number,number][], isHoriz:boolean): {
+  r:number; c:number; special:"row"|"col"|"bomb"|"wave"
+} | null {
+  if (group.length < 4) return null;
+  const center = group[Math.floor(group.length/2)];
+  if (group.length >= 5) return {r:center[0],c:center[1],special:"bomb"};
+  if (isHoriz) return {r:center[0],c:center[1],special:"row"};
+  return {r:center[0],c:center[1],special:"col"};
+}
+
+function activateSpecial(
+  b: Board, r:number, c:number,
+  collected: Set<string>,
+  cfg: LevelConfig
+): [number,number][] {
+  const ROWS=b.length; const COLS=b[0].length;
+  const affected:[number,number][] = [];
+  const spec = b[r][c].special;
+  const sym  = b[r][c].sym;
+  
+  if (spec==="row") {
+    for (let cc=0;cc<COLS;cc++) affected.push([r,cc]);
+  } else if (spec==="col") {
+    for (let rr=0;rr<ROWS;rr++) affected.push([rr,c]);
+  } else if (spec==="bomb" && sym!==null) {
+    // Clear all of same symbol
+    for (let rr=0;rr<ROWS;rr++) for (let cc=0;cc<COLS;cc++) {
+      if (!b[rr][cc].klesha && b[rr][cc].sym===sym) affected.push([rr,cc]);
     }
-    for(let r=empty;r>=0;r--)nb[r][c]=rnd();
+  } else if (spec==="wave") {
+    for (let dr=-1;dr<=1;dr++) for (let dc=-1;dc<=1;dc++) {
+      const nr=r+dr; const nc=c+dc;
+      if (nr>=0&&nr<ROWS&&nc>=0&&nc<COLS) affected.push([nr,nc]);
+    }
+  }
+  return affected;
+}
+
+function damageKlesha(b: Board, positions:[number,number][]): {
+  newBoard: Board; cleared: number
+} {
+  let cleared = 0;
+  let nb = b.map(row => row.map(cell => ({...cell})));
+  positions.forEach(([r,c]) => {
+    if (nb[r][c].klesha > 0) {
+      if (nb[r][c].klesha === 1) {
+        nb[r][c].klesha = 0;
+        cleared++;
+      } else {
+        nb[r][c].klesha = (nb[r][c].klesha - 1) as 1|2|3;
+      }
+    }
+  });
+  return {newBoard:nb, cleared};
+}
+
+function dropBoard(b: Board, symCount: number): Board {
+  const ROWS=b.length; const COLS=b[0].length;
+  const nb = b.map(row => row.map(c=>({...c})));
+  for (let c=0;c<COLS;c++) {
+    let empty=ROWS-1;
+    for (let r=ROWS-1;r>=0;r--) {
+      if (!nb[r][c].klesha && nb[r][c].sym!==null) {
+        if (r!==empty) {nb[empty]=nb[empty].map((cell,cc)=>cc===c?{...nb[r][c]}:cell);
+          nb[r]=nb[r].map((cell,cc)=>cc===c?{sym:null,special:null,klesha:0}:cell);}
+        empty--;
+      } else if (nb[r][c].klesha) {
+        empty=r-1;
+      }
+    }
+    for (let r=empty;r>=0;r--) {
+      if (!nb[r][c].klesha) {
+        nb[r][c]={sym:rndSym(symCount),special:null,klesha:0};
+      }
+    }
   }
   return nb;
 }
 
-// Count a match row/col length
-function matchLen(b:Board,r:number,c:number,dr:number,dc:number){
-  const s=b[r][c];let len=1,rr=r+dr,cc=c+dc;
-  while(rr>=0&&rr<ROWS&&cc>=0&&cc<COLS&&b[rr][cc]===s){len++;rr+=dr;cc+=dc;}
-  return len;
+// ── Count kleshas remaining ───────────────────────────────────────
+function countKleshas(b:Board): number {
+  return b.flat().filter(c=>c.klesha>0).length;
 }
 
-export default function KarmaCrush(){
+// ═════════════════════════════════════════════════════════════════
+// MAIN GAME COMPONENT
+// ═════════════════════════════════════════════════════════════════
+export default function KarmaCrush() {
   const {player,isReady}=usePlayer();
-  const [currentLevel, setCurrentLevel] = useState(() => parseInt(localStorage.getItem("kc_level")||"1",10));
-  const lvlCfg = getLevelConfig(currentLevel);
-  const [board,setBoard]=useState<Board>(()=>makeBoard());
-  const [sel,setSel]=useState<[number,number]|null>(null);
-  const [flashing,setFlashing]=useState<[number,number][]>([]);
-  const [score,setScore]=useState(0);
-  const [moves,setMoves]=useState(()=>getLevelConfig(parseInt(localStorage.getItem("kc_level")||"1",10)).moves);
-  const [msg,setMsg]=useState<string|null>(null);
-  const [combo,setCombo]=useState(0);
-  const [screen,setScreen]=useState<"play"|"over"|"levelcomplete">("play");
-  const [busy,setBusy]=useState(false);
-  const msgT=useRef<ReturnType<typeof setTimeout>|null>(null);
-  const TARGET=lvlCfg.target;
+  const [currentLevel, setCurrentLevel] = useState(() =>
+    parseInt(typeof window!=="undefined"?localStorage.getItem("kc_level")||"1":"1",10)
+  );
+  const cfg       = getLevelConfig(currentLevel);
+  const [board,   setBoard]   = useState<Board>(()=>makeBoard(cfg));
+  const [sel,     setSel]     = useState<[number,number]|null>(null);
+  const [score,   setScore]   = useState(0);
+  const [moves,   setMoves]   = useState(cfg.moves);
+  const [combo,   setCombo]   = useState(0);
+  const [msg,     setMsg]     = useState<string|null>(null);
+  const [screen,  setScreen]  = useState<"play"|"over"|"levelcomplete">("play");
+  const [busy,    setBusy]    = useState(false);
+  const [flashing,setFlash]   = useState<[number,number][]>([]);
+  const [collected,setCollect]= useState(0);  // for "collect" type
+  const [kleshasLeft,setKL]   = useState(()=>countKleshas(makeBoard(cfg)));
   
-  // Refs to avoid stale closure in processCascade useCallback
-  const levelRef  = useRef(currentLevel);
-  const targetRef = useRef(TARGET);
-  useEffect(() => { levelRef.current  = currentLevel; }, [currentLevel]);
-  useEffect(() => { targetRef.current = TARGET; },       [TARGET]);
-
-  const showMsg=useCallback((m:string)=>{
+  // Refs for stale-closure safety
+  const levelRef   = useRef(currentLevel);
+  const targetRef  = useRef(cfg.target);
+  const cfgRef     = useRef(cfg);
+  useEffect(()=>{ levelRef.current  = currentLevel; },[currentLevel]);
+  useEffect(()=>{ targetRef.current = cfg.target;   },[cfg.target]);
+  useEffect(()=>{ cfgRef.current    = cfg;           },[cfg]);
+  
+  const msgT = useRef<ReturnType<typeof setTimeout>|null>(null);
+  const showMsg = useCallback((m:string)=>{
     if(msgT.current)clearTimeout(msgT.current);
     setMsg(m);msgT.current=setTimeout(()=>setMsg(null),1800);
   },[]);
 
-  // Process cascades synchronously in steps
-  const processCascade=useCallback((initial:Board)=>{
-    let cur=initial;let pts=0;let cb=0;
+  const MSGS = ["🌸 Punya!","✨ Great!","🕉️ Dharmic!","🌟 Karma+","📿 Navkar!","🪷 Ahimsa!"];
 
-    const step=()=>{
-      const hits=findHits(cur);
-      if(hits.length===0){
-        setFlashing([]);
-        if(pts>0){
-          setScore(s=>{
-            const ns=s+pts;
-            // Use refs so we ALWAYS get current level & target (no stale closure!)
-            if(ns>=targetRef.current){
-              const curLvl=levelRef.current;
-              const nextLvl=curLvl+1;
-              localStorage.setItem("kc_level",String(nextLvl));
-              setTimeout(()=>{
-                setCurrentLevel(nextLvl);
-                setScreen("levelcomplete");
-              },400);
-            }
-            return ns;
-          });
+  // ── Check win condition ───────────────────────────────────────
+  const checkWin = useCallback((ns:number, nc:number, brd:Board)=>{
+    const c = cfgRef.current;
+    const kl = countKleshas(brd);
+    let won = false;
+    if (c.type==="score")   won = ns >= c.target;
+    if (c.type==="collect") won = nc >= c.target;
+    if (c.type==="clear")   won = kl === 0;
+    if (c.type==="mixed")   won = ns >= c.target && kl === 0;
+    if (won) {
+      const nextLvl = levelRef.current + 1;
+      localStorage.setItem("kc_level", String(nextLvl));
+      setTimeout(()=>{ setCurrentLevel(nextLvl); setScreen("levelcomplete"); },400);
+    }
+    return won;
+  },[]);
+
+  // ── Core cascade processor ────────────────────────────────────
+  const processCascade = useCallback((initial:Board, initScore:number, initCollect:number)=>{
+    let cur=initial; let sc=initScore; let nc=initCollect; let cb=0; let totalPts=0;
+
+    const step = ()=>{
+      const groups = findMatches(cur);
+      if (groups.length===0) {
+        // No more matches — update state
+        setBoard([...cur.map(r=>[...r])]);
+        setFlash([]);
+        if (totalPts>0) {
+          setScore(sc);
           setCombo(cb);
-          showMsg(MSGS[Math.floor(Math.random()*MSGS.length)]+(cb>1?` ×${cb} Combo!`:"")+"  +"+pts);
+          setCollect(nc);
+          setKL(countKleshas(cur));
+          showMsg(MSGS[Math.floor(Math.random()*MSGS.length)]+(cb>1?` ×${cb} Combo!`:"")+`  +${totalPts}`);
+          if (checkWin(sc,nc,cur)) return;
         }
         setBusy(false);
-        setMoves(m=>{const nm=m-1;if(nm<=0)setTimeout(()=>setScreen("over"),600);return nm;});
+        setMoves(m=>{
+          const nm=m-1;
+          if(nm<=0) setTimeout(()=>setScreen("over"),600);
+          return nm;
+        });
         return;
       }
-      // Play sound based on combo
-      if(cb===0)playSound.match(); else if(cb===1)playSound.bigMatch(); else playSound.comboBlast();
+
+      // Process matches & create specials
+      const allHits:Set<string> = new Set();
+      const specials:[number,number,string][] = [];
       
-      // Calculate bonus for match length
-      let bonus=0;
-      hits.forEach(([r,c])=>{
-        // Check for 4+ or 5+ in a row for special bonus
-        const maxH=matchLen(cur,r,c,0,1);const maxV=matchLen(cur,r,c,1,0);
-        const ml=Math.max(maxH,maxV);
-        if(ml>=5)bonus+=30; else if(ml===4)bonus+=20; else if(ml===3)bonus+=10;
+      groups.forEach(grp=>{
+        const isHoriz = grp.length>1 && grp[0][0]===grp[1][0];
+        const spec = createSpecial(cur,grp,isHoriz);
+        if (spec && grp.length>=4) specials.push([spec.r,spec.c,spec.special]);
+        grp.forEach(([r,c])=>allHits.add(`${r},${c}`));
       });
-      pts+=hits.length*8*(cb+1)+bonus;
+
+      // Calculate points
+      const matchPts = allHits.size * 10 * (cb+1);
+      totalPts += matchPts; sc += matchPts;
+
+      // Damage adjacent kleshas
+      const adjPositions:[number,number][] = [];
+      allHits.forEach(key=>{
+        const [r,c]=key.split(",").map(Number);
+        [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc])=>{
+          const nr=r+dr; const nc2=c+dc;
+          if(nr>=0&&nr<cur.length&&nc2>=0&&nc2<cur[0].length&&cur[nr][nc2].klesha>0)
+            adjPositions.push([nr,nc2]);
+        });
+      });
+      const {newBoard:afterKlesha} = damageKlesha(cur,adjPositions);
+      cur = afterKlesha;
+
+      // Track collected symbols
+      const collectSym = cfgRef.current.collectSym;
+      if (cfgRef.current.type==="collect" || cfgRef.current.type==="mixed") {
+        allHits.forEach(key=>{
+          const [r,c]=key.split(",").map(Number);
+          if(cur[r][c].sym===collectSym) nc++;
+        });
+      }
+
+      // Activate specials that were in match
+      let extraHits:[number,number][] = [];
+      allHits.forEach(key=>{
+        const [r,c]=key.split(",").map(Number);
+        if(cur[r][c].special) {
+          const ah=activateSpecial(cur,r,c,new Set(),cfgRef.current);
+          extraHits=[...extraHits,...ah];
+        }
+      });
+
+      // Remove matched cells
+      const allPositions:[number,number][] = [...Array.from(allHits).map(k=>{const[r,c]=k.split(",").map(Number);return[r,c] as [number,number];}),...extraHits];
+      setFlash(allPositions);
+
+      // Play sound
+      cb===0?playSound.match():cb===1?playSound.bigMatch():playSound.comboBlast();
       cb++;
 
-      // Show flash
-      setFlashing(hits);
-
-      // After delay: remove + drop
       setTimeout(()=>{
-        hits.forEach(([r,c])=>{cur=cur.map((row,ri)=>row.map((v,ci)=>ri===r&&ci===c?null:v));});
-        cur=drop(cur);
+        // Remove matched cells
+        let nb = cur.map(row=>row.map(c=>({...c})));
+        allPositions.forEach(([r,c])=>{
+          if(nb[r][c].klesha===0) nb[r][c]={sym:null,special:null,klesha:0};
+        });
+        
+        // Place specials
+        specials.forEach(([r,c,sp])=>{
+          const origSym = cur[r][c].sym;
+          nb[r][c] = {sym:origSym, special:sp as "row"|"col"|"bomb"|"wave", klesha:0};
+        });
+
+        cur = dropBoard(nb, cfgRef.current.symCount);
         setBoard([...cur.map(r=>[...r])]);
-        setFlashing([]);
-        setTimeout(step,250);
-      },380);
+        setFlash([]);
+        setTimeout(step, 250);
+      }, 380);
     };
     step();
-  },[showMsg]);
+  },[showMsg,checkWin]);
 
-  function tap(r:number,c:number){
-    if(busy||moves<=0||screen!=="play")return;
-    if(!sel){setSel([r,c]);playSound.click();return;}
-    const[sr,sc]=sel;
-    if(sr===r&&sc===c){setSel(null);return;}
-    if(Math.abs(sr-r)+Math.abs(sc-c)!==1){setSel([r,c]);playSound.click();return;}
+  // ── Tap / Swap handler ────────────────────────────────────────
+  function tap(r:number,c:number) {
+    if (busy||moves<=0||screen!=="play") return;
+    const cell=board[r][c];
+    if (cell.klesha) return; // can't select klesha
 
-    // Swap
-    const nb=board.map(row=>[...row]);
-    const tmp=nb[sr][sc];nb[sr][sc]=nb[r][c];nb[r][c]=tmp;
-    const hits=findHits(nb);
-    if(hits.length===0){
-      playSound.wrongSwap();setSel(null);
-      showMsg("🚫 No match here! Try another.");
+    if (!sel) { setSel([r,c]); playSound.click(); return; }
+    const [sr,sc2]=sel;
+    if (sr===r&&sc2===c) { setSel(null); return; }
+
+    // Must be adjacent
+    if (Math.abs(sr-r)+Math.abs(sc2-c)!==1) { setSel([r,c]); playSound.click(); return; }
+    
+    // Attempt swap
+    const nb = board.map(row=>row.map(cell=>({...cell})));
+    [nb[sr][sc2],nb[r][c]] = [nb[r][c],nb[sr][sc2]];
+    
+    // Check if swap creates match or activates special
+    const groups = findMatches(nb);
+    const isSpecial = board[sr][sc2].special || board[r][c].special;
+    
+    if (groups.length===0 && !isSpecial) {
+      // Invalid swap
+      playSound.click();
+      setSel(null);
       return;
     }
-    setSel(null);setBusy(true);setBoard(nb);setCombo(0);
-    processCascade(nb);
+    
+    setSel(null); setBusy(true);
+    setBoard([...nb.map(r2=>[...r2])]);
+    processCascade(nb, score, collected);
   }
 
-  if(!isReady)return null;
-  if(!player)return <PlayerModal/>;
+  // ── New level setup ───────────────────────────────────────────
+  function startLevel(level:number) {
+    const c=getLevelConfig(level);
+    const nb=makeBoard(c);
+    setBoard(nb);
+    setScore(0);
+    setMoves(c.moves);
+    setCombo(0);
+    setSel(null);
+    setFlash([]);
+    setBusy(false);
+    setCollect(0);
+    setKL(countKleshas(nb));
+    setScreen("play");
+  }
 
-  if(screen==="levelcomplete") return(
+  if (!isReady) return null;
+  if (!player) return <PlayerModal/>;
+
+  const sym = cfg.collectSym!==undefined ? SYMBOLS[cfg.collectSym] : null;
+  const kleshasTotal = countKleshas(makeBoard(cfg));
+
+  // ── LEVEL COMPLETE ────────────────────────────────────────────
+  if (screen==="levelcomplete") return (
     <div className="flex items-center justify-center min-h-64 px-3 w-full">
       <div className="w-full max-w-sm text-center" style={{animation:"popIn 0.4s ease"}}>
-        
-        {/* Level Complete image — displayed FULL, no cropping */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/level-complete-kids.png"
-          alt="Level Complete!"
-          style={{width:"100%",display:"block",objectFit:"contain",borderRadius:16,marginBottom:12}}
-        />
-        
-        {/* Stats + Next Level card */}
+        <img src="/level-complete-kids.webp" alt="Level Complete!"
+          style={{width:"100%",display:"block",objectFit:"contain",borderRadius:16,marginBottom:12}}/>
         <div className="rounded-2xl overflow-hidden shadow-2xl"
-          style={{background:"linear-gradient(135deg,#FFFDE7,#FFF9C4)",border:"3px solid #FFD700",boxShadow:"0 8px 40px rgba(255,215,0,0.5)"}}>
+          style={{background:"linear-gradient(135deg,#FFFDE7,#FFF9C4)",border:"3px solid #FFD700"}}>
           <div className="px-4 pt-4 pb-2">
             <p className="font-sans font-black text-base text-amber-900">Level {currentLevel-1} Complete! 🌟</p>
-            <p className="font-hindi text-xs text-amber-700">Level {currentLevel} unlocked!</p>
+            <p className="font-hindi text-xs text-amber-700">{getLevelConfig(currentLevel).labelHi}</p>
           </div>
           <div className="grid grid-cols-2 gap-3 px-4 pb-3">
             <div className="rounded-xl p-3 bg-white">
-              <p className="font-display text-2xl font-black text-pink-600">🪷 {score}</p>
+              <p className="font-sans text-2xl font-black text-pink-600">🪷 {score}</p>
               <p className="font-sans text-[10px] text-gray-400">Punya Points</p>
             </div>
             <div className="rounded-xl p-3 bg-white">
-              <p className="font-display text-2xl font-black text-purple-600">⭐ +{Math.round(currentLevel*3)}</p>
+              <p className="font-sans text-2xl font-black text-purple-600">⭐ +{Math.round(currentLevel*3)}</p>
               <p className="font-sans text-[10px] text-gray-400">Stars Earned</p>
             </div>
           </div>
           <div className="px-4 pb-4">
-            <button
-              onClick={()=>{
-                const nextLvl = levelRef.current;  // use ref — always current!
-                const cfg = getLevelConfig(nextLvl);
-                setBoard(makeBoard());
-                setScore(0);
-                setMoves(cfg.moves);
-                setCombo(0);
-                setSel(null);
-                setFlashing([]);
-                setBusy(false);
-                setScreen("play");
-              }}
+            <button onClick={()=>startLevel(levelRef.current)}
               className="w-full py-4 rounded-2xl font-sans font-black text-sm text-white"
-              style={{background:"linear-gradient(135deg,#FFD700,#FF9800)",boxShadow:"0 4px 16px rgba(245,158,11,0.4)"}}>
+              style={{background:"linear-gradient(135deg,#FFD700,#FF9800)"}}>
               ▶ Play Level {currentLevel}!
             </button>
           </div>
@@ -241,124 +569,169 @@ export default function KarmaCrush(){
     </div>
   );
 
-  if(screen==="over")return(
+  // ── GAME OVER ─────────────────────────────────────────────────
+  if (screen==="over") return (
     <div className="flex items-center justify-center min-h-64 px-3 w-full">
-      <div className="w-full max-w-sm rounded-3xl p-8 text-center"
-        style={{background:"linear-gradient(135deg,#FCE4EC,#EDE7F6)",border:"4px solid #E91E63",animation:"popIn 0.4s ease"}}>
-        <div className="text-6xl mb-3">{screen==="over"&&score>=TARGET?"🏆":"🙏"}</div>
-        <h2 className="font-display-hi text-2xl font-black mb-1" style={{color:"#880E4F"}}>
-          {score>=TARGET?`${player.avatar} मोक्ष प्राप्त!`:`${player.avatar} प्रयास जारी!`}
-        </h2>
-        <div className="grid grid-cols-3 gap-3 my-5">
-          {[{l:"🪷 Punya",v:score,c:"#E91E63"},{l:"⚡ Combos",v:combo,c:"#9C27B0"},{l:"🎯 Target",v:TARGET,c:"#FF9800"}].map(s=>(
-            <div key={s.l} className="rounded-xl p-3 bg-white shadow-sm">
-              <p className="font-display text-2xl font-black" style={{color:s.c}}>{s.v}</p>
-              <p className="font-sans text-[10px] text-gray-400">{s.l}</p>
-            </div>
-          ))}
+      <div className="w-full max-w-sm rounded-3xl p-6 text-center"
+        style={{background:"linear-gradient(135deg,#FCE4EC,#EDE7F6)",border:"3px solid #E91E63",animation:"popIn 0.4s ease"}}>
+        <div className="text-5xl mb-3">🙏</div>
+        <h2 className="font-sans font-black text-xl text-gray-800 mb-1">Try Again!</h2>
+        <p className="font-hindi text-sm text-gray-600 mb-4">हिम्मत रखो! Level {currentLevel}</p>
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="rounded-xl p-3 bg-white">
+            <p className="font-sans text-xl font-black text-pink-600">🪷 {score}</p>
+            <p className="font-sans text-[10px] text-gray-400">Score</p>
+          </div>
+          <div className="rounded-xl p-3 bg-white">
+            <p className="font-sans text-xl font-black text-amber-600">🎯 {cfg.target}</p>
+            <p className="font-sans text-[10px] text-gray-400">Target</p>
+          </div>
         </div>
-        <button onClick={()=>{setBoard(makeBoard());setScore(0);setMoves(30);setCombo(0);setSel(null);setFlashing([]);setScreen("play");setBusy(false);}}
-          className="w-full py-4 rounded-2xl font-sans font-black text-sm text-white"
-          style={{background:"linear-gradient(135deg,#E91E63,#9C27B0)"}}>
-          🪷 Play Again!
+        <button onClick={()=>startLevel(currentLevel)}
+          className="w-full py-3 rounded-2xl font-sans font-black text-sm text-white"
+          style={{background:"linear-gradient(135deg,#E91E63,#C2185B)"}}>
+          🔄 Try Again
         </button>
       </div>
     </div>
   );
 
-  const pct=Math.min(100,(score/TARGET)*100);
-  return(
-    <div className="flex flex-col items-center w-full px-3 pb-10 overflow-x-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between w-full max-w-md mt-2 mb-2">
-        <div className="rounded-2xl px-3 py-2 bg-white shadow-sm" style={{border:"2px solid #9C27B030"}}>
-          <p className="font-sans text-[10px] text-gray-400">Level</p>
-          <p className="font-display text-xl font-black text-purple-700">⚡ {currentLevel}</p>
+  // ── PLAY SCREEN ───────────────────────────────────────────────
+  return (
+    <div className="flex flex-col items-center px-2 pb-6 pt-2 w-full">
+      <style>{`@keyframes popIn{0%{transform:scale(0.6);opacity:0}100%{transform:scale(1);opacity:1}}`}</style>
+
+      {/* HUD */}
+      <div className="grid grid-cols-4 gap-1.5 w-full max-w-md mb-2">
+        {/* Score / Objective */}
+        <div className="col-span-2 rounded-xl p-2 text-center"
+          style={{background:"white",border:`2px solid ${cfg.type==="score"?"#E91E63":"#9C27B0"}30`,boxShadow:"0 2px 8px rgba(0,0,0,0.06)"}}>
+          {cfg.type==="score" || cfg.type==="mixed" ? (
+            <>
+              <p className="font-sans font-black text-lg text-pink-600">🪷 {score}</p>
+              <p className="font-sans text-[9px] text-gray-400">Target: {cfg.target}</p>
+              <div className="h-1 rounded-full bg-pink-100 mt-1 overflow-hidden">
+                <div className="h-full rounded-full bg-pink-500" style={{width:`${Math.min(100,(score/cfg.target)*100)}%`,transition:"width 0.3s"}}/>
+              </div>
+            </>
+          ) : cfg.type==="collect" ? (
+            <>
+              <p className="font-sans font-black text-lg" style={{color:sym?.color}}>{sym?.emoji} {collected}</p>
+              <p className="font-sans text-[9px] text-gray-400">Need: {cfg.target}</p>
+              <div className="h-1 rounded-full bg-gray-100 mt-1 overflow-hidden">
+                <div className="h-full rounded-full" style={{width:`${Math.min(100,(collected/cfg.target)*100)}%`,background:sym?.color,transition:"width 0.3s"}}/>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="font-sans font-black text-lg text-purple-600">🔲 {kleshasLeft}</p>
+              <p className="font-sans text-[9px] text-gray-400">Kleshas left</p>
+            </>
+          )}
         </div>
-        <div className="rounded-2xl px-3 py-2 bg-white shadow-sm" style={{border:"2px solid #E91E6330"}}>
-          <p className="font-sans text-[10px] text-gray-400">Punya Points</p>
-          <p className="font-display text-xl font-black" style={{color:"#E91E63"}}>🪷 {score}</p>
+        {/* Moves */}
+        <div className="rounded-xl p-2 text-center" style={{background:"white",border:"2px solid #2196F330"}}>
+          <p className="font-sans font-black text-lg text-blue-600">⚡ {moves}</p>
+          <p className="font-sans text-[9px] text-gray-400">Moves</p>
         </div>
-        <div className="text-center">
-          <p className="font-sans text-sm font-black" style={{color:"#880E4F"}}>{player.avatar} {player.name}</p>
-          {combo>1&&<p className="font-sans text-xs font-black text-purple-600 animate-bounce">⚡ ×{combo} Combo!</p>}
-        </div>
-        <div className="rounded-2xl px-3 py-2 bg-white shadow-sm" style={{border:`2px solid ${moves<8?"#F4433630":"#FF980030"}`}}>
-          <p className="font-sans text-[10px] text-gray-400">Moves</p>
-          <p className="font-display text-xl font-black" style={{color:moves<8?"#F44336":"#FF9800"}}>{moves}</p>
+        {/* Level */}
+        <div className="rounded-xl p-2 text-center" style={{background:"white",border:"2px solid #FF980030"}}>
+          <p className="font-sans font-black text-lg text-amber-600">Lv {currentLevel}</p>
+          <p className="font-sans text-[9px] text-gray-400">{cfg.type}</p>
         </div>
       </div>
 
-      {/* Progress */}
-      <div className="w-full max-w-md mb-2 flex items-center gap-2">
-        <span className="font-sans text-[10px] text-gray-400 shrink-0">0</span>
-        <div className="flex-1 h-3 rounded-full bg-gray-100 overflow-hidden">
-          <div className="h-full rounded-full transition-all duration-500"
-            style={{width:`${pct}%`,background:"linear-gradient(90deg,#E91E63,#FFD700,#4CAF50)"}}/>
-        </div>
-        <span className="font-sans text-[10px] text-amber-700 font-bold shrink-0">🌟{TARGET}</span>
+      {/* Objective banner */}
+      <div className="w-full max-w-md mb-2 rounded-xl px-3 py-1.5 flex items-center justify-between"
+        style={{background:"#F3E5F5",border:"1px solid #CE93D8"}}>
+        <p className="font-hindi text-xs font-bold text-purple-700">{cfg.labelHi}</p>
+        <p className="font-sans text-[9px] text-purple-500">{cfg.tip.slice(0,40)}…</p>
       </div>
 
-      {/* Message */}
-      {msg&&<div className="mb-2 rounded-2xl px-5 py-2 font-sans text-sm font-black text-white text-center"
-        style={{background:"linear-gradient(135deg,#E91E63,#9C27B0)",animation:"msgPop 0.3s ease"}}>{msg}</div>}
+      {/* Floating message */}
+      {msg && (
+        <div className="absolute top-32 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
+          style={{animation:"popIn 0.2s ease"}}>
+          <p className="font-sans font-black text-lg text-white px-5 py-2 rounded-full"
+            style={{background:"rgba(0,0,0,0.7)",backdropFilter:"blur(4px)"}}>{msg}</p>
+        </div>
+      )}
 
       {/* Board */}
-      <div className="w-full max-w-md select-none" style={{perspective:1200}}>
-        <div className="rounded-3xl overflow-hidden"
-          style={{background:"linear-gradient(145deg,#FCE4EC,#F8BBD9,#EDE7F6)",padding:8,gap:5,
-            display:"grid",gridTemplateColumns:`repeat(${COLS},1fr)`,
-            boxShadow:"0 20px 60px rgba(233,30,99,0.3),0 0 0 3px white,0 0 0 6px #E91E63",
-            transform:"rotateX(4deg)",transformStyle:"preserve-3d"}}>
-          {board.map((row,r)=>row.map((sym,c)=>{
-            const isSel=!!sel&&sel[0]===r&&sel[1]===c;
-            const isFlash=flashing.some(([fr,fc])=>fr===r&&fc===c);
-            const s=sym!==null?SYMBOLS[sym]:null;
-            return(
-              <button key={`${r}-${c}`} onClick={()=>tap(r,c)}
-                className="relative flex items-center justify-center rounded-2xl transition-all duration-150"
-                style={{aspectRatio:"1/1",
-                  background:isSel?"rgba(255,215,0,0.5)":isFlash?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.78)",
-                  border:isSel?"3px solid #FFD700":isFlash?`2px solid ${s?.color}`:"2px solid rgba(255,255,255,0.5)",
-                  boxShadow:isSel?`0 0 20px #FFD700,0 6px 16px rgba(0,0,0,0.2),inset 0 2px 4px rgba(255,255,255,0.9)`:
-                    isFlash?`0 0 28px ${s?.glow},0 4px 12px rgba(0,0,0,0.1)`:
-                    s?`0 4px 10px ${s.color}20,inset 0 2px 3px rgba(255,255,255,0.7)`:"none",
-                  transform:isSel?"scale(1.18) translateZ(24px) translateY(-4px)":isFlash?"scale(1.12) translateZ(12px)":"scale(1)",
-                  opacity:isFlash?0.25:1,
-                  animation:isFlash?"matchPop 0.38s ease":"none",
-                  zIndex:isSel?10:1}}>
-                {s&&<div className="relative w-full h-full p-1.5 flex items-center justify-center"
-                  style={{filter:isSel?`drop-shadow(0 0 12px ${s.glow}) brightness(1.15)`:isFlash?`drop-shadow(0 0 24px ${s.glow})brightness(1.3)`:`drop-shadow(0 3px 6px ${s.color}60)`,
-                    transform:isSel?"scale(1.12)":"scale(1)",transition:"transform 0.15s"}}>
-                  <Image src={s.img} alt={s.name} fill className="object-contain p-0.5" unoptimized sizes="60px"/>
-                </div>}
-                {isSel&&<div className="absolute inset-0 rounded-2xl pointer-events-none"
-                  style={{background:"linear-gradient(135deg,rgba(255,255,255,0.55) 0%,transparent 55%)"}}/>}
-              </button>
+      <div className="rounded-2xl overflow-hidden shadow-xl"
+        style={{
+          display:"grid",
+          gridTemplateColumns:`repeat(${cfg.cols},1fr)`,
+          gap:3, padding:8,
+          background:"linear-gradient(135deg,#1a0033,#2D0052)",
+          border:"3px solid #FFD700",
+        }}>
+        {board.map((row,r)=>row.map((cell,c)=>{
+          const isFlash = flashing.some(([fr,fc])=>fr===r&&fc===c);
+          const isSel   = sel?.[0]===r&&sel?.[1]===c;
+          const S = cell.sym!==null ? SYMBOLS[cell.sym] : null;
+          const sizeV = cfg.cols<=7?52:cfg.cols<=8?44:38;
+          
+          if (cell.klesha) {
+            // Klesha obstacle tile
+            return (
+              <div key={`${r}-${c}`} className="rounded-xl flex items-center justify-center relative"
+                style={{width:sizeV,height:sizeV,background:KLESHA_COLORS[cell.klesha],border:"2px solid rgba(255,255,255,0.1)"}}>
+                <span style={{fontSize:sizeV*0.4}}>{cell.klesha===3?"🔒":cell.klesha===2?"⛓️":"🧱"}</span>
+                {cell.klesha>1&&(
+                  <div className="absolute bottom-0.5 right-0.5 flex gap-0.5">
+                    {Array.from({length:cell.klesha}).map((_,i)=>(
+                      <div key={i} className="w-1.5 h-1.5 rounded-full bg-amber-400"/>
+                    ))}
+                  </div>
+                )}
+                <p className="absolute bottom-0 left-0 right-0 text-center font-sans text-[7px] font-black text-amber-200">{KLESHA_NAMES[cell.klesha]}</p>
+              </div>
             );
-          }))}
-        </div>
+          }
+          
+          if (!S) return <div key={`${r}-${c}`} style={{width:sizeV,height:sizeV}}/>;
+          
+          const isSpecialTile = !!cell.special;
+          
+          return (
+            <button key={`${r}-${c}`}
+              onClick={()=>tap(r,c)}
+              className="rounded-xl flex flex-col items-center justify-center relative transition-all"
+              style={{
+                width:sizeV, height:sizeV,
+                background: isFlash?"rgba(255,255,255,0.95)": isSel?"rgba(255,255,255,0.9)": isSpecialTile?"rgba(255,255,255,0.85)": S.bg,
+                border:`2px solid ${isSel?"#FFD700":isSpecialTile?S.color:S.color+"40"}`,
+                transform: isSel?"scale(1.1)":isFlash?"scale(1.15)":"scale(1)",
+                boxShadow: isSel?`0 0 12px ${S.color}`:isSpecialTile?`0 0 8px ${S.color},0 0 16px ${S.color}30`:"none",
+                transition:"all 0.15s",
+              }}>
+              <span style={{fontSize:sizeV*0.45,filter:isFlash?"brightness(2)":"none"}}>{S.emoji}</span>
+              {cell.special && (
+                <span style={{fontSize:sizeV*0.2,position:"absolute",top:1,right:2}}>
+                  {cell.special==="row"?"↔":cell.special==="col"?"↕":cell.special==="bomb"?"💥":"🌊"}
+                </span>
+              )}
+            </button>
+          );
+        }))}
       </div>
 
-      {/* Legend */}
-      <div className="w-full max-w-md mt-4 rounded-2xl p-3 bg-white shadow-sm" style={{border:"2px solid #FCE4EC"}}>
-        <p className="font-sans text-[10px] font-black text-pink-600 mb-2">Match 3+ symbols to earn Punya Points!</p>
-        <div className="grid grid-cols-5 gap-2">
-          {SYMBOLS.map(s=>(
-            <div key={s.id} className="flex flex-col items-center gap-1">
-              <div className="relative w-9 h-9" style={{filter:`drop-shadow(0 3px 8px ${s.glow})`}}>
-                <Image src={s.img} alt={s.name} fill className="object-contain" unoptimized sizes="48px"/>
-              </div>
-              <p className="font-sans text-[9px] font-bold text-center leading-tight" style={{color:s.color}}>{s.hi}</p>
-            </div>
-          ))}
-        </div>
+      {/* Symbol legend */}
+      <div className="flex gap-1.5 mt-3 flex-wrap justify-center">
+        {SYMBOLS.slice(0,cfg.symCount).map(s=>(
+          <div key={s.id} className="flex items-center gap-1 rounded-full px-2 py-0.5"
+            style={{background:s.bg,border:`1.5px solid ${s.color}40`}}>
+            <span style={{fontSize:12}}>{s.emoji}</span>
+            <span className="font-sans text-[9px] font-bold" style={{color:s.color}}>{s.name}</span>
+            {cfg.type==="collect" && cfg.collectSym===s.id&&(
+              <span className="font-sans text-[9px] font-black text-white px-1 rounded-full" style={{background:s.color}}>
+                {collected}/{cfg.target}
+              </span>
+            )}
+          </div>
+        ))}
       </div>
-      <style>{`
-        @keyframes matchPop{0%{transform:scale(1);opacity:1}50%{transform:scale(1.3);opacity:0.5}100%{transform:scale(0.4);opacity:0}}
-        @keyframes msgPop{0%{transform:scale(0.85);opacity:0}100%{transform:scale(1);opacity:1}}
-        @keyframes popIn{0%{transform:scale(0.6);opacity:0}100%{transform:scale(1);opacity:1}}
-      `}</style>
     </div>
   );
 }

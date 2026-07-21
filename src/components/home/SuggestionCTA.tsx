@@ -40,7 +40,7 @@ export default function SuggestionCTA() {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/images/logo.png"
+          src="/images/logo.webp"
           alt=""
           aria-hidden
           className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/4 h-full opacity-10 pointer-events-none select-none"

@@ -71,7 +71,7 @@ export default function ReportPaywall({ sessionId }: { sessionId: string }) {
         order_id: orderData.orderId,
         name: "KarmaKnocksBack",
         description: "Karma Mirror — पूरी रिपोर्ट",
-        image: "/images/logo.png",
+        image: "/images/logo.webp",
         prefill: {
           name: orderData.prefill?.name || "",
           email: orderData.prefill?.email || "",

@@ -33,7 +33,7 @@ export default function AboutPreview() {
           <div className="relative py-12 lg:pr-16 flex flex-col justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/images/logo.png"
+              src="/images/logo.webp"
               alt=""
               aria-hidden
               className="absolute right-0 top-1/2 -translate-y-1/2 w-64 opacity-10 pointer-events-none select-none hidden lg:block"

@@ -9,5 +9,5 @@ export async function GET(req: NextRequest) {
     planet: searchParams.get("planet") || undefined,
     duration: searchParams.get("duration") || undefined,
   });
-  return NextResponse.json({ japs });
+  (()=>{const __r=NextResponse.json({ japs });__r.headers.set("Cache-Control","public, s-maxage=3600, max-age=300, stale-while-revalidate=86400");return __r;})();
 }

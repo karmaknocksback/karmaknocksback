@@ -86,7 +86,7 @@ export default function PayPage({ params }: { params: Promise<{ code: string }> 
         order_id: orderData.orderId,
         name: "KarmaKnocksBack",
         description: payment.note || "भुगतान",
-        image: "/images/logo.png",
+        image: "/images/logo.webp",
         prefill: { name: payment.customerName },
         theme: { color: "#c89b3c" },
         handler: async function (response: {

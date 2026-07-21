@@ -14,7 +14,7 @@ export default function Hero() {
       <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none select-none">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/images/logo.png"
+          src="/images/logo.webp"
           alt=""
           className="w-full h-full object-contain scale-125"
           style={{ filter: "blur(1px)" }}
@@ -68,7 +68,7 @@ export default function Hero() {
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/images/logo.png"
+              src="/images/logo.webp"
               alt="KarmaKnocksBack"
               className="mx-auto mb-8 h-44 sm:h-56 w-auto animate-float-slow"
               style={{
