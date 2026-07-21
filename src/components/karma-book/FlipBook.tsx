@@ -199,8 +199,12 @@ export default function FlipBook({ bookId, bookTitle, bookEmoji, bookColor, page
               onError={() => setImgLoaded(true)}
               draggable={false}
               style={{
-                position:"absolute", inset:0,
-                width:"100%", height:"100%",
+                position:"absolute",
+                top:0, left:0, right:0,
+                // Leave 68px at bottom for audio bar so it never covers image content
+                bottom: hasAudio ? "68px" : "0px",
+                width:"100%",
+                height: hasAudio ? "calc(100% - 68px)" : "100%",
                 objectFit:"contain",
                 background:"#0a0015",
                 display:"block",
@@ -208,8 +212,11 @@ export default function FlipBook({ bookId, bookTitle, bookEmoji, bookColor, page
                 transition:"opacity 0.4s ease",
               }}/>
           ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center"
-              style={{background:`linear-gradient(135deg,${bookColor}20,#0d0d1a)`}}>
+            <div className="absolute flex flex-col items-center justify-center"
+              style={{
+                top:0, left:0, right:0,
+                bottom: hasAudio ? "68px" : "0px",
+                background:`linear-gradient(135deg,${bookColor}20,#0d0d1a)`}}>
               <div style={{fontSize:80}}>{bookEmoji}</div>
               <p className="font-sans text-white/30 text-sm mt-3">Page {cur+1}</p>
             </div>
@@ -226,7 +233,7 @@ export default function FlipBook({ bookId, bookTitle, bookEmoji, bookColor, page
           {page.caption && (
             <div className="absolute left-0 right-0 pointer-events-none"
               style={{
-                bottom: hasAudio ? "18%" : "4%",
+                bottom: hasAudio ? "calc(68px + 8px)" : "4%",
                 background:"linear-gradient(0deg,rgba(0,0,0,0.88) 0%,rgba(0,0,0,0.5) 60%,transparent 100%)",
                 padding:"40px 20px 16px",
               }}>

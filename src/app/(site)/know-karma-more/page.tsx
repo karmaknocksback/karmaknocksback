@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BOOK_SERIES } from "@/components/karma-book/book-series";
+import { listBookPages } from "@/lib/repo/book-pages";
 
 export const metadata: Metadata = {
   title: "Kids Library 📚 | Jain Books for Children",
@@ -9,9 +10,22 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function KidsLibraryPage() {
+export default async function KidsLibraryPage() {
   const available = BOOK_SERIES.filter(b => b.available);
   const coming    = BOOK_SERIES.filter(b => !b.available);
+
+  // Fetch first page (cover image) for each available book
+  const coverImages: Record<string, string | null> = {};
+  await Promise.all(available.map(async (book) => {
+    try {
+      const pages = await listBookPages(book.id);
+      // Page 0 = cover
+      const coverPage = pages.find(p => p.pageNumber === 0);
+      coverImages[book.id] = coverPage?.imageUrl || null;
+    } catch {
+      coverImages[book.id] = null;
+    }
+  }));
 
   return (
     <div className="min-h-screen pb-20" style={{background:"linear-gradient(180deg,#FFF8F0 0%,#FFF0F8 50%,#F0F8FF 100%)"}}>
@@ -81,16 +95,25 @@ export default function KidsLibraryPage() {
                 {/* Book card */}
                 <div className="relative rounded-3xl overflow-hidden" style={{aspectRatio:"3/4"}}>
 
-                  {/* Bright cover background */}
-                  <div className="absolute inset-0" style={{background:book.coverBg}}/>
-
-                  {/* Shine overlay */}
-                  <div className="absolute inset-0 pointer-events-none"
-                    style={{background:`linear-gradient(135deg,${shine} 0%,transparent 50%)`}}/>
-
-                  {/* Pattern decoration */}
-                  <div className="absolute inset-0 pointer-events-none opacity-20"
-                    style={{backgroundImage:"radial-gradient(circle,rgba(255,255,255,0.4) 1px,transparent 1px)",backgroundSize:"20px 20px"}}/>
+                  {/* Cover image from DB (page 0) OR gradient fallback */}
+                  {coverImages[book.id] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={coverImages[book.id]!}
+                      alt={book.title}
+                      className="absolute inset-0 w-full h-full"
+                      style={{objectFit:"contain", background:book.coverBg}}
+                    />
+                  ) : (
+                    <>
+                      {/* Gradient fallback when no cover image set */}
+                      <div className="absolute inset-0" style={{background:book.coverBg}}/>
+                      <div className="absolute inset-0 pointer-events-none"
+                        style={{background:`linear-gradient(135deg,${shine} 0%,transparent 50%)`}}/>
+                      <div className="absolute inset-0 pointer-events-none opacity-20"
+                        style={{backgroundImage:"radial-gradient(circle,rgba(255,255,255,0.4) 1px,transparent 1px)",backgroundSize:"20px 20px"}}/>
+                    </>
+                  )}
 
                   {/* Book spine */}
                   <div className="absolute left-0 top-0 bottom-0 w-3 rounded-l-3xl"
@@ -102,8 +125,8 @@ export default function KidsLibraryPage() {
                     {book.ageGroup} 🌟
                   </div>
 
-                  {/* Main character / emoji */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pb-10">
+                  {/* Main character / emoji — only show when NO cover image */}
+                  {!coverImages[book.id] && <div className="absolute inset-0 flex flex-col items-center justify-center pb-10">
                     <div className="text-7xl mb-3 drop-shadow-lg group-hover:scale-110 transition-transform duration-300">
                       {book.emoji}
                     </div>
@@ -113,7 +136,7 @@ export default function KidsLibraryPage() {
                         {book.character}
                       </div>
                     )}
-                  </div>
+                  </div>}
 
                   {/* Bottom title area - white gradient with HIGH CONTRAST text */}
                   <div className="absolute bottom-0 left-0 right-0 p-4"
