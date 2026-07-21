@@ -29,7 +29,8 @@ export default function BookPageMedia({ media, fallback, pageLabel }: Props) {
             <img
               src={media!.imageUrl!}
               alt={media?.caption || pageLabel || "Book page"}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
+              style={{background:"#0a0015"}}
             />
             {/* Caption overlay */}
             {media?.caption && (

@@ -538,9 +538,14 @@ export default function KarmaCrush() {
   if (screen==="levelcomplete") return (
     <div className="flex items-center justify-center min-h-64 px-3 w-full">
       <div className="w-full max-w-sm text-center" style={{animation:"popIn 0.4s ease"}}>
+        {/* Wide celebration image with Jain kids - full width, no crop */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/level-complete-kids.webp" alt="Level Complete!"
-          style={{width:"100%",display:"block",objectFit:"contain",borderRadius:16,marginBottom:12}}/>
+        <img src="/level-complete-kids.webp" alt="Level Complete! Well Done!"
+          style={{width:"100%",display:"block",objectFit:"contain",borderRadius:12,marginBottom:10}}/>
+        {/* Badge icon below */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/level-complete-badge.webp" alt="Level Complete Badge"
+          style={{width:90,height:90,display:"block",margin:"-20px auto 8px",objectFit:"contain",filter:"drop-shadow(0 4px 8px rgba(0,0,0,0.3))"}}/>
         <div className="rounded-2xl overflow-hidden shadow-2xl"
           style={{background:"linear-gradient(135deg,#FFFDE7,#FFF9C4)",border:"3px solid #FFD700"}}>
           <div className="px-4 pt-4 pb-2">

@@ -201,7 +201,8 @@ export default function FlipBook({ bookId, bookTitle, bookEmoji, bookColor, page
               style={{
                 position:"absolute", inset:0,
                 width:"100%", height:"100%",
-                objectFit:"cover",
+                objectFit:"contain",
+                background:"#0a0015",
                 display:"block",
                 opacity: imgLoaded ? 1 : 0,
                 transition:"opacity 0.4s ease",
